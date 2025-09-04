@@ -1,34 +1,72 @@
 name: "Entrée de journal"
-description: "Créer une nouvelle entrée de journal d'action"
-title: "Journal: YYYY-MM-DD — [Sujet]"
+description: "Documenter une étape de travail (contrat, code, test)"
+title: "Journal: YYYY-MM-DD — Sujet"
 labels: ["journal"]
+
 body:
+  - type: input
+    id: date
+    attributes:
+      label: Date
+      placeholder: "YYYY-MM-DD"
+    validations:
+      required: true
+
+  - type: input
+    id: id
+    attributes:
+      label: Numéro d'entrée
+      placeholder: "001"
+    validations:
+      required: true
+
   - type: textarea
     id: objectif
     attributes:
-      label: "Objectif"
-      description: "Quel est le but de cette entrée ?"
-      placeholder: "Ex: Implémenter la configuration et l'initialisation DB"
+      label: Objectif
+      description: "Quel résultat on vise pour cette entrée."
+      placeholder: "Poser les contrats MQTT/DB/API pour le MVP"
     validations:
       required: true
-      
+
   - type: textarea
     id: decisions
     attributes:
-      label: "Décisions"
-      description: "Quelles décisions techniques ont été prises ?"
-      placeholder: "Ex: Utiliser SQLite en mode WAL, config via ENV..."
-      
+      label: Décisions
+      description: "Décisions clés prises."
+      placeholder: "- SQLite WAL activé\n- Topic MQTT unique ..."
+    validations:
+      required: true
+
   - type: textarea
     id: artefacts
     attributes:
-      label: "Artefacts produits"
-      description: "Quels fichiers/docs seront créés ?"
-      placeholder: "Ex: src/config.js, src/db.js, tests/..."
-      
+      label: Artifacts produits
+      description: "Docs, schémas, interfaces, fichiers ajoutés."
+      placeholder: "- docs/journal/...\n- src/.../interfaces ..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: commands
+    attributes:
+      label: Commandes exécutées (optionnel)
+      placeholder: "npm run init-db, curl /health, mosquitto_pub ..."
+    validations:
+      required: false
+
   - type: textarea
     id: acceptance
     attributes:
-      label: "Critères d'acceptation"  
-      description: "Comment savoir que c'est terminé ?"
-      placeholder: "Ex: - [ ] Tests passent\n- [ ] /health retourne 200"
+      label: Critères d’acceptation
+      placeholder: "- Contrats définis\n- Route /health répond 200 ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: todo
+    attributes:
+      label: Suivi / TODO
+      placeholder: "- Implémenter getConfig()\n- Écrire tests parseTopic() ..."
+    validations:
+      required: false
