@@ -125,7 +125,7 @@ GROUP BY r.room_id;
    * Vérifier le **topic** (doit correspondre au pattern).
    * Upsert dans `devices` (`device_id`, metadata).
    * Résoudre `room_id` via `device_room_placements`.
-   * Insérer une ligne dans `readings_raw` avec `raw_payload` intact.
+   * Mapper le payload (temperature\_c→t, humidity\_pct→h, ts→ts) et insérer une ligne dans `readings_raw`.
 
 2. En cas d’erreur :
 
@@ -135,7 +135,92 @@ GROUP BY r.room_id;
 
 ---
 
-✅ Ce contrat définit les règles minimales pour le MVP :
+## 4. API HTTP (MVP)
 
-* Structure des **topics MQTT** + payload.
-* Schéma **SQLite** (tables `rooms`, `devices`, `device_room_placements`, `readings_raw`) pour stocker les mesures brutes et leur contexte.
+**Base path** : `/api/v1` (sauf `/health` à la racine).
+**Auth (MVP LAN)** : aucune (clé API/JWT en Phase 2).
+**Content-Type** : `application/json; charset=utf-8`.
+
+### 4.1 Healthcheck
+
+Note : placé à la racine (`/health`) plutôt que sous `/api/v1/health`, car c’est un endpoint **opérationnel** (monitoring, readiness check). Cette convention est répandue (Kubernetes, load balancers) et facilite la supervision. Les endpoints métier, eux, restent sous `/api/v1`.
+
+`GET /health`
+
+* **200 OK**
+
+```json
+{ "status": "ok" }
+```
+
+* **500 Internal Server Error** (ex. DB inaccessible)
+
+```json
+{ "status": "failed" }
+```
+
+**Règle** : la route effectue un `SELECT 1` sur SQLite. Si échec → 500.
+
+---
+
+### 4.2 Dernières mesures par device
+
+`GET /api/v1/readings/latest`
+
+**Description** : renvoie la **dernière lecture** connue pour chaque `device_id` (données issues de `readings_raw`, agrégées par device).
+
+**200 OK**
+
+```json
+{
+  "data": [
+    {
+      "device_id": "rpi-living-01",
+      "room_id": "salon",
+      "ts": "2025-09-04T19:05:00Z",
+      "t": 23.7,
+      "h": 52.5
+    }
+  ]
+}
+```
+
+**Notes de contrat**
+
+* La sélection se base sur la ligne à `ts` maximale par `device_id` dans `readings_raw`.
+* Les valeurs renvoyées sont **post-calibration** si le service applique `offset_t/offset_h` lors de l’ingestion (sinon brutes au MVP).
+* Ordre de tri recommandé : `device_id` croissant.
+
+**Erreurs communes**
+
+* **500** (erreur interne)
+
+```json
+{ "error": { "code": "INTERNAL_ERROR", "message": "..." } }
+```
+
+**Évolutions prévues (non-MVP)**
+
+* Filtres : `?homeId=...`, `?roomId=...`.
+* Endpoint complémentaire : `GET /api/v1/rooms/:roomId/live`.
+
+---
+
+### 4.3 Format générique des erreurs
+
+Toutes les erreurs suivent le format :
+
+```json
+{ "error": { "code": "<CODE>", "message": "<description>" } }
+```
+
+**Codes communs** :
+
+* `VALIDATION_ERROR` → payload invalide.
+* `UNAUTHORIZED` → clé manquante ou invalide.
+* `FORBIDDEN` → rôle insuffisant (phase 2+).
+* `NOT_FOUND` → ressource absente.
+* `DUPLICATE` → `msgId` déjà traité.
+* `INTERNAL_ERROR` → erreur serveur.
+
+---
