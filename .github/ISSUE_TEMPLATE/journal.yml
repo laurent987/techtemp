@@ -1,0 +1,34 @@
+name: "Entrée de journal"
+description: "Créer une nouvelle entrée de journal d'action"
+title: "Journal: YYYY-MM-DD — [Sujet]"
+labels: ["journal"]
+body:
+  - type: textarea
+    id: objectif
+    attributes:
+      label: "Objectif"
+      description: "Quel est le but de cette entrée ?"
+      placeholder: "Ex: Implémenter la configuration et l'initialisation DB"
+    validations:
+      required: true
+      
+  - type: textarea
+    id: decisions
+    attributes:
+      label: "Décisions"
+      description: "Quelles décisions techniques ont été prises ?"
+      placeholder: "Ex: Utiliser SQLite en mode WAL, config via ENV..."
+      
+  - type: textarea
+    id: artefacts
+    attributes:
+      label: "Artefacts produits"
+      description: "Quels fichiers/docs seront créés ?"
+      placeholder: "Ex: src/config.js, src/db.js, tests/..."
+      
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "Critères d'acceptation"  
+      description: "Comment savoir que c'est terminé ?"
+      placeholder: "Ex: - [ ] Tests passent\n- [ ] /health retourne 200"
