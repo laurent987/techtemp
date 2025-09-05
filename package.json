@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "mqtt": "^5.14.1"
+  },
+  "devDependencies": {
+    "aedes": "^0.51.3",
+    "vitest": "^3.2.4"
+  }
+}
