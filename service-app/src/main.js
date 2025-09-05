@@ -4,7 +4,7 @@
  */
 
 import { loadConfig } from './config.js';
-import { initDb, closeDb } from '../db/index.js';
+import { initDb, closeDb } from './db/index.js';
 import { createMqttClient } from './mqtt/client.js';
 import { createHttpServer } from './http/server.js';
 
