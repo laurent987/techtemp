@@ -6,8 +6,8 @@
 import Database from 'better-sqlite3';
 
 /**
- * @typedef {import('../src/types.js').ReadingRow} ReadingRow
- * @typedef {import('../src/types.js').DeviceRow} DeviceRow
+ * @typedef {import('../types.js').ReadingRow} ReadingRow
+ * @typedef {import('../types.js').DeviceRow} DeviceRow
  */
 
 /** @type {Database.Database | null} */
