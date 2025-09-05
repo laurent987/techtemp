@@ -16,7 +16,7 @@ import { Router } from 'express';
  * GET /api/v1/readings/latest?homeId=...&deviceId=...
  * 200: { data: LatestReadingResponse | null }
  * 400: for missing/invalid query params
- * @param {{ repo: import('../../db/index.js').DbRepo }} deps
+ * @param {{ repo: import('../../../db/index.js').DbRepo }} deps
  * @returns {import('express').Router}
  */
 export function readingsRouter(deps) {
