@@ -83,7 +83,7 @@ export function createMqttClient(opts) {
       if (!topic || typeof topic !== 'string') {
         throw new Error('topic is required and must be a string');
       }
-      if (msg === undefined || msg === null) {
+      if (msg == null) {
         throw new Error('msg is required');
       }
 
