@@ -3,6 +3,9 @@ import net from 'node:net';
 import { once } from 'node:events';
 import { createMqttClient } from '../src/mqtt/client.js';
 
+// Helper function for test delays
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 let broker;
 let server;
 let port = 18883;
@@ -37,7 +40,7 @@ describe('MQTT Client Tests', () => {
     await subscribe('home/test/reading');
     await publish('home/test/reading', JSON.stringify({ hello: 'world' }));
 
-    await new Promise((r) => setTimeout(r, 100));
+    await delay(100);
 
     expect(received.length).toBeGreaterThan(0);
     expect(received[0].topic).toBe('home/test/reading');
@@ -74,7 +77,7 @@ describe('MQTT Client Tests', () => {
     await subscribe('home/test/multi');
     await publish('home/test/multi', 'ping');
 
-    await new Promise((r) => setTimeout(r, 100));
+    await delay(100);
 
     expect(h1).toHaveBeenCalled();
     expect(h2).toHaveBeenCalled();
@@ -127,14 +130,14 @@ describe('MQTT Client Tests', () => {
 
     await subscribe('home/test/unsub');
     await publish('home/test/unsub', 'before-unsub');
-    await new Promise((r) => setTimeout(r, 100));
+    await delay(100);
 
     expect(handler).toHaveBeenCalledTimes(1);
 
     // Unsubscribe and verify handler no longer called
     unsubscribe();
     await publish('home/test/unsub', 'after-unsub');
-    await new Promise((r) => setTimeout(r, 100));
+    await delay(100);
 
     expect(handler).toHaveBeenCalledTimes(1); // Still 1, not 2
 
@@ -153,7 +156,7 @@ describe('MQTT Client Tests', () => {
 
     await subscribe('home/test/error');
     await publish('home/test/error', 'trigger-error');
-    await new Promise((r) => setTimeout(r, 100));
+    await delay(100);
 
     // Both handlers should be called despite error in first one
     expect(errorHandler).toHaveBeenCalled();
@@ -234,7 +237,7 @@ describe('MQTT Client Tests', () => {
     // Test Buffer message
     await publish('home/test/formats', Buffer.from('buffer message'));
 
-    await new Promise((r) => setTimeout(r, 100));
+    await delay(100);
 
     expect(received.length).toBe(2);
     expect(received[0].isBuffer).toBe(true); // All messages come as Buffers
@@ -267,7 +270,7 @@ describe('MQTT Client Tests', () => {
       publish('concurrent/topic3', 'message3')
     ]);
 
-    await new Promise((r) => setTimeout(r, 200));
+    await delay(200);
 
     expect(received.length).toBe(3);
 
