@@ -86,5 +86,3 @@ if (action === 'opened') {
     body: `🗒️ **Journal #${idVal} — ${datePart}**\n\n_Titre auto-généré à partir de l’objectif. Si besoin, édite l’objectif : le bot gardera le titre synchronisé._`
   });
 }
-
-et pour le worflow, c correct ce fichier ? si ok dit simplement oui
