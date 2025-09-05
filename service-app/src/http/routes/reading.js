@@ -1,5 +1,4 @@
-/**
- * @file Reading routes – /api/v1/readings/latest
+ * @file readings.js – Reading routes – /api/v1/readings/latest
  */
 
 import { Router } from 'express';
