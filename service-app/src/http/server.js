@@ -11,7 +11,7 @@ import { readingsRouter } from './routes/readings.js';
  * @param {{ port: number, deps: RouteDeps }} opts
  * @returns {{ app: import('express').Express, server: import('http').Server, stop: () => Promise<void> }}
  * @typedef {Object} RouteDeps
- * @property {import('../db/index.js').DbRepo} repo
+ * @property {import('../../db/index.js').DbRepo} repo
  */
 export function createHttpServer(opts) {
   throw new Error('NotImplemented');
