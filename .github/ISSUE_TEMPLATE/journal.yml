@@ -1,85 +1,94 @@
-name: "Entrée de journal"
-description: "Documenter une étape de travail (contrat, code, test)"
+name: "Journal Entry"
+description: "Document a work step (contract, code, test)"
 title: "Journal (auto-renamed by workflow)"
 labels: ["journal"]
 
 body:
+  - type: input
+    id: subject
+    attributes:
+      label: Subject (short)
+      description: "Short title to identify this entry (max 50 characters)"
+      placeholder: "Ex: MQTT client implementation"
+    validations:
+      required: true
+
   - type: textarea
     id: objectif
     attributes:
-      label: Objectif
-      description: "Quel résultat on vise pour cette entrée."
-      placeholder: "Ex: Implémenter mqtt/client.js et ses tests (Vitest + broker aedes)"
+      label: Objective
+      description: "What result we aim for with this entry."
+      placeholder: "Ex: Implement mqtt/client.js and its tests (Vitest + aedes broker)"
     validations:
       required: true
 
   - type: textarea
     id: contexte
     attributes:
-      label: Contexte
-      description: "Pourquoi cette étape ? Lien avec journaux précédents, risques/planning."
-      placeholder: "Ex: Journal #001 a défini les contrats ; ici on dé-risque l'I/O MQTT"
+      label: Context
+      description: "Why this step? Link with previous journals, risks/planning."
+      placeholder: "Ex: Journal #001 defined contracts; here we de-risk MQTT I/O"
     validations:
       required: false
 
   - type: textarea
     id: decisions
     attributes:
-      label: Décisions
-      description: "Décisions clés prises pour cette entrée."
-      placeholder: "- Utiliser mqtt.js v4\n- Promises pour subscribe/publish\n- LWT optionnelle"
+      label: Decisions
+      description: "Key decisions made for this entry."
+      placeholder: "- Use mqtt.js v4\n- Promises for subscribe/publish\n- Optional LWT"
     validations:
       required: true
 
   - type: textarea
     id: portee
     attributes:
-      label: Portée (Scope / Done)
-      description: "Ce qui est couvert par cette entrée."
-      placeholder: "- Wrapper mqtt/client.js (connect/subscribe/publish/close)\n- Tests intégration avec aedes\n- QoS par défaut = 1"
+      label: Scope (Done)
+      description: "What is covered by this entry."
+      placeholder: "- Wrapper mqtt/client.js (connect/subscribe/publish/close)\n- Integration tests with aedes\n- Default QoS = 1"
     validations:
       required: false
 
   - type: textarea
     id: hors_portee
     attributes:
-      label: Hors Portée (Out of scope)
-      description: "Ce qui n'est PAS couvert ici et sera traité plus tard."
-      placeholder: "- Backoff exponentiel\n- Intégration ingestion DB\n- Filtrage par pattern de topic"
+      label: Out of Scope
+      description: "What is NOT covered here and will be handled later."
+      placeholder: "- Exponential backoff\n- DB ingestion integration\n- Topic pattern filtering"
     validations:
       required: false
 
   - type: textarea
     id: artefacts
     attributes:
-      label: Artifacts produits
-      description: "Docs, schémas, interfaces, fichiers ajoutés."
-      placeholder: "- service-app/src/mqtt/client.js\n- service-app/test/mqtt.client.test.js\n- docs/journal/YYYY-MM-DD-entree-XXX.md"
+      label: Produced Artifacts
+      description: "Docs, schemas, interfaces, added files."
+      placeholder: "- service-app/src/mqtt/client.js\n- service-app/test/mqtt.client.test.js\n- docs/journal/YYYY-MM-DD-entry-XXX.md"
     validations:
       required: false
 
   - type: textarea
     id: liens
     attributes:
-      label: Liens utiles
-      description: "Liens vers journaux, contrats, PR, Notion."
-      placeholder: "- Journal #001 …\n- Contrat service-app …\n- PR: …"
+      label: Useful Links
+      description: "Links to journals, contracts, PRs, Notion."
+      placeholder: "- Journal #001 …\n- Contract service-app …\n- PR: …"
     validations:
       required: false
 
   - type: textarea
     id: plan
     attributes:
-      label: Plan d’implémentation
-      description: "Étapes prévues pour livrer ce journal."
-      placeholder: "1) Installer deps\n2) Implémenter client.js\n3) Écrire tests\n4) Lancer CI"
+      label: Implementation Plan
+      description: "Planned steps to deliver this journal."
+      placeholder: "1) Install deps\n2) Implement client.js\n3) Write tests\n4) Run CI"
     validations:
       required: false
 
   - type: textarea
     id: commands
     attributes:
-      label: Commandes exécutées (optionnel)
+      label: Executed Commands (optional)
       placeholder: "npm i mqtt\nnpm i -D vitest aedes\nnpm run test"
     validations:
       required: false
@@ -87,25 +96,25 @@ body:
   - type: textarea
     id: acceptance
     attributes:
-      label: Critères d’acceptation
-      description: "Conditions de réussite vérifiables."
-      placeholder: "- Tous les tests passent (Vitest)\n- API du wrapper conforme au contrat\n- Fermeture clean sans fuite de sockets"
+      label: Acceptance Criteria
+      description: "Verifiable success conditions."
+      placeholder: "- All tests pass (Vitest)\n- Wrapper API conforms to contract\n- Clean shutdown without socket leaks"
     validations:
       required: true
 
   - type: textarea
     id: risques
     attributes:
-      label: Risques & mitigations
-      placeholder: "- Ports occupés → port dynamique\n- Fuites sockets → always await close()"
+      label: Risks & Mitigations
+      placeholder: "- Busy ports → dynamic port\n- Socket leaks → always await close()"
     validations:
       required: false
 
   - type: textarea
     id: todo
     attributes:
-      label: Suivi / TODO
-      placeholder: "- Ajouter helper onTopic(pattern)\n- Ajouter test retain/LWT"
+      label: Follow-up / TODO
+      placeholder: "- Add helper onTopic(pattern)\n- Add test retain/LWT"
     validations:
       required: false
 
@@ -113,7 +122,7 @@ body:
     id: dod
     attributes:
       label: Definition of Done (DoD)
-      description: "Définition de fait : quand considère-t-on que c'est terminé ?"
-      placeholder: "- Code mergé dans develop via PR\n- CI verte\n- Journal commité & lié à l’issue"
+      description: "Definition of done: when do we consider this finished?"
+      placeholder: "- Code merged into develop via PR\n- Green CI\n- Journal committed & linked to issue"
     validations:
       required: false

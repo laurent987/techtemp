@@ -2,7 +2,7 @@ name: Rename + Autonumber Journal Issues
 
 on:
   issues:
-    types: [opened, edited, labeled]
+    types: [opened, labeled]
 
 permissions:
   issues: write
@@ -30,7 +30,8 @@ jobs:
               return '';
             };
 
-            const objectifFirstLine = pick([/###\s*Objectif\s*\n+([^\n#]+)/i, /###\s*Objective\s*\n+([^\n#]+)/i]);
+            const sujetFromForm = pick([/###\s*Subject \(short\)\s*\n+([^\n#]+)/i]);
+            const objectifFirstLine = pick([/###\s*Objective\s*\n+([^\n#]+)/i, /###\s*Objectif\s*\n+([^\n#]+)/i]);
 
             const dateFromForm = pick([/###\s*Date\s*\n+([^\n#]+)/i]);
             const todayBrussels = new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Brussels' }).format(new Date());
@@ -57,11 +58,11 @@ jobs:
               idVal = String(maxId + 1).padStart(3, '0');
             }
 
-            const shorten = (s, n = 80) => {
+            const shorten = (s, n = 50) => {
               const t = (s || '').replace(/\r/g, '').trim();
               return t.length > n ? t.slice(0, n - 1) + '…' : t || 'Work entry';
             };
-            const subject = shorten(objectifFirstLine || currentTitle.replace(/^Journal.*?—\s*/i, ''), 80);
+            const subject = shorten(sujetFromForm || objectifFirstLine || currentTitle.replace(/^Journal.*?—\s*/i, ''), 50);
 
             const newTitle = `Journal #${idVal} — ${datePart} — ${subject}`;
 
