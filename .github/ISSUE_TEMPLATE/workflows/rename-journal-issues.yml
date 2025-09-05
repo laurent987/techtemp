@@ -1,88 +1,79 @@
 name: Rename + Autonumber Journal Issues
 
 on:
-issues:
-types: [opened, edited, labeled]
+  issues:
+    types: [opened, edited, labeled]
 
 permissions:
-issues: write
+  issues: write
 
 jobs:
-rename:
-    # N'agir que sur les issues portant le label "journal"
-if: contains(join(github.event.issue.labels.*.name, ','), 'journal')
-runs - on: ubuntu - latest
-steps:
-- name: Rename title and(on open) comment metadata
-uses: actions / github - script@v7
-with:
-script: |
+  rename:
+    if: contains(join(github.event.issue.labels.*.name, ','), 'journal')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rename title and (on open) comment metadata
+        uses: actions/github-script@v7
+        with:
+          script: |
             const { owner, repo } = context.repo;
-const issue = context.payload.issue;
-const action = context.payload.action;
-const body = issue.body || '';
-const currentTitle = issue.title || '';
+            const issue = context.payload.issue;
+            const action = context.payload.action;
+            const body = issue.body || '';
+            const currentTitle = issue.title || '';
 
-// Helper pour extraire les champs de l’Issue Form
-const pick = (regexes) => {
-  for (const r of regexes) {
-    const m = body.match(r);
-    if (m && m[1]) return m[1].trim();
-  }
-  return '';
-};
+            const pick = (regexes) => {
+              for (const r of regexes) {
+                const m = body.match(r);
+                if (m && m[1]) return m[1].trim();
+              }
+              return '';
+            };
 
-// Récupère "Objectif" (1ère ligne) pour le sujet
-const objectifFirstLine = pick([/###\s*Objectif\s*\n+([^\n#]+)/i, /###\s*Objective\s*\n+([^\n#]+)/i]);
+            const objectifFirstLine = pick([/###\s*Objectif\s*\n+([^\n#]+)/i, /###\s*Objective\s*\n+([^\n#]+)/i]);
 
-// Date (fallback = aujourd’hui Europe/Brussels)
-const dateFromForm = pick([/###\s*Date\s*\n+([^\n#]+)/i]);
-const todayBrussels = new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Brussels' })
-  .format(new Date()); // "YYYY-MM-DD"
-const datePart = (/^\d{4}-\d{2}-\d{2}$/.test(dateFromForm) ? dateFromForm : todayBrussels);
+            const dateFromForm = pick([/###\s*Date\s*\n+([^\n#]+)/i]);
+            const todayBrussels = new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Brussels' }).format(new Date());
+            const datePart = (/^\d{4}-\d{2}-\d{2}$/.test(dateFromForm) ? dateFromForm : todayBrussels);
 
-// ID (auto-numérotation si absent)
-let idVal = pick([/###\s*Numéro d'entrée\s*\n+([^\n#]+)/i, /###\s*Entry number\s*\n+([^\n#]+)/i]);
-if (!idVal) {
-  let page = 1, maxId = 0;
-  while (true) {
-    const { data } = await github.rest.issues.listForRepo({
-      owner, repo, labels: 'journal', state: 'all', per_page: 100, page
-    });
-    if (!data.length) break;
-    for (const it of data) {
-      const m = it.title.match(/Journal\s*#\s*(\d{1,6})\b/i);
-      if (m) {
-        const n = parseInt(m[1], 10);
-        if (!Number.isNaN(n) && n > maxId) maxId = n;
-      }
-    }
-    if (data.length < 100) break;
-    page++;
-  }
-  idVal = String(maxId + 1).padStart(3, '0'); // 001, 002, ...
-}
+            let idVal = pick([/###\s*Numéro d'entrée\s*\n+([^\n#]+)/i, /###\s*Entry number\s*\n+([^\n#]+)/i]);
+            if (!idVal) {
+              let page = 1, maxId = 0;
+              while (true) {
+                const { data } = await github.rest.issues.listForRepo({
+                  owner, repo, labels: 'journal', state: 'all', per_page: 100, page
+                });
+                if (!data.length) break;
+                for (const it of data) {
+                  const m = it.title.match(/Journal\s*#\s*(\d{1,6})\b/i);
+                  if (m) {
+                    const n = parseInt(m[1], 10);
+                    if (!Number.isNaN(n) && n > maxId) maxId = n;
+                  }
+                }
+                if (data.length < 100) break;
+                page++;
+              }
+              idVal = String(maxId + 1).padStart(3, '0');
+            }
 
-// Sujet court à partir d’Objectif (ou fallback)
-const shorten = (s, n = 80) => {
-  const t = (s || '').replace(/\r/g, '').trim();
-  return t.length > n ? t.slice(0, n - 1) + '…' : t || 'Work entry';
-};
-const subject = shorten(objectifFirstLine || currentTitle.replace(/^Journal.*?—\s*/i, ''), 80);
+            const shorten = (s, n = 80) => {
+              const t = (s || '').replace(/\r/g, '').trim();
+              return t.length > n ? t.slice(0, n - 1) + '…' : t || 'Work entry';
+            };
+            const subject = shorten(objectifFirstLine || currentTitle.replace(/^Journal.*?—\s*/i, ''), 80);
 
-const newTitle = `Journal #${idVal} — ${datePart} — ${subject}`;
+            const newTitle = `Journal #${idVal} — ${datePart} — ${subject}`;
 
-// Renommer si nécessaire
-if (newTitle !== currentTitle) {
-  await github.rest.issues.update({
-    owner, repo, issue_number: issue.number, title: newTitle
-  });
-}
+            if (newTitle !== currentTitle) {
+              await github.rest.issues.update({
+                owner, repo, issue_number: issue.number, title: newTitle
+              });
+            }
 
-// Ajouter un commentaire uniquement lors de la création
-if (action === 'opened') {
-  await github.rest.issues.createComment({
-    owner, repo, issue_number: issue.number,
-    body: `🗒️ **Journal #${idVal} — ${datePart}**\n\n_Titre auto-généré à partir de l’objectif. Si besoin, édite l’objectif : le bot gardera le titre synchronisé._`
-  });
-}
+            if (action === 'opened') {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issue.number,
+                body: `🗒️ **Journal #${idVal} — ${datePart}**\n\n_Titre auto-généré à partir de l’objectif. Si besoin, édite l’objectif : le bot gardera le titre synchronisé._`
+              });
+            }
