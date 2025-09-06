@@ -12,7 +12,7 @@ describe('SQLite Database Initialization', () => {
   let testDbPath;
 
   beforeEach(() => {
-    // Créer un nouveau chemin de base de données pour chaque test
+    // Create a new database path for each test
     testDbPath = path.join(process.cwd(), `test-${Date.now()}-${Math.random().toString(36).slice(2)}.db`);
   });
 
