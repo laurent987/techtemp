@@ -126,8 +126,8 @@ describe('Data Access Layer', () => {
         device_id: 'dev001',
         room_id: 'room001',
         ts: new Date().toISOString(),
-        t: 23.5,
-        h: 55.0,
+        temperature: 23.5,
+        humidity: 55.0,
         source: 'mqtt'
       };
 
@@ -151,15 +151,15 @@ describe('Data Access Layer', () => {
       dataAccess.insertReading({
         device_id: 'dev001',
         ts: earlier.toISOString(),
-        t: 20.0,
-        h: 50.0
+        temperature: 20.0,
+        humidity: 50.0
       });
 
       dataAccess.insertReading({
         device_id: 'dev001',
         ts: now.toISOString(),
-        t: 25.0,
-        h: 60.0
+        temperature: 25.0,
+        humidity: 60.0
       });
 
       // Act
@@ -167,8 +167,8 @@ describe('Data Access Layer', () => {
 
       // Assert
       expect(latest).toBeDefined();
-      expect(latest.t).toBe(25.0);
-      expect(latest.h).toBe(60.0);
+      expect(latest.temperature).toBe(25.0);
+      expect(latest.humidity).toBe(60.0);
     });
 
     it('should find readings by room and time range', () => {
@@ -180,9 +180,9 @@ describe('Data Access Layer', () => {
 
       const baseTime = new Date('2025-09-06T10:00:00Z');
       const readings = [
-        { device_id: 'dev001', room_id: 'room001', ts: new Date(baseTime.getTime()).toISOString(), t: 20.0 },
-        { device_id: 'dev001', room_id: 'room001', ts: new Date(baseTime.getTime() + 1800000).toISOString(), t: 22.0 },
-        { device_id: 'dev001', room_id: 'room002', ts: new Date(baseTime.getTime() + 3600000).toISOString(), t: 24.0 }
+        { device_id: 'dev001', room_id: 'room001', ts: new Date(baseTime.getTime()).toISOString(), temperature: 20.0 },
+        { device_id: 'dev001', room_id: 'room001', ts: new Date(baseTime.getTime() + 1800000).toISOString(), temperature: 22.0 },
+        { device_id: 'dev001', room_id: 'room002', ts: new Date(baseTime.getTime() + 3600000).toISOString(), temperature: 24.0 }
       ];
 
       readings.forEach(r => dataAccess.insertReading(r));
@@ -194,8 +194,8 @@ describe('Data Access Layer', () => {
 
       // Assert
       expect(results).toHaveLength(2);
-      expect(results[0].t).toBe(20.0);
-      expect(results[1].t).toBe(22.0);
+      expect(results[0].temperature).toBe(20.0);
+      expect(results[1].temperature).toBe(22.0);
     });
   });
 });
