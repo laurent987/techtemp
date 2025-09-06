@@ -2,7 +2,7 @@
 
 ## 1. MQTT — Contrat de topic & payload
 
-### Topic principal (lecture capteurs → serveur)
+### Topic principal (lecture capt   * Mapper le payload (temperature_c→temperature, humidity_pct* Les valeurs renvoyées sont **post-calibration** si le service applique `offset_temperature/offset_humidity` lors de l'ingestion (sinon brutes au MVP).humidity, ts→ts) et insérer une ligne dans `readings_raw`.urs → serveur)
 
 ```
 home/{homeId}/sensors/{deviceId}/reading
@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS devices (
   model        TEXT,               -- modèle: rpi-zero-2w
   created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_seen_at DATETIME,
-  offset_t     REAL DEFAULT 0,     -- correction température °C
-  offset_h     REAL DEFAULT 0      -- correction humidité %
+  offset_temperature REAL DEFAULT 0, -- correction température °C
+  offset_humidity    REAL DEFAULT 0  -- correction humidité %
 );
 ```
 
@@ -88,8 +88,8 @@ CREATE TABLE IF NOT EXISTS readings_raw (
   device_id   TEXT NOT NULL REFERENCES devices(device_id),
   room_id     TEXT,                     -- pièce résolue au moment T
   ts          DATETIME NOT NULL,        -- horodatage UTC
-  t           REAL,                     -- température (°C)
-  h           REAL,                     -- humidité (%)
+  temperature REAL,                     -- température (°C)
+  humidity    REAL,                     -- humidité (%)
   source      TEXT,                     -- ex: "mqtt"
   msg_id      TEXT,                     -- identifiant unique du message
   PRIMARY KEY (device_id, ts)
@@ -106,12 +106,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_raw_msg ON readings_raw(msg_id) WHERE msg_
 CREATE VIEW IF NOT EXISTS v_room_last AS
 SELECT r.room_id,
        MAX(r.ts) AS last_ts,
-       (SELECT t FROM readings_raw rr
+       (SELECT temperature FROM readings_raw rr
          WHERE rr.room_id = r.room_id
-         ORDER BY rr.ts DESC LIMIT 1) AS last_t,
-       (SELECT h FROM readings_raw rr
+         ORDER BY rr.ts DESC LIMIT 1) AS last_temperature,
+       (SELECT humidity FROM readings_raw rr
          WHERE rr.room_id = r.room_id
-         ORDER BY rr.ts DESC LIMIT 1) AS last_h
+         ORDER BY rr.ts DESC LIMIT 1) AS last_humidity
 FROM readings_raw r
 GROUP BY r.room_id;
 ```
@@ -178,8 +178,8 @@ Note : placé à la racine (`/health`) plutôt que sous `/api/v1/health`, car c�
       "device_id": "rpi-living-01",
       "room_id": "salon",
       "ts": "2025-09-04T19:05:00Z",
-      "t": 23.7,
-      "h": 52.5
+      "temperature": 23.7,
+      "humidity": 52.5
     }
   ]
 }

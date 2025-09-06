@@ -5,6 +5,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "joi": "^18.0.1",
     "mqtt": "^5.14.1"
   },
   "devDependencies": {

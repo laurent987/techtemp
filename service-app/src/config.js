@@ -23,7 +23,7 @@ export const configSchema = Joi.object({
   MQTT_URL: Joi.string().uri({ scheme: ['mqtt', 'mqtts', 'ws', 'wss'] }).required(),
   MQTT_USERNAME: Joi.string().optional(),
   MQTT_PASSWORD: Joi.string().optional(),
-  HTTP_PORT: Joi.number().port().required(),
+  HTTP_PORT: Joi.string().pattern(/^\d+$/).required(), // String containing a number
   TOPIC_READING_PATTERN: Joi.string().default('home/+/sensors/+/reading'),
 }).unknown(true);
 
@@ -35,5 +35,27 @@ export const configSchema = Joi.object({
  * const cfg = loadConfig();
  */
 export function loadConfig() {
-  throw new Error('NotImplemented');
+  // Valider l'environnement avec le schéma Joi
+  const { error, value } = configSchema.validate(process.env);
+
+  if (error) {
+    throw new Error(`Configuration validation failed: ${error.message}`);
+  }
+
+  // Convertir et valider le port
+  const httpPort = Number(value.HTTP_PORT);
+  if (httpPort < 1 || httpPort > 65535) {
+    throw new Error('HTTP_PORT must be a valid port number (1-65535)');
+  }
+
+  // Transformer et mapper vers l'objet de configuration
+  return {
+    nodeEnv: value.NODE_ENV,
+    dbPath: value.DB_PATH,
+    mqttUrl: value.MQTT_URL,
+    mqttUsername: value.MQTT_USERNAME,
+    mqttPassword: value.MQTT_PASSWORD,
+    httpPort: httpPort,
+    topicReadingPattern: value.TOPIC_READING_PATTERN
+  };
 }
