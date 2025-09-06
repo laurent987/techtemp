@@ -23,7 +23,7 @@ export const configSchema = Joi.object({
   MQTT_URL: Joi.string().uri({ scheme: ['mqtt', 'mqtts', 'ws', 'wss'] }).required(),
   MQTT_USERNAME: Joi.string().optional(),
   MQTT_PASSWORD: Joi.string().optional(),
-  HTTP_PORT: Joi.string().pattern(/^\d+$/).required(), // String qui contient un nombre
+  HTTP_PORT: Joi.string().pattern(/^\d+$/).required(), // String containing a number
   TOPIC_READING_PATTERN: Joi.string().default('home/+/sensors/+/reading'),
 }).unknown(true);
 
