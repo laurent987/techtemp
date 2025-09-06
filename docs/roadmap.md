@@ -61,4 +61,4 @@
 ---
 
 📌 Cette roadmap donne la **vue macro**.  
-Pour les détails (contrats, décisions, code), se référer aux **journaux** dans `/docs/journal/`.
+Pour les détails (contrats, décisions, code), se référer aux **journaux** dans `/docs/journaux/`.
