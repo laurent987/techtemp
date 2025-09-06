@@ -55,10 +55,7 @@ async function startSubscriber() {
       process.exit(0);
     });
 
-    // Garder le script en vie
-    setInterval(() => {
-      // Heartbeat silencieux
-    }, 1000);
+    // Le process reste en vie grâce à la connexion MQTT et aux event handlers
 
   } catch (error) {
     console.error('❌ Erreur subscriber:', error.message);
