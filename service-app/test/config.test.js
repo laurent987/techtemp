@@ -5,7 +5,7 @@ describe('Configuration Loading', () => {
   let originalEnv;
 
   beforeEach(() => {
-    // Sauvegarder l'environnement original
+    // Save the original environment
     originalEnv = { ...process.env };
 
     // Reset des variables d'environnement pour des tests propres
