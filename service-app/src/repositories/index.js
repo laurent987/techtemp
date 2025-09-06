@@ -1,15 +1,8 @@
 /**
- * @file Repository Pattern - Phase 4 (Stub)
- * Business logic layer that uses Data Access Layer
- * This is a minimal stub to avoid import errors during TDD
+ * @file Repository Pattern - Complete Implementation
+ * Business logic layer that provides repository interfaces for devices, rooms, and readings.
+ * Uses the Data Access Layer to interact with the database and applies business rules.
  */
-
-/**
- * @file Repository Pattern - Phase 4 (Stub)
- * Business logic layer that uses Data Access Layer
- * This is a minimal stub to avoid import errors during TDD
- */
-
 import { createDataAccess } from '../db/dataAccess.js';
 
 /**
