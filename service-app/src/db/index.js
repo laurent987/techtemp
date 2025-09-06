@@ -31,7 +31,7 @@ export function initDb(dbPath) {
     db.pragma('busy_timeout = 5000');
     db.pragma('cache_size = -16000'); // 16MB cache
 
-    // Appliquer les migrations
+    // Appliquer le schéma
     migrateSchema(db);
 
     // Stocker le handle global
@@ -80,8 +80,8 @@ function migrateSchema(db) {
       model        TEXT,
       created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       last_seen_at DATETIME,
-      offset_t     REAL DEFAULT 0,
-      offset_h     REAL DEFAULT 0
+      offset_temperature REAL DEFAULT 0,
+      offset_humidity    REAL DEFAULT 0
     )
   `);
 
@@ -102,8 +102,8 @@ function migrateSchema(db) {
       device_id   TEXT NOT NULL REFERENCES devices(device_id),
       room_id     TEXT,
       ts          DATETIME NOT NULL,
-      t           REAL,
-      h           REAL,
+      temperature REAL,
+      humidity    REAL,
       source      TEXT,
       msg_id      TEXT,
       PRIMARY KEY (device_id, ts)
@@ -121,12 +121,12 @@ function migrateSchema(db) {
     CREATE VIEW IF NOT EXISTS v_room_last AS
     SELECT r.room_id,
            MAX(r.ts) AS last_ts,
-           (SELECT t FROM readings_raw rr
+           (SELECT temperature FROM readings_raw rr
              WHERE rr.room_id = r.room_id
-             ORDER BY rr.ts DESC LIMIT 1) AS last_t,
-           (SELECT h FROM readings_raw rr
+             ORDER BY rr.ts DESC LIMIT 1) AS last_temperature,
+           (SELECT humidity FROM readings_raw rr
              WHERE rr.room_id = r.room_id
-             ORDER BY rr.ts DESC LIMIT 1) AS last_h
+             ORDER BY rr.ts DESC LIMIT 1) AS last_humidity
     FROM readings_raw r
     GROUP BY r.room_id
   `);

@@ -43,7 +43,7 @@ export function createDataAccess(db) {
 
 function createInsertDevice(db) {
   const stmt = db.prepare(`
-    INSERT INTO devices (device_id, device_uid, label, model, created_at, last_seen_at, offset_t, offset_h)
+    INSERT INTO devices (device_id, device_uid, label, model, created_at, last_seen_at, offset_temperature, offset_humidity)
     VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, ?, ?)
   `);
 
@@ -55,8 +55,8 @@ function createInsertDevice(db) {
       deviceData.model || null,
       deviceData.created_at || null,
       deviceData.last_seen_at || null,
-      deviceData.offset_t || 0,
-      deviceData.offset_h || 0
+      deviceData.offset_temperature || 0,
+      deviceData.offset_humidity || 0
     );
   };
 }
@@ -113,7 +113,7 @@ function createFindRoomById(db) {
 
 function createInsertReading(db) {
   const stmt = db.prepare(`
-    INSERT INTO readings_raw (device_id, room_id, ts, t, h, source, msg_id)
+    INSERT INTO readings_raw (device_id, room_id, ts, temperature, humidity, source, msg_id)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
@@ -122,8 +122,8 @@ function createInsertReading(db) {
       readingData.device_id,
       readingData.room_id || null,
       readingData.ts,
-      readingData.t || null,
-      readingData.h || null,
+      readingData.temperature || null,
+      readingData.humidity || null,
       readingData.source || null,
       readingData.msg_id || null
     );
