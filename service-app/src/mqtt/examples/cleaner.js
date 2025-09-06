@@ -2,13 +2,15 @@
 
 /**
  * Cleaner - Supprime les messages retained
+ * Usage: node cleaner.js [broker-url]
  */
 
 import { createMqttClient } from '../client.js';
 
-const BROKER_URL = 'mqtt://test.mosquitto.org:1883';
+const BROKER_URL = process.argv[2] || 'mqtt://test.mosquitto.org:1883';
 
 console.log('🧹 Nettoyage des messages retained...');
+console.log('📡 Broker:', BROKER_URL);
 
 async function cleanRetainedMessages() {
   const { publish, close } = createMqttClient({ url: BROKER_URL });
