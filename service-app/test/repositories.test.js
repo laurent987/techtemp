@@ -13,7 +13,7 @@ describe('Repository Pattern - Business Logic Layer', () => {
   let repository;
 
   beforeEach(() => {
-    // Créer une base en mémoire pour chaque test
+    // Create an in-memory database for each test
     db = initDb(':memory:');
     repository = createRepository(db);
   });
