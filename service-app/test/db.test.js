@@ -117,7 +117,7 @@ describe('SQLite Database Initialization', () => {
       // Assert - vérifier que les index critiques existent
       const indexNames = indexes.map(i => i.name);
       expect(indexNames).toContain('idx_places_room');
-      expect(indexNames).toContain('idx_places_device'); 
+      expect(indexNames).toContain('idx_places_device');
       expect(indexNames).toContain('idx_raw_room_ts');
       expect(indexNames).toContain('idx_raw_msg');
     });
