@@ -12,7 +12,7 @@ describe('Data Access Layer', () => {
   let dataAccess;
 
   beforeEach(() => {
-    // Créer une base en mémoire pour chaque test
+    // Create an in-memory database for each test
     db = initDb(':memory:');
     dataAccess = createDataAccess(db);
   });
