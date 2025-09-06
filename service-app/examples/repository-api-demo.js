@@ -1,6 +1,11 @@
 /**
- * @file Demo - Repository API avec noms explicites
- * Démontre l'utilisation de l'API Repository avec des noms de propriétés explicites
+ * @file Demo - Repository Pattern API
+ * 
+ * Démo focused uniquement sur l'utilisation du Repository Pattern
+ * avec les nouveaux noms de colonnes explicites.
+ * 
+ * ⚠️  POUR UNE DEMO COMPLÈTE DU SERVICE: voir service-complete-demo.js
+ * ⚡ POUR UNE DEMO RAPIDE: voir quick-demo.js
  */
 
 import { createRepository } from '../src/repositories/index.js';
