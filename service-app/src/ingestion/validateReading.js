@@ -73,7 +73,7 @@ export function validateReading(payload) {
     throw new Error('Temperature out of valid range (-40°C to 85°C)');
   }
 
-  if (!isFinite(humidity_pct) || humidity_pct < 0 || humidity_pct > 100) {
+  if (humidity_pct !== undefined && (!isFinite(humidity_pct) || humidity_pct < 0 || humidity_pct > 100)) {
     throw new Error('Humidity out of valid range (0% to 100%)');
   }
 
@@ -83,16 +83,22 @@ export function validateReading(payload) {
   if (!isoPattern.test(timestamp)) {
     throw new Error('Timestamp has invalid ISO format');
   }
-  
+
   const timestampDate = new Date(timestamp);
   if (isNaN(timestampDate.getTime())) {
     throw new Error('Timestamp has invalid ISO format');
   }
 
   // Step 6: Transform and return normalized reading
-  return {
+  const result = {
     temperature: temperature_c,
-    humidity: humidity_pct,
     ts: timestamp
   };
+
+  // Only include humidity if provided
+  if (humidity_pct !== undefined) {
+    result.humidity = humidity_pct;
+  }
+
+  return result;
 }

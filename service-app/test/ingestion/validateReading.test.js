@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { validateReading } from '../../src/ingestion/validateReading.js';
 
 describe('Validate Reading - MQTT Payload Validation', () => {
-  
+
   describe('Valid Payloads', () => {
     it('should validate and transform standard sensor reading', () => {
       // Arrange
