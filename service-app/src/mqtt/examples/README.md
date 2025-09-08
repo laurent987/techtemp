@@ -1,95 +1,143 @@
-# 📡 MQTT Client Examples
+# 📡 MQTT Examples
 
-Exemples pratiques d'utilisation du client MQTT.
+This folder contains structured and educational examples to demonstrate MQTT client usage.
 
-## 🚀 Scripts disponibles
+## � Structure
 
-### 👂 Subscriber - `subscriber.js`
-Écoute les messages sur un topic pattern.
-
-```bash
-# Écouter tous les messages techtemp/demo/*
-node subscriber.js
-
-# Avec broker et topic personnalisés
-node subscriber.js mqtt://localhost:1883 "sensors/+/temperature"
+```
+src/mqtt/examples/
+├── publisher.js      # ✈️ Sending MQTT messages
+├── subscriber.js     # 📥 Listening for MQTT messages  
+├── cleaner.js        # 🧹 Cleaning retained messages
+└── README.md         # 📚 This guide
 ```
 
-### 📤 Publisher - `publisher.js`
-Publie des messages sur des topics.
+## 🎯 Educational Objectives
 
+### **publisher.js** - Sending messages
+✅ **Demonstrated features:**
+- Connection to MQTT broker
+- Publishing with different QoS (0, 1, 2)
+- JSON and text formats
+- Option handling (retain, qos)
+- Clean disconnection
+
+### **subscriber.js** - Receiving messages  
+✅ **Demonstrated features:**
+- Connection to MQTT broker
+- Subscription with patterns/wildcards (`+`, `#`)
+- Automatic JSON vs text analysis
+- Message metadata (QoS, retain, size)
+- Real-time statistics
+- Clean shutdown with Ctrl+C
+
+### **cleaner.js** - Retained cleanup
+✅ **Demonstrated features:**
+- Removal of retained messages
+- Cleanup statistics
+- Error handling
+- Operation validation
+
+## 🚀 Usage
+
+### **Complete test in 3 terminals**
+
+#### Terminal 1 - Subscriber (listening)
 ```bash
-# Mode démo (4 messages d'exemple)
-node publisher.js
-
-# Message personnalisé
-node publisher.js mqtt://localhost:1883 "sensors/room1/temp" "23.5"
-
-# Avec broker personnalisé
-node publisher.js mqtt://test.mosquitto.org:1883
+cd service-app
+node src/mqtt/examples/subscriber.js
 ```
 
-### 🧹 Cleaner - `cleaner.js`
-Supprime les messages retained du broker.
-
+#### Terminal 2 - Publisher (sending)
 ```bash
-node cleaner.js
+cd service-app  
+node src/mqtt/examples/publisher.js
 ```
 
-## 🧪 Test en temps réel
-
-### Terminal 1 - Subscriber
+#### Terminal 3 - Cleaner (cleanup)
 ```bash
-cd service-app/src/mqtt/examples
-node subscriber.js
+cd service-app
+node src/mqtt/examples/cleaner.js
 ```
 
-### Terminal 2 - Publisher  
+### **Custom options**
+
 ```bash
-cd service-app/src/mqtt/examples
-node publisher.js
+# Custom broker
+node publisher.js mqtt://localhost:1883
+
+# Custom topic
+node subscriber.js mqtt://test.mosquitto.org "sensors/#"
+
+# Single message
+node publisher.js mqtt://test.mosquitto.org sensors/temp001 "Hello MQTT"
 ```
 
-## 📋 Messages d'exemple
+### **Built-in help**
 
-Le publisher en mode démo envoie :
-
-- **Temperature** : `techtemp/demo/sensors/temperature` (QoS 1, non-retained)
-- **Humidity** : `techtemp/demo/sensors/humidity` (QoS 1, non-retained)  
-- **Status** : `techtemp/demo/status` (QoS 0, non-retained)
-- **Alert** : `techtemp/demo/alerts` (QoS 2, non-retained)
-
-## 🔧 Configuration
-
-### Brokers testés
-- `mqtt://test.mosquitto.org:1883` (défaut)
-- `mqtt://broker.hivemq.com:1883`
-- `mqtt://localhost:1883` (broker local)
-
-### Topics pattern
-- `techtemp/demo/#` - Tous les sous-topics démo
-- `sensors/+/temperature` - Température de tous capteurs
-- `alerts/critical` - Alertes critiques uniquement
-
-## 🎯 Cas d'usage
-
-### Monitoring de capteurs
 ```bash
-# Terminal 1: Écouter les capteurs
-node subscriber.js mqtt://localhost:1883 "sensors/+/+"
-
-# Terminal 2: Simuler capteur température
-node publisher.js mqtt://localhost:1883 "sensors/room1/temperature" "22.1"
-
-# Terminal 3: Simuler capteur humidité  
-node publisher.js mqtt://localhost:1883 "sensors/room1/humidity" "65.2"
+node publisher.js --help
+node subscriber.js --help  
+node cleaner.js --help
 ```
 
-### Debug et développement
-```bash
-# Écouter TOUS les messages (attention: verbeux)
-node subscriber.js mqtt://test.mosquitto.org:1883 "#"
+## 📋 Useful MQTT Patterns
 
-# Envoyer message de test
-node publisher.js mqtt://test.mosquitto.org:1883 "debug/test" "Hello world"
+| Pattern | Description | Examples |
+|---------|-------------|----------|
+| `sensors/+/readings` | Single level | `sensors/temp001/readings`, `sensors/temp002/readings` |
+| `sensors/#` | All levels | `sensors/temp001/readings`, `sensors/alerts/critical` |
+| `+/status` | All device status | `temp001/status`, `humidity001/status` |
+| `sensors/temp001/+` | All sub-topics | `sensors/temp001/readings`, `sensors/temp001/status` |
+
+## 🔧 Test MQTT Brokers
+
+| Broker | URL | Description |
+|--------|-----|-------------|
+| Eclipse Mosquitto | `mqtt://test.mosquitto.org:1883` | Public test broker |
+| HiveMQ | `mqtt://broker.hivemq.com:1883` | Public test broker |
+| Local | `mqtt://localhost:1883` | Local broker (if installed) |
+
+## 💡 Usage Tips
+
+### **Recommended startup:**
+1. Launch `subscriber.js` first (to see messages)
+2. Launch `publisher.js` (to send messages)
+3. Observe messages in the subscriber terminal
+4. Use `cleaner.js` if cleanup is needed
+
+### **QoS (Quality of Service):**
+- **QoS 0**: Fire and forget (no guarantee)
+- **QoS 1**: At least once (with acknowledgment)  
+- **QoS 2**: Exactly once (with double handshake)
+
+### **Retained Messages:**
+- Stored by the broker
+- Automatically sent to new subscribers
+- Removed with empty payload + retain=true
+
+## 🐛 Troubleshooting
+
+### **Connection error**
 ```
+💥 Publisher failed: Error: Connection refused
+```
+**Solution:** Check that the broker is accessible and the URL is correct.
+
+### **No messages received**
+**Check:**
+- The subscriber is launched before the publisher
+- Topics match (watch out for wildcards)
+- The broker is working correctly
+
+### **Duplicate messages**
+**Possible causes:**
+- QoS 1 with retransmission
+- Multiple publishers on the same topic
+- Retained messages repeating
+
+## 📚 Useful Links
+
+- [MQTT Documentation](https://mqtt.org/)
+- [MQTT.js (library used)](https://github.com/mqttjs/MQTT.js)
+- [Public test brokers](https://github.com/mqtt/mqtt.github.io/wiki/public_brokers)
