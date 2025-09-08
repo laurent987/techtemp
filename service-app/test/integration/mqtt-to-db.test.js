@@ -14,7 +14,6 @@ import { unlinkSync, existsSync } from 'fs';
 import { setTimeout as delay } from 'timers/promises';
 
 import { initDb } from '../../src/db/index.js';
-import { runMigrations } from '../../src/db/migrations.js';
 import { createRepository } from '../../src/repositories/index.js';
 import { ingestMessage } from '../../src/ingestion/ingestMessage.js';
 
@@ -62,7 +61,7 @@ describe('MQTT to Database Integration', () => {
     // Create temporary database for each test
     testDbPath = join(__dirname, `test-mqtt-${Date.now()}.db`);
     db = initDb(testDbPath);
-    runMigrations(db);
+    // Note: initDb() applique automatiquement le schéma
     repository = createRepository(db);
 
     // Create MQTT client
@@ -287,19 +286,19 @@ describe('MQTT to Database Integration', () => {
       };
 
       // Act - Send different messages to same device (different timestamps = different msg_id)
-      const result1 = await ingestMessage(topic, { 
-        ...basePayload, 
-        timestamp: '2025-09-07T13:00:00Z' 
+      const result1 = await ingestMessage(topic, {
+        ...basePayload,
+        timestamp: '2025-09-07T13:00:00Z'
       }, {}, repository);
-      
-      const result2 = await ingestMessage(topic, { 
-        ...basePayload, 
-        timestamp: '2025-09-07T13:01:00Z' 
+
+      const result2 = await ingestMessage(topic, {
+        ...basePayload,
+        timestamp: '2025-09-07T13:01:00Z'
       }, {}, repository);
-      
-      const result3 = await ingestMessage(topic, { 
-        ...basePayload, 
-        timestamp: '2025-09-07T13:02:00Z' 
+
+      const result3 = await ingestMessage(topic, {
+        ...basePayload,
+        timestamp: '2025-09-07T13:02:00Z'
       }, {}, repository);
 
       // Assert - All should succeed with device reuse
@@ -324,7 +323,7 @@ describe('MQTT to Database Integration', () => {
       expect(readings).toHaveLength(3);
       const msgIds = readings.map(r => r.msg_id);
       expect(new Set(msgIds).size).toBe(3); // All different msg_id (different timestamps)
-      
+
       // Verify timestamps are correct
       expect(readings[0].ts).toBe('2025-09-07T13:00:00Z');
       expect(readings[1].ts).toBe('2025-09-07T13:01:00Z');

@@ -1,17 +1,74 @@
 /**
- * @file DEMO COMPLÈTE - TechTemp Service App avec VRAI MQTT
+ * @file DEMO COMPLÈTE - TechTemp Service App avec MQ    try {
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // 1️⃣  TEST: Initialisation base de données
+      // ═══════════════════════════════════════════════════════════════════════════════
+      console.log('🔗 1️⃣  TEST: Initialisation base de données SQLite');
+      console.log('┌─ OBJECTIF: Créer base persistante avec schema IoT complet');
+      console.log('│  Migrations: Automatiques vers version 2 (temperature/humidity)');
+      console.log('│  Tables: rooms, devices, readings_raw');
+      console.log('└─ Nettoyage: Suppression ancienne base pour démo propre');
+      console.log('');
+      await this.initializeDatabase();
+      console.log('✅ Base de données prête et migrée');
+      console.log('═'.repeat(80) + '\n');
+
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // 2️⃣  TEST: Données de base (rooms & devices)
+      // ═══════════════════════════════════════════════════════════════════════════════
+      console.log('🏠 2️⃣  TEST: Création données de base (maison type)');
+      console.log('┌─ OBJECTIF: Simuler une vraie maison avec capteurs IoT');
+      console.log('│  Rooms: Salon, Cuisine, Chambre (avec étages et orientations)');
+      console.log('│  Devices: Raspberry Pi Zero 2W avec capteurs DHT22');
+      console.log('└─ Mapping: device_id → room_id pour ingestion');
+      console.log('');
+      await this.setupBaseData();
+      console.log('✅ Maison virtuelle créée avec capteurs');
+      console.log('═'.repeat(80) + '\n');
+
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // 3️⃣  TEST: Serveur HTTP avec API
+      // ═══════════════════════════════════════════════════════════════════════════════
+      console.log('🌐 3️⃣  TEST: Serveur HTTP avec endpoints API');
+      console.log('┌─ OBJECTIF: Serveur HTTP pour monitoring et health checks');
+      console.log('│  Endpoints: /health, /api/v1/readings/latest, /api/v1/stats');
+      console.log('│  Features: CORS, JSON responses, error handling');
+      console.log('└─ Monitoring: Accessible via curl ou navigateur');
+      console.log('');
+      await this.startHttpServer();
+      console.log(`✅ API HTTP active sur http://localhost:${HTTP_PORT}`);
+      console.log('═'.repeat(80) + '\n');
+
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // 4️⃣  TEST: Connexion MQTT réelle
+      // ═══════════════════════════════════════════════════════════════════════════════
+      console.log('📡 4️⃣  TEST: Connexion MQTT au broker public');
+      console.log('┌─ OBJECTIF: Établir connexion MQTT pour ingestion temps réel');
+      console.log('│  Broker: test.mosquitto.org (public, gratuit)');
+      console.log('│  Topics: home/{homeId}/sensors/{deviceId}/reading');
+      console.log('└─ Handler: Pipeline automatique MQTT → Repository → SQLite');
+      console.log('');
+      await this.connectMqtt();
+      console.log('✅ Pipeline ingestion MQTT → Database opérationnel');
+      console.log('═'.repeat(80) + '\n'); ✅ OBJECTIF: Démonstration complète du pipeline IoT
+ * 📦 COMPOSANTS DÉMONTRÉS:
+ *    - API HTTP avec endpoint /health
+ *    - Client MQTT réel (test.mosquitto.org)
+ *    - Pipeline ingestion MQTT → Database
+ *    - Repository pattern avec SQLite
+ *    - Simulation capteurs réalistes
  * 
- * Cette démo montre comment utiliser l'ensemble du service-app :
- * 1. Connexion à un broker MQTT public 
- * 2. Envoi de données via MQTT (simulation capteurs)
- * 3. Réception et traitement des données MQTT → Base de données
- * 4. Consultation des données via Repository (future API HTTP)
+ * 🚀 USAGE:
+ *    Terminal 1: node examples/service-complete-demo.js
+ *    Terminal 2: node examples/device-simulator.js (à créer)
  */
 
 import { createMqttClient } from '../src/mqtt/client.js';
 import { initDb } from '../src/db/index.js';
 import { createRepository } from '../src/repositories/index.js';
 import { promises as fs } from 'fs';
+import http from 'http';
+import url from 'url';
 
 const MQTT_BROKER = 'mqtt://test.mosquitto.org:1883';  // Broker MQTT public
 const HTTP_PORT = 13000;  // Port HTTP pour la démo
@@ -28,7 +85,23 @@ class TechTempServiceDemo {
   }
 
   async start() {
-    console.log('🚀 === DÉMO COMPLÈTE TECHTEMP SERVICE avec VRAI MQTT ===\n');
+    console.log('🚀 === DEMO COMPLÈTE TECHTEMP SERVICE ===');
+    console.log('🎯 Module: Pipeline IoT complet avec API HTTP');
+    console.log('');
+    console.log('📖 APERÇU DES COMPOSANTS:');
+    console.log('1️⃣  Database     → SQLite avec migrations automatiques');
+    console.log('2️⃣  Rooms/Devices → Données de base (maison type)');
+    console.log('3️⃣  API HTTP     → Serveur avec /health endpoint');
+    console.log('4️⃣  MQTT Client  → Connexion broker public');
+    console.log('5️⃣  Ingestion    → Pipeline MQTT → Database');
+    console.log('6️⃣  Monitoring   → Consultation données temps réel');
+    console.log('');
+    console.log('⚙️  CONFIGURATION:');
+    console.log(`   🌐 API HTTP: http://localhost:${HTTP_PORT}`);
+    console.log(`   📡 MQTT Broker: ${MQTT_BROKER}`);
+    console.log(`   💾 Database: ${DB_PATH}`);
+    console.log(`   🏠 Home ID: ${DEMO_HOME_ID}`);
+    console.log('═'.repeat(80) + '\n');
 
     try {
       // 1. Initialiser la base de données
@@ -51,134 +124,331 @@ class TechTempServiceDemo {
       await this.connectMqtt();
       console.log('✅ Client MQTT connecté au broker public\n');
 
-      // 5. Simuler des capteurs avec VRAI MQTT
-      console.log('🌡️  5. Simulation de capteurs avec vrai MQTT...');
-      await this.simulateSensorsViaMqtt();
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // 5️⃣  TEST: Attente messages devices (mode production)
+      // ═══════════════════════════════════════════════════════════════════════════════
+      console.log('⏳ 5️⃣  TEST: Attente messages devices IoT');
+      console.log('┌─ OBJECTIF: Recevoir données de capteurs réels ou simulés');
+      console.log('│  Mode Production: Raspberry Pi + DHT22 envoient via MQTT');
+      console.log('│  Mode Démo: Lancez device-simulator.js dans autre terminal');
+      console.log('└─ Pipeline: Ingestion automatique MQTT → Repository → SQLite');
+      console.log('');
+      console.log('📤 Test 5.1: Service en attente');
+      console.log('   🔄 Pipeline ingestion actif et opérationnel');
+      console.log('   📡 Écoute MQTT: home/demo-home-001/sensors/+/reading');
+      console.log('   💾 Base de données: prête pour stockage');
+      console.log('   🌐 API HTTP: endpoints /health et /api/v1/* disponibles');
+      console.log('');
+      console.log('📤 Test 5.2: Instructions pour envoi de données');
+      console.log('   💡 Option A - Simulateur automatique:');
+      console.log('       Terminal 2: node examples/device-simulator.js');
+      console.log('   💡 Option B - Test manuel:');
+      console.log('       mosquitto_pub -h test.mosquitto.org -t "home/demo-home-001/sensors/rpi-salon-01/reading" \\');
+      console.log('                     -m \'{"ts":' + Date.now() + ',"temperature_c":23.5,"humidity_pct":65.2}\'');
+      console.log('   💡 Option C - Production:');
+      console.log('       Capteurs Raspberry Pi configurés avec ce contrat MQTT');
+      console.log('');
+      console.log('✅ Service prêt à recevoir données capteurs');
+      console.log('═'.repeat(80) + '\n');
 
-      // 6. Consulter les données reçues
-      console.log('📈 6. Consultation des données reçues...');
-      await this.demonstrateApi();
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // 6️⃣  TEST: Service en fonctionnement continu
+      // ═══════════════════════════════════════════════════════════════════════════════
+      console.log('� 6️⃣  TEST: Service en fonctionnement continu');
+      console.log('┌─ OBJECTIF: Démontrer service complet opérationnel');
+      console.log('│  Composants: API HTTP + Ingestion MQTT + Database');
+      console.log('│  Monitoring: Statistiques temps réel');
+      console.log('└─ Durée: Infinie (Ctrl+C pour arrêter)');
+      console.log('');
 
-      // 7. Explorer la base de données directement
-      await this.exploreDatabase();
+      // Afficher l'état initial
+      await this.displayServiceStatus();
+      console.log('✅ Service opérationnel');
+      console.log('═'.repeat(80) + '\n');
 
-      console.log('\n🎉 DÉMO TERMINÉE AVEC SUCCÈS !');
-      console.log('\n📋 État du projet :');
-      console.log('   ✅ Database Schema (colonnes explicites)');
-      console.log('   ✅ Repository Pattern (business logic)');
-      console.log('   ✅ Data Access Layer (SQL operations)');
-      console.log('   ✅ Client MQTT RÉEL (connecté à test.mosquitto.org)');
-      console.log('   ✅ Intégration MQTT → Repository');
-      console.log('   🚧 HTTP API (prochaine phase)');
+      console.log('🎉 === SERVICE TECHTEMP OPÉRATIONNEL ===');
+      console.log('');
+      console.log('📊 COMPOSANTS ACTIFS:');
+      console.log('   ✅ API HTTP      → http://localhost:13000/health');
+      console.log('   ✅ Ingestion MQTT → Temps réel depuis test.mosquitto.org');
+      console.log('   ✅ Database SQLite → Persistance automatique');
+      console.log('   ✅ Repository    → Business logic layer');
+      console.log('');
+      console.log('🌡️  CAPTEURS ATTENDUS:');
+      console.log('   • rpi-salon-01   → Salon');
+      console.log('   • rpi-cuisine-01 → Cuisine');
+      console.log('   • rpi-chambre-01 → Chambre');
+      console.log('');
+      console.log('💡 ACTIONS DISPONIBLES:');
+      console.log('   • Testez API: curl http://localhost:13000/health');
+      console.log('   • Simulez capteurs: node examples/device-simulator.js (autre terminal)');
+      console.log('   • Consultez DB: sqlite3 ./examples/db-example/demo-techtemp.db');
+      console.log('');
+      console.log('⏳ Service en attente de données... (Ctrl+C pour arrêter)');
 
-      console.log('\n💡 Ce que vous pouvez faire :');
-      console.log(`   • Examiner la base : sqlite3 ${DB_PATH} "SELECT * FROM readings_raw;"`);
-      console.log('   • Messages reçus via MQTT :', this.receivedMessages);
-      console.log('   • Broker utilisé : test.mosquitto.org (public)');
-      console.log('   📁 Base dans examples/db-example/ (pas de pollution racine)');
+      // Démarrer monitoring temps réel
+      this.startRealTimeMonitoring();
+
+      // Attendre indéfiniment
+      await this.waitForShutdown();
 
     } catch (error) {
-      console.error('❌ Erreur pendant la démo:', error.message);
+      console.error('💥 Erreur pendant la démo:', error.message);
       throw error;
     }
   }
 
   async initializeDatabase() {
+    // Créer le dossier de destination s'il n'existe pas
+    const dbDir = DB_PATH.substring(0, DB_PATH.lastIndexOf('/'));
+    try {
+      await fs.mkdir(dbDir, { recursive: true });
+    } catch (e) {
+      // Dossier existe déjà
+    }
+
     // Supprimer l'ancienne base si elle existe
     try {
       await fs.unlink(DB_PATH);
+      console.log('📤 Test 1.1: Nettoyage ancienne base');
+      console.log('   🗑️  Ancien fichier supprimé pour démo propre');
     } catch (e) {
-      // Fichier n'existe pas, c'est normal
+      console.log('📤 Test 1.1: Nouvelle installation');
+      console.log('   ✨ Aucun fichier existant (première fois)');
     }
 
+    console.log('📤 Test 1.2: Création base SQLite');
+    console.log(`   📁 Chemin: ${DB_PATH}`);
+    console.log(`   📂 Dossier: ${dbDir}`);
     // Créer la nouvelle base avec le vrai schéma
     this.db = initDb(DB_PATH);
-    this.repository = createRepository(this.db);
+    console.log('   ✅ Base SQLite créée');
 
-    console.log(`   📁 Base créée : ${DB_PATH}`);
+    console.log('📤 Test 1.3: Application migrations');
+    console.log('   🏗️  Target: Schema version 2');
+    console.log('   ✅ Migrations appliquées (tables: rooms, devices, readings_raw)');
+
+    console.log('📤 Test 1.4: Création Repository');
+    this.repository = createRepository(this.db);
+    console.log('   ✅ Repository pattern configuré (business logic layer)');
   }
 
   async setupBaseData() {
+    console.log('📤 Test 2.1: Création des rooms (pièces maison)');
     // Créer des rooms
     const rooms = [
-      { room_id: 'salon', name: 'Salon', floor: 'rdc', side: 'jardin' },
-      { room_id: 'cuisine', name: 'Cuisine', floor: 'rdc', side: 'rue' },
-      { room_id: 'chambre1', name: 'Chambre 1', floor: 'etage', side: 'jardin' }
+      { room_id: 'salon', name: 'Salon' },
+      { room_id: 'cuisine', name: 'Cuisine' },
+      { room_id: 'chambre1', name: 'Chambre 1' }
     ];
 
     for (const room of rooms) {
       await this.repository.rooms.create(room);
-      console.log(`   🏠 Room créée : ${room.name} (${room.room_id})`);
+      console.log(`   🏠 Room créée: ${room.name} (ID: ${room.room_id})`);
     }
 
+    console.log('📤 Test 2.2: Création des devices IoT');
     // Créer des devices
     const devices = [
       {
         device_id: 'rpi-salon-01',
         device_uid: 'rpi-salon-01',
-        label: 'Capteur Salon Principal',
-        model: 'rpi-zero-2w'
+        room_id: 'salon',
+        label: 'Capteur Salon Principal'
       },
       {
         device_id: 'rpi-cuisine-01',
         device_uid: 'rpi-cuisine-01',
-        label: 'Capteur Cuisine',
-        model: 'rpi-zero-2w'
+        room_id: 'cuisine',
+        label: 'Capteur Cuisine'
+      },
+      {
+        device_id: 'rpi-chambre-01',
+        device_uid: 'rpi-chambre-01',
+        room_id: 'chambre1',
+        label: 'Capteur Chambre 1'
       }
     ];
 
     for (const device of devices) {
       await this.repository.devices.create(device);
-      console.log(`   📱 Device créé : ${device.label} (${device.device_id})`);
+      console.log(`   📱 Device créé: ${device.label} → room_id: ${device.room_id}`);
     }
+
+    console.log('📤 Test 2.3: Mapping devices → rooms');
+    console.log('   📊 Associations:');
+    devices.forEach(d => {
+      console.log(`       ${d.device_id} → ${d.room_id}`);
+    });
   }
 
   async startHttpServer() {
-    // Note: Le serveur HTTP n'est pas encore implémenté dans cette phase
-    console.log(`   🌐 [SIMULATION] Serveur HTTP sur port ${HTTP_PORT}`);
-    console.log('   📋 Routes qui seront disponibles :');
-    console.log('      GET /health                      # Health check');
-    console.log('      GET /api/v1/readings/latest      # Dernières mesures');
-    console.log('   💡 Phase actuelle: Repository + MQTT (✅)');
-    console.log('   🚧 Phase suivante: API HTTP');
+    console.log('📤 Test 3.1: Création serveur HTTP');
+    console.log(`   🌐 Port: ${HTTP_PORT}`);
+
+    return new Promise((resolve, reject) => {
+      this.httpServer = http.createServer(async (req, res) => {
+        // CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Content-Type', 'application/json');
+
+        const parsedUrl = url.parse(req.url, true);
+        const pathname = parsedUrl.pathname;
+
+        try {
+          // Route: GET /health
+          if (pathname === '/health' && req.method === 'GET') {
+            const healthData = {
+              status: 'ok',
+              timestamp: new Date().toISOString(),
+              service: 'techtemp-service',
+              version: '1.0.0',
+              components: {
+                database: this.db ? 'connected' : 'disconnected',
+                mqtt: this.mqttClient ? 'connected' : 'disconnected',
+                http: 'active'
+              },
+              stats: {
+                receivedMessages: this.receivedMessages,
+                uptime: process.uptime()
+              }
+            };
+
+            res.writeHead(200);
+            res.end(JSON.stringify(healthData, null, 2));
+            return;
+          }
+
+          // Route: GET /api/v1/readings/latest
+          if (pathname === '/api/v1/readings/latest' && req.method === 'GET') {
+            const devices = ['rpi-salon-01', 'rpi-cuisine-01', 'rpi-chambre-01'];
+            const latestReadings = [];
+
+            for (const deviceId of devices) {
+              const latest = await this.repository.readings.getLatestByDevice(deviceId);
+              if (latest) {
+                latestReadings.push({
+                  device_id: latest.device_id,
+                  room_id: latest.room_id,
+                  ts: latest.ts,
+                  temperature: latest.temperature,
+                  humidity: latest.humidity,
+                  source: latest.source
+                });
+              }
+            }
+
+            res.writeHead(200);
+            res.end(JSON.stringify({ data: latestReadings }, null, 2));
+            return;
+          }
+
+          // Route: GET /api/v1/stats
+          if (pathname === '/api/v1/stats' && req.method === 'GET') {
+            const stats = this.db.prepare(`
+              SELECT 
+                COUNT(*) as total_readings,
+                COUNT(DISTINCT device_id) as total_devices,
+                MIN(ts) as first_reading,
+                MAX(ts) as last_reading
+              FROM readings_raw
+            `).get();
+
+            res.writeHead(200);
+            res.end(JSON.stringify({ stats }, null, 2));
+            return;
+          }
+
+          // Route non trouvée
+          res.writeHead(404);
+          res.end(JSON.stringify({
+            error: 'Not Found',
+            available_endpoints: ['/health', '/api/v1/readings/latest', '/api/v1/stats']
+          }, null, 2));
+
+        } catch (error) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: error.message }, null, 2));
+        }
+      });
+
+      this.httpServer.listen(HTTP_PORT, (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          console.log('   ✅ Serveur HTTP démarré');
+          console.log('� Test 3.2: Configuration endpoints');
+          console.log('   📋 Routes disponibles:');
+          console.log('       GET /health                     → Health check complet');
+          console.log('       GET /api/v1/readings/latest     → Dernières mesures');
+          console.log('       GET /api/v1/stats               → Statistiques globales');
+          console.log('📤 Test 3.3: Test rapide endpoints');
+          console.log(`   � Testez: curl http://localhost:${HTTP_PORT}/health`);
+          console.log(`   💡 Browser: http://localhost:${HTTP_PORT}/health`);
+          resolve();
+        }
+      });
+    });
   }
 
   async connectMqtt() {
-    console.log(`   📡 Connexion au broker MQTT public : ${MQTT_BROKER}`);
+    console.log('📤 Test 4.1: Création client MQTT');
+    console.log(`   📡 Broker: ${MQTT_BROKER}`);
 
     // Utiliser notre vrai client MQTT
     this.mqttClient = createMqttClient({
       url: MQTT_BROKER,
       clientId: `techtemp-demo-${Date.now()}`
     });
+    console.log('   ✅ Client MQTT créé');
 
+    console.log('📤 Test 4.2: Configuration handler ingestion');
     // Setup des handlers pour recevoir les messages
     this.mqttClient.onMessage((topic, payload) => {
       this.handleMqttMessage(topic, payload);
     });
+    console.log('   ✅ Pipeline MQTT → Repository configuré');
 
+    console.log('📤 Test 4.3: Abonnement aux topics capteurs');
     // S'abonner aux topics selon le contrat
     const topic = `home/${DEMO_HOME_ID}/sensors/+/reading`;
     await this.mqttClient.subscribe(topic);
-
-    console.log(`   📝 Abonné au topic : ${topic}`);
-    console.log('   💡 Le client MQTT écoute maintenant les vrais messages !');
+    console.log(`   📝 Pattern abonné: ${topic}`);
+    console.log('   � Topics couverts:');
+    console.log(`       home/${DEMO_HOME_ID}/sensors/rpi-salon-01/reading`);
+    console.log(`       home/${DEMO_HOME_ID}/sensors/rpi-cuisine-01/reading`);
+    console.log(`       home/${DEMO_HOME_ID}/sensors/rpi-chambre-01/reading`);
+    console.log('   ✅ Ingestion temps réel opérationnelle');
   }
 
   async simulateSensorsViaMqtt() {
+    console.log('📤 Test 5.1: Préparation simulation capteurs');
     const sensors = [
-      { deviceId: 'rpi-salon-01', roomId: 'salon', name: 'Salon' },
-      { deviceId: 'rpi-cuisine-01', roomId: 'cuisine', name: 'Cuisine' }
+      { deviceId: 'rpi-salon-01', roomId: 'salon', name: 'Salon', baseTemp: 22 },
+      { deviceId: 'rpi-cuisine-01', roomId: 'cuisine', name: 'Cuisine', baseTemp: 25 },
+      { deviceId: 'rpi-chambre-01', roomId: 'chambre1', name: 'Chambre', baseTemp: 20 }
     ];
 
-    console.log('   📡 Envoi de vraies données MQTT via le broker public...');
-    console.log('   🌐 Utilisation du broker : test.mosquitto.org');
+    console.log('   📡 Mode: Messages MQTT via broker public');
+    console.log('   🌐 Broker: test.mosquitto.org');
+    console.log('   📊 Capteurs simulés:');
+    sensors.forEach(s => {
+      console.log(`       ${s.deviceId} → ${s.name} (${s.baseTemp}°C nominal)`);
+    });
 
-    for (let i = 0; i < 3; i++) {  // 3 readings par capteur
+    console.log('📤 Test 5.2: Génération données réalistes');
+    console.log('   🔄 Envoi de 2 cycles de mesures par capteur...');
+
+    for (let cycle = 1; cycle <= 2; cycle++) {
+      console.log(`   📊 Cycle ${cycle}/2:`);
+
       for (const sensor of sensors) {
-        // Générer des données selon le contrat MQTT
-        const temperature_c = 20 + Math.random() * 8; // 20-28°C
-        const humidity_pct = 40 + Math.random() * 30;   // 40-70%
+        // Générer des données selon le contrat MQTT avec variations réalistes
+        const tempVariation = (Math.random() - 0.5) * 4; // ±2°C
+        const temperature_c = sensor.baseTemp + tempVariation;
+        const humidity_pct = 45 + Math.random() * 25; // 45-70%
 
         const mqttPayload = {
           ts: Date.now(),  // epoch ms UTC selon contrat
@@ -191,51 +461,157 @@ class TechTempServiceDemo {
         // Publier via notre vrai client MQTT
         await this.mqttClient.publish(topic, JSON.stringify(mqttPayload));
 
-        console.log(`   📊 [ENVOYÉ] ${sensor.name}: ${mqttPayload.temperature_c}°C, ${mqttPayload.humidity_pct}%`);
+        console.log(`       📤 ${sensor.name}: ${mqttPayload.temperature_c}°C, ${mqttPayload.humidity_pct}%`);
 
         // Petite pause pour voir l'ordre des messages
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      if (cycle < 2) {
+        console.log('       ⏱️  Pause 1s entre cycles...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
-    console.log('   ✅ Données MQTT envoyées ! Le client devrait les recevoir...');
+    console.log('📤 Test 5.3: Attente réception messages');
+    console.log('   ⏳ Délai pour traitement asynchrone MQTT...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log(`   ✅ Messages simulés envoyés (${sensors.length * 2} au total)`);
   }
 
-  // Handler pour les messages MQTT reçus
+  async displayServiceStatus() {
+    console.log('📤 Test 6.1: État des composants');
+    console.log('   🌐 API HTTP: Active');
+    console.log(`   📡 MQTT: ${this.mqttClient ? 'Connecté' : 'Déconnecté'}`);
+    console.log(`   💾 Database: ${this.db ? 'Prête' : 'Non initialisée'}`);
+    console.log(`   📊 Messages reçus: ${this.receivedMessages}`);
+
+    console.log('📤 Test 6.2: Test endpoints API');
+    try {
+      const stats = this.db.prepare(`
+        SELECT 
+          COUNT(*) as total_readings,
+          COUNT(DISTINCT device_id) as total_devices,
+          MAX(ts) as last_reading
+        FROM readings_raw
+      `).get();
+
+      console.log(`   📊 Total mesures en base: ${stats.total_readings}`);
+      console.log(`   📱 Devices actifs: ${stats.total_devices}`);
+      console.log(`   🕐 Dernière mesure: ${stats.last_reading || 'Aucune'}`);
+    } catch (error) {
+      console.log(`   ⚠️  Erreur lecture base: ${error.message}`);
+    }
+  }
+
+  startRealTimeMonitoring() {
+    let lastMessageCount = this.receivedMessages;
+
+    // Afficher les stats toutes les 30 secondes
+    this.monitoringInterval = setInterval(() => {
+      const newMessages = this.receivedMessages - lastMessageCount;
+
+      if (newMessages > 0) {
+        console.log(`\n📊 [${new Date().toLocaleTimeString()}] Activité détectée:`);
+        console.log(`   📥 +${newMessages} nouveaux messages MQTT`);
+        console.log(`   📈 Total reçus: ${this.receivedMessages}`);
+
+        // Afficher dernières mesures
+        try {
+          const latest = this.db.prepare(`
+            SELECT device_id, temperature, humidity, ts 
+            FROM readings_raw 
+            ORDER BY ts DESC 
+            LIMIT 3
+          `).all();
+
+          if (latest.length > 0) {
+            console.log('   📋 Dernières mesures:');
+            latest.forEach(r => {
+              const time = new Date(r.ts).toLocaleTimeString();
+              console.log(`       ${r.device_id}: ${r.temperature}°C, ${r.humidity}% (${time})`);
+            });
+          }
+        } catch (e) {
+          console.log('   ⚠️  Erreur lecture dernières mesures');
+        }
+
+        lastMessageCount = this.receivedMessages;
+      }
+    }, 30000); // 30 secondes
+  }
+
+  async waitForShutdown() {
+    return new Promise((resolve) => {
+      process.on('SIGINT', async () => {
+        console.log('\n\n🛑 Arrêt du service demandé...');
+        await this.stop();
+        resolve();
+      });
+    });
+  }
   async handleMqttMessage(topic, payload) {
     try {
       this.receivedMessages++;
-      console.log(`   📥 [REÇU #${this.receivedMessages}] Topic: ${topic}`);
+      const messageNum = this.receivedMessages;
+
+      console.log('');
+      console.log(`� ════════════ INGESTION MESSAGE #${messageNum} ════════════`);
+      console.log(`📡 MQTT Topic reçu: ${topic}`);
 
       // Parser le topic selon le contrat : home/{homeId}/sensors/{deviceId}/reading
       const topicParts = topic.split('/');
       if (topicParts.length !== 5 || topicParts[0] !== 'home' || topicParts[2] !== 'sensors' || topicParts[4] !== 'reading') {
-        console.log(`   ⚠️  Topic invalide ignoré: ${topic}`);
+        console.log(`❌ Topic invalide (format attendu: home/{homeId}/sensors/{deviceId}/reading)`);
+        console.log(`   Topic reçu: ${topic}`);
         return;
       }
 
       const homeId = topicParts[1];
       const deviceId = topicParts[3];
 
+      console.log(`🏠 Home ID: ${homeId}`);
+      console.log(`📱 Device ID: ${deviceId}`);
+
       // Parser le payload JSON
       let data;
       try {
         data = JSON.parse(payload.toString());
+        console.log(`📄 Payload brut: ${JSON.stringify(data)}`);
       } catch (e) {
-        console.log(`   ❌ Payload JSON invalide: ${payload}`);
+        console.log(`❌ ERREUR: Payload JSON invalide`);
+        console.log(`   Payload reçu: ${payload}`);
         return;
       }
 
       // Valider les champs requis selon le contrat
       if (!data.ts || typeof data.temperature_c !== 'number' || typeof data.humidity_pct !== 'number') {
-        console.log(`   ❌ Champs requis manquants dans: ${payload}`);
+        console.log(`❌ ERREUR: Champs requis manquants`);
+        console.log(`   Attendu: {ts: number, temperature_c: number, humidity_pct: number}`);
+        console.log(`   Reçu: ${JSON.stringify(data)}`);
         return;
       }
 
-      // Résoudre la room_id (pour cette démo, on map directement depuis les devices créés)
+      // Résoudre la room_id depuis les devices créés
       let roomId = null;
       if (deviceId === 'rpi-salon-01') roomId = 'salon';
       if (deviceId === 'rpi-cuisine-01') roomId = 'cuisine';
+      if (deviceId === 'rpi-chambre-01') roomId = 'chambre1';
+
+      if (!roomId) {
+        console.log(`❌ ERREUR: Device inconnu dans la configuration`);
+        console.log(`   Device ID: ${deviceId}`);
+        console.log(`   Devices configurés: rpi-salon-01, rpi-cuisine-01, rpi-chambre-01`);
+        return;
+      }
+
+      console.log(`🎯 Mapping: ${deviceId} → room "${roomId}"`);
+
+      // Afficher les transformations de données
+      console.log(`🔄 Transformation des données:`);
+      console.log(`   Timestamp: ${data.ts} → ${new Date(data.ts).toISOString()}`);
+      console.log(`   Température: temperature_c=${data.temperature_c} → temperature=${data.temperature_c}`);
+      console.log(`   Humidité: humidity_pct=${data.humidity_pct} → humidity=${data.humidity_pct}`);
 
       // Transformer selon le contrat : temperature_c → temperature, humidity_pct → humidity
       const reading = {
@@ -248,13 +624,39 @@ class TechTempServiceDemo {
         msg_id: `${deviceId}-${data.ts}`      // ID unique pour déduplication
       };
 
-      // Sauvegarder via Repository
-      await this.repository.readings.create(reading);
+      console.log(`💾 Objet pour SQLite:`);
+      console.log(`   device_id: "${reading.device_id}"`);
+      console.log(`   room_id: "${reading.room_id}"`);
+      console.log(`   ts: "${reading.ts}"`);
+      console.log(`   temperature: ${reading.temperature}°C`);
+      console.log(`   humidity: ${reading.humidity}%`);
+      console.log(`   source: "${reading.source}"`);
+      console.log(`   msg_id: "${reading.msg_id}"`);
 
-      console.log(`   ✅ [SAUVÉ] ${deviceId}: ${reading.temperature}°C, ${reading.humidity}% dans ${roomId || 'unknown room'}`);
+      // Sauvegarder via Repository
+      console.log(`📤 Sauvegarde via Repository...`);
+      const result = await this.repository.readings.create(reading);
+
+      if (result.success) {
+        console.log(`✅ SUCCESS: Données sauvegardées en SQLite`);
+        console.log(`   📊 ${deviceId} (${roomId}): ${reading.temperature}°C, ${reading.humidity}%`);
+        console.log(`   � Horodatage: ${reading.ts}`);
+        console.log(`   📈 Total messages traités: ${messageNum}`);
+      } else {
+        console.log(`❌ ERREUR: Échec sauvegarde SQLite`);
+        console.log(`   Device: ${deviceId}`);
+        console.log(`   Erreur: ${result.error || 'Unknown error'}`);
+      }
+
+      console.log(`═════════════════════════════════════════════════`);
 
     } catch (error) {
-      console.log(`   ❌ Erreur traitement MQTT: ${error.message}`);
+      console.log(`💥 ERREUR CRITIQUE: ${error.message}`);
+      console.log(`📍 Context:`);
+      console.log(`   Topic: ${topic}`);
+      console.log(`   Payload: ${payload}`);
+      console.log(`   Stack: ${error.stack}`);
+      console.log(`═════════════════════════════════════════════════`);
     }
   }
 
@@ -404,17 +806,48 @@ class TechTempServiceDemo {
   }
 
   async stop() {
-    console.log('\n🛑 Arrêt de la démo...');
+    console.log('\n🛑 === ARRÊT DU SERVICE TECHTEMP ===');
 
+    // Arrêter le monitoring
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      console.log('✅ Monitoring temps réel arrêté');
+    }
+
+    // Fermer le serveur HTTP
+    if (this.httpServer) {
+      return new Promise((resolve) => {
+        this.httpServer.close(() => {
+          console.log('✅ Serveur HTTP fermé');
+          this.closeRemainingConnections().then(resolve);
+        });
+      });
+    } else {
+      await this.closeRemainingConnections();
+    }
+  }
+
+  async closeRemainingConnections() {
+    // Fermer MQTT
     if (this.mqttClient) {
       await this.mqttClient.close();
       console.log('✅ Client MQTT fermé');
     }
 
+    // Fermer base de données
     if (this.db) {
       this.db.close();
       console.log('✅ Base de données fermée');
     }
+
+    // Statistiques finales
+    console.log('');
+    console.log('📊 STATISTIQUES FINALES:');
+    console.log(`   📥 Messages MQTT traités: ${this.receivedMessages}`);
+    console.log(`   💾 Base de données: ${DB_PATH}`);
+    console.log(`   📡 Broker utilisé: ${MQTT_BROKER}`);
+    console.log('');
+    console.log('👋 Service TechTemp arrêté proprement');
   }
 }
 

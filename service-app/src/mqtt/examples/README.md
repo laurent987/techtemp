@@ -1,95 +1,143 @@
-# 📡 MQTT Client Examples
+# 📡 Exemples MQTT
 
-Exemples pratiques d'utilisation du client MQTT.
+Ce dossier contient des exemples structurés et pédagogiques pour démontrer l'utilisation du client MQTT.
 
-## 🚀 Scripts disponibles
+## � Structure
 
-### 👂 Subscriber - `subscriber.js`
-Écoute les messages sur un topic pattern.
-
-```bash
-# Écouter tous les messages techtemp/demo/*
-node subscriber.js
-
-# Avec broker et topic personnalisés
-node subscriber.js mqtt://localhost:1883 "sensors/+/temperature"
+```
+src/mqtt/examples/
+├── publisher.js      # ✈️ Envoi de messages MQTT
+├── subscriber.js     # 📥 Écoute de messages MQTT  
+├── cleaner.js        # 🧹 Nettoyage messages retained
+└── README.md         # 📚 Ce guide
 ```
 
-### 📤 Publisher - `publisher.js`
-Publie des messages sur des topics.
+## 🎯 Objectifs pédagogiques
 
+### **publisher.js** - Envoi de messages
+✅ **Fonctionnalités démontrées :**
+- Connexion au broker MQTT
+- Publication avec différents QoS (0, 1, 2)
+- Formats JSON et texte
+- Gestion des options (retain, qos)
+- Déconnexion propre
+
+### **subscriber.js** - Réception de messages  
+✅ **Fonctionnalités démontrées :**
+- Connexion au broker MQTT
+- Abonnement avec patterns/wildcards (`+`, `#`)
+- Analyse automatique JSON vs texte
+- Métadonnées des messages (QoS, retain, taille)
+- Statistiques en temps réel
+- Arrêt propre avec Ctrl+C
+
+### **cleaner.js** - Nettoyage retained
+✅ **Fonctionnalités démontrées :**
+- Suppression de messages retained
+- Statistiques de nettoyage
+- Gestion d'erreurs
+- Validation des opérations
+
+## 🚀 Utilisation
+
+### **Test complet en 3 terminaux**
+
+#### Terminal 1 - Subscriber (écoute)
 ```bash
-# Mode démo (4 messages d'exemple)
-node publisher.js
-
-# Message personnalisé
-node publisher.js mqtt://localhost:1883 "sensors/room1/temp" "23.5"
-
-# Avec broker personnalisé
-node publisher.js mqtt://test.mosquitto.org:1883
+cd service-app
+node src/mqtt/examples/subscriber.js
 ```
 
-### 🧹 Cleaner - `cleaner.js`
-Supprime les messages retained du broker.
-
+#### Terminal 2 - Publisher (envoi)
 ```bash
-node cleaner.js
+cd service-app  
+node src/mqtt/examples/publisher.js
 ```
 
-## 🧪 Test en temps réel
-
-### Terminal 1 - Subscriber
+#### Terminal 3 - Cleaner (nettoyage)
 ```bash
-cd service-app/src/mqtt/examples
-node subscriber.js
+cd service-app
+node src/mqtt/examples/cleaner.js
 ```
 
-### Terminal 2 - Publisher  
+### **Options personnalisées**
+
 ```bash
-cd service-app/src/mqtt/examples
-node publisher.js
+# Broker personnalisé
+node publisher.js mqtt://localhost:1883
+
+# Topic personnalisé
+node subscriber.js mqtt://test.mosquitto.org "sensors/#"
+
+# Message unique
+node publisher.js mqtt://test.mosquitto.org sensors/temp001 "Hello MQTT"
 ```
 
-## 📋 Messages d'exemple
+### **Aide intégrée**
 
-Le publisher en mode démo envoie :
-
-- **Temperature** : `techtemp/demo/sensors/temperature` (QoS 1, non-retained)
-- **Humidity** : `techtemp/demo/sensors/humidity` (QoS 1, non-retained)  
-- **Status** : `techtemp/demo/status` (QoS 0, non-retained)
-- **Alert** : `techtemp/demo/alerts` (QoS 2, non-retained)
-
-## 🔧 Configuration
-
-### Brokers testés
-- `mqtt://test.mosquitto.org:1883` (défaut)
-- `mqtt://broker.hivemq.com:1883`
-- `mqtt://localhost:1883` (broker local)
-
-### Topics pattern
-- `techtemp/demo/#` - Tous les sous-topics démo
-- `sensors/+/temperature` - Température de tous capteurs
-- `alerts/critical` - Alertes critiques uniquement
-
-## 🎯 Cas d'usage
-
-### Monitoring de capteurs
 ```bash
-# Terminal 1: Écouter les capteurs
-node subscriber.js mqtt://localhost:1883 "sensors/+/+"
-
-# Terminal 2: Simuler capteur température
-node publisher.js mqtt://localhost:1883 "sensors/room1/temperature" "22.1"
-
-# Terminal 3: Simuler capteur humidité  
-node publisher.js mqtt://localhost:1883 "sensors/room1/humidity" "65.2"
+node publisher.js --help
+node subscriber.js --help  
+node cleaner.js --help
 ```
 
-### Debug et développement
-```bash
-# Écouter TOUS les messages (attention: verbeux)
-node subscriber.js mqtt://test.mosquitto.org:1883 "#"
+## 📋 Patterns MQTT utiles
 
-# Envoyer message de test
-node publisher.js mqtt://test.mosquitto.org:1883 "debug/test" "Hello world"
+| Pattern | Description | Exemples |
+|---------|-------------|----------|
+| `sensors/+/readings` | Un seul niveau | `sensors/temp001/readings`, `sensors/temp002/readings` |
+| `sensors/#` | Tous niveaux | `sensors/temp001/readings`, `sensors/alerts/critical` |
+| `+/status` | Tous devices status | `temp001/status`, `humidity001/status` |
+| `sensors/temp001/+` | Tous sous-topics | `sensors/temp001/readings`, `sensors/temp001/status` |
+
+## 🔧 Brokers MQTT de test
+
+| Broker | URL | Description |
+|--------|-----|-------------|
+| Eclipse Mosquitto | `mqtt://test.mosquitto.org:1883` | Broker public de test |
+| HiveMQ | `mqtt://broker.hivemq.com:1883` | Broker public de test |
+| Local | `mqtt://localhost:1883` | Broker local (si installé) |
+
+## 💡 Conseils d'utilisation
+
+### **Démarrage recommandé :**
+1. Lancez `subscriber.js` en premier (pour voir les messages)
+2. Lancez `publisher.js` (pour envoyer des messages)
+3. Observez les messages dans le terminal subscriber
+4. Utilisez `cleaner.js` si besoin de nettoyer
+
+### **QoS (Quality of Service) :**
+- **QoS 0** : Fire and forget (aucune garantie)
+- **QoS 1** : Au moins une fois (avec acknowledgment)  
+- **QoS 2** : Exactement une fois (avec double handshake)
+
+### **Messages Retained :**
+- Stockés par le broker
+- Envoyés automatiquement aux nouveaux subscribers
+- Supprimés avec payload vide + retain=true
+
+## 🐛 Dépannage
+
+### **Erreur de connexion**
 ```
+💥 Publisher failed: Error: Connection refused
+```
+**Solution :** Vérifiez que le broker est accessible et l'URL correcte.
+
+### **Aucun message reçu**
+**Vérifiez :**
+- Le subscriber est lancé avant le publisher
+- Les topics correspondent (attention aux wildcards)
+- Le broker fonctionne correctement
+
+### **Messages dupliqués**
+**Causes possibles :**
+- QoS 1 avec retransmission
+- Plusieurs publishers sur le même topic
+- Messages retained qui se répètent
+
+## 📚 Liens utiles
+
+- [Documentation MQTT](https://mqtt.org/)
+- [MQTT.js (bibliothèque utilisée)](https://github.com/mqttjs/MQTT.js)
+- [Test brokers publics](https://github.com/mqtt/mqtt.github.io/wiki/public_brokers)
