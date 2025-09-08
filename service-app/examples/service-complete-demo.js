@@ -1,66 +1,21 @@
 /**
- * @file DEMO COMPLÈTE - TechTemp Service App avec MQ    try {
-      // ═══════════════════════════════════════════════════════════════════════════════
-      // 1️⃣  TEST: Initialisation base de données
-      // ═══════════════════════════════════════════════════════════════════════════════
-      console.log('🔗 1️⃣  TEST: Initialisation base de données SQLite');
-      console.log('┌─ OBJECTIF: Créer base persistante avec schema IoT complet');
-      console.log('│  Migrations: Automatiques vers version 2 (temperature/humidity)');
-      console.log('│  Tables: rooms, devices, readings_raw');
-      console.log('└─ Nettoyage: Suppression ancienne base pour démo propre');
-      console.log('');
-      await this.initializeDatabase();
-      console.log('✅ Base de données prête et migrée');
-      console.log('═'.repeat(80) + '\n');
-
-      // ═══════════════════════════════════════════════════════════════════════════════
-      // 2️⃣  TEST: Données de base (rooms & devices)
-      // ═══════════════════════════════════════════════════════════════════════════════
-      console.log('🏠 2️⃣  TEST: Création données de base (maison type)');
-      console.log('┌─ OBJECTIF: Simuler une vraie maison avec capteurs IoT');
-      console.log('│  Rooms: Salon, Cuisine, Chambre (avec étages et orientations)');
-      console.log('│  Devices: Raspberry Pi Zero 2W avec capteurs DHT22');
-      console.log('└─ Mapping: device_id → room_id pour ingestion');
-      console.log('');
-      await this.setupBaseData();
-      console.log('✅ Maison virtuelle créée avec capteurs');
-      console.log('═'.repeat(80) + '\n');
-
-      // ═══════════════════════════════════════════════════════════════════════════════
-      // 3️⃣  TEST: Serveur HTTP avec API
-      // ═══════════════════════════════════════════════════════════════════════════════
-      console.log('🌐 3️⃣  TEST: Serveur HTTP avec endpoints API');
-      console.log('┌─ OBJECTIF: Serveur HTTP pour monitoring et health checks');
-      console.log('│  Endpoints: /health, /api/v1/readings/latest, /api/v1/stats');
-      console.log('│  Features: CORS, JSON responses, error handling');
-      console.log('└─ Monitoring: Accessible via curl ou navigateur');
-      console.log('');
-      await this.startHttpServer();
-      console.log(`✅ API HTTP active sur http://localhost:${HTTP_PORT}`);
-      console.log('═'.repeat(80) + '\n');
-
-      // ═══════════════════════════════════════════════════════════════════════════════
-      // 4️⃣  TEST: Connexion MQTT réelle
-      // ═══════════════════════════════════════════════════════════════════════════════
-      console.log('📡 4️⃣  TEST: Connexion MQTT au broker public');
-      console.log('┌─ OBJECTIF: Établir connexion MQTT pour ingestion temps réel');
-      console.log('│  Broker: test.mosquitto.org (public, gratuit)');
-      console.log('│  Topics: home/{homeId}/sensors/{deviceId}/reading');
-      console.log('└─ Handler: Pipeline automatique MQTT → Repository → SQLite');
-      console.log('');
-      await this.connectMqtt();
-      console.log('✅ Pipeline ingestion MQTT → Database opérationnel');
-      console.log('═'.repeat(80) + '\n'); ✅ OBJECTIF: Démonstration complète du pipeline IoT
+ * @file DEMO COMPLÈTE - TechTemp Service App avec Pipeline IoT
+ * 
+ * ✅ OBJECTIF: Démonstration complète du pipeline IoT
  * 📦 COMPOSANTS DÉMONTRÉS:
- *    - API HTTP avec endpoint /health
- *    - Client MQTT réel (test.mosquitto.org)
- *    - Pipeline ingestion MQTT → Database
- *    - Repository pattern avec SQLite
- *    - Simulation capteurs réalistes
+ *    - API HTTP avec endpoint /health, /api/v1/readings/latest, /api/v1/stats
+ *    - Client MQTT réel (test.mosquitto.org) avec pipeline ingestion
+ *    - Base SQLite avec migrations automatiques et Repository pattern
+ *    - Monitoring temps réel avec logs structurés
  * 
  * 🚀 USAGE:
  *    Terminal 1: node examples/service-complete-demo.js
- *    Terminal 2: node examples/device-simulator.js (à créer)
+ *    Terminal 2: node examples/device-simulator.js
+ * 
+ * � ENDPOINTS API:
+ *    GET /health              → Status du service
+ *    GET /api/v1/readings/latest → Dernières mesures capteurs
+ *    GET /api/v1/stats        → Statistiques de la base
  */
 
 import { createMqttClient } from '../src/mqtt/client.js';

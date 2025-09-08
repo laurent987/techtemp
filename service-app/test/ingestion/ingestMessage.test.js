@@ -244,7 +244,9 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       // Verify no repository calls were made
       expect(mockRepository.devices.findById).not.toHaveBeenCalled();
       expect(mockRepository.readings.create).not.toHaveBeenCalled();
-    }); it('should handle MQTT retain flag correctly', async () => {
+    });
+
+    it('should handle MQTT retain flag correctly', async () => {
       // Arrange
       const topic = 'sensors/temp001/readings';
       const payload = { temperature_c: 24.0, humidity_pct: 58.0, timestamp: '2025-09-07T16:00:00Z' };
