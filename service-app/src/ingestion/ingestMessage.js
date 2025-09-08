@@ -95,6 +95,8 @@ export async function ingestMessage(topic, payload, options = {}, repository) {
 
   if (deviceCreated) {
     result.deviceCreated = true;
+  } else {
+    result.deviceCreated = false;
   }
 
   if (options.retain) {
