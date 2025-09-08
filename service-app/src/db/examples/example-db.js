@@ -2,12 +2,12 @@
 /**
  * @file Example Database & Repository
  * 
- * ✅ OBJECTIF: Démontrer l'utilisation des modules DB et Repository
- * 📦 MODULES DÉMONTRÉS:
+ * ✅ OBJECTIVE: Demonstrate usage of DB and Repository modules
+ * 📦 DEMONSTRATED MODULES:
  *    - src/db/index.js (initDb, migrations)
  *    - src/repositories/index.js (createRepository)
  * 
- * 🚫 PAS DÉMONTRÉ: Client MQTT, Pipeline d'ingestion, HTTP API
+ * 🚫 NOT DEMONSTRATED: MQTT Client, Ingestion Pipeline, HTTP API
  */
 
 import { initDb, closeDb } from '../index.js';
@@ -19,90 +19,90 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 async function demonstrateDatabaseRepository() {
-  console.log('🗄️  === EXEMPLE DATABASE + REPOSITORY ===');
-  console.log('🎯 Module: initDb + migrateSchema (intégré) + createRepository');
+  console.log('🗄️  === DATABASE + REPOSITORY EXAMPLE ===');
+  console.log('🎯 Module: initDb + migrateSchema (integrated) + createRepository');
   console.log('');
-  console.log('📖 APERÇU DES TESTS:');
-  console.log('1️⃣  Base mémoire    → Initialisation et migrations en RAM');
-  console.log('2️⃣  Room Repository → Création et recherche de pièces');
-  console.log('3️⃣  Device Repository → Gestion des devices IoT');
-  console.log('4️⃣  Readings Repository → Stockage données capteurs');
-  console.log('5️⃣  Base fichier   → Persistance SQLite sur disque');
-  console.log('6️⃣  Nettoyage     → Fermeture propre des connexions');
+  console.log('📖 TEST OVERVIEW:');
+  console.log('1️⃣  Memory DB      → Initialization and migrations in RAM');
+  console.log('2️⃣  Room Repository → Creation and search of rooms');
+  console.log('3️⃣  Device Repository → IoT device management');
+  console.log('4️⃣  Readings Repository → Sensor data storage');
+  console.log('5️⃣  File DB       → SQLite persistence on disk');
+  console.log('6️⃣  Cleanup       → Proper connection closure');
   console.log('');
   console.log('⚙️  CONFIGURATION:');
-  console.log('   💾 DB Mémoire: :memory:');
-  console.log('   � DB Fichier: examples/db-data-examples/example-db.db');
+  console.log('   💾 Memory DB: :memory:');
+  console.log('   📁 File DB: examples/db-data-examples/example-db.db');
   console.log('   🏗️  Schema: Version 2 (temperature/humidity)');
   console.log('═'.repeat(80) + '\n');
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // 1️⃣  TEST: Base de données en mémoire
+  // 1️⃣  TEST: In-memory database
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('🔗 1️⃣  TEST: Initialisation base de données mémoire');
-  console.log('┌─ OBJECTIF: Créer DB temporaire en RAM pour tests rapides');
-  console.log('│  Avantages: Ultra-rapide, pas de fichiers, isolation totale');
-  console.log('│  Inconvénients: Données perdues à la fermeture');
-  console.log('└─ Usage: Tests unitaires, développement, prototypage');
+  console.log('🔗 1️⃣  TEST: Memory database initialization');
+  console.log('┌─ OBJECTIVE: Create temporary DB in RAM for fast tests');
+  console.log('│  Advantages: Ultra-fast, no files, total isolation');
+  console.log('│  Disadvantages: Data lost on closure');
+  console.log('└─ Usage: Unit tests, development, prototyping');
   console.log('');
 
-  console.log('📤 Test 1.1: Création DB mémoire');
+  console.log('📤 Test 1.1: Memory DB creation');
   console.log('   📋 Connection string: ":memory:"');
   const memDb = initDb(':memory:');
-  console.log('   ✅ Base de données mémoire créée');
+  console.log('   ✅ Memory database created');
 
-  console.log('📤 Test 1.2: Application du schéma');
-  console.log('   🏗️  Schema: Automatique via initDb()');
-  // Note: initDb() appelle automatiquement migrateSchema()
-  console.log('   ✅ Schema appliqué avec succès');
+  console.log('📤 Test 1.2: Schema application');
+  console.log('   🏗️  Schema: Automatic via initDb()');
+  // Note: initDb() automatically calls migrateSchema()
+  console.log('   ✅ Schema applied successfully');
 
-  console.log('📤 Test 1.3: Création du repository');
+  console.log('📤 Test 1.3: Repository creation');
   const memRepo = createRepository(memDb);
-  console.log('   ✅ Repository configuré (rooms, devices, readings)');
+  console.log('   ✅ Repository configured (rooms, devices, readings)');
   console.log('═'.repeat(80) + '\n');
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // 2️⃣  TEST: Room Repository
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('🏠 2️⃣  TEST: Room Repository (gestion des pièces)');
-  console.log('┌─ OBJECTIF: Créer et gérer les pièces de la maison');
-  console.log('│  Fonctionnalités: create, findById, findAll, update, delete');
-  console.log('│  Validation: Contraintes unicité, relations avec devices');
+  console.log('🏠 2️⃣  TEST: Room Repository (room management)');
+  console.log('┌─ OBJECTIVE: Create and manage house rooms');
+  console.log('│  Features: create, findById, findAll, update, delete');
+  console.log('│  Validation: Uniqueness constraints, device relationships');
   console.log('└─ Structure: room_id (PK), name, created_at, updated_at');
   console.log('');
 
-  console.log('📤 Test 2.1: Création d\'une room');
+  console.log('📤 Test 2.1: Creating a room');
   console.log('   📍 Room ID: "salon"');
   console.log('   🏷️  Name: "Salon"');
   const room = await memRepo.rooms.create({
     room_id: 'salon',
     name: 'Salon'
   });
-  console.log('   ✅ Room créée avec succès');
-  console.log(`   📊 Résultat: ${JSON.stringify({ room_id: room.room_id, name: room.name }, null, 2).replace(/\n/g, '\n       ')}`);
+  console.log('   ✅ Room created successfully');
+  console.log(`   📊 Result: ${JSON.stringify({ room_id: room.room_id, name: room.name }, null, 2).replace(/\n/g, '\n       ')}`);
 
-  console.log('📤 Test 2.2: Recherche par ID');
-  console.log('   🔍 Recherche: room_id = "salon"');
+  console.log('📤 Test 2.2: Search by ID');
+  console.log('   🔍 Search: room_id = "salon"');
   const foundRoom = await memRepo.rooms.findById('salon');
-  console.log(`   ✅ Room trouvée: ${foundRoom?.name || 'Non trouvée'}`);
-  console.log(`   📊 Données: ${foundRoom ? JSON.stringify({ room_id: foundRoom.room_id, name: foundRoom.name, created_at: foundRoom.created_at }, null, 2).replace(/\n/g, '\n       ') : 'Aucune'}`);
+  console.log(`   ✅ Room found: ${foundRoom?.name || 'Not found'}`);
+  console.log(`   📊 Data: ${foundRoom ? JSON.stringify({ room_id: foundRoom.room_id, name: foundRoom.name, created_at: foundRoom.created_at }, null, 2).replace(/\n/g, '\n       ') : 'None'}`);
 
-  console.log('📤 Test 2.3: Création d\'une seconde room');
+  console.log('📤 Test 2.3: Creating a second room');
   console.log('   📍 Room ID: "cuisine"');
   console.log('   🏷️  Name: "Cuisine"');
   const room2 = await memRepo.rooms.create({
     room_id: 'cuisine',
     name: 'Cuisine'
   });
-  console.log('   ✅ Seconde room créée');
+  console.log('   ✅ Second room created');
 
-  console.log('📤 Test 2.4: Vérification des rooms créées');
-  console.log('   🔍 Test: Recherche des rooms par ID');
+  console.log('📤 Test 2.4: Verifying created rooms');
+  console.log('   🔍 Test: Search rooms by ID');
   const salonCheck = await memRepo.rooms.findById('salon');
   const cuisineCheck = await memRepo.rooms.findById('cuisine');
-  console.log(`   ✅ Room "salon": ${salonCheck ? 'trouvée' : 'non trouvée'}`);
-  console.log(`   ✅ Room "cuisine": ${cuisineCheck ? 'trouvée' : 'non trouvée'}`);
-  console.log('   📊 Rooms validées:');
+  console.log(`   ✅ Room "salon": ${salonCheck ? 'found' : 'not found'}`);
+  console.log(`   ✅ Room "cuisine": ${cuisineCheck ? 'found' : 'not found'}`);
+  console.log('   📊 Validated rooms:');
   if (salonCheck) console.log(`       • ${salonCheck.room_id}: ${salonCheck.name}`);
   if (cuisineCheck) console.log(`       • ${cuisineCheck.room_id}: ${cuisineCheck.name}`);
   console.log('═'.repeat(80) + '\n');
@@ -110,51 +110,51 @@ async function demonstrateDatabaseRepository() {
   // ═══════════════════════════════════════════════════════════════════════════════
   // 3️⃣  TEST: Device Repository
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('📱 3️⃣  TEST: Device Repository (gestion des devices IoT)');
-  console.log('┌─ OBJECTIF: Gérer les capteurs et actuateurs IoT');
-  console.log('│  Fonctionnalités: create, findById, findByRoom, findAll');
+  console.log('📱 3️⃣  TEST: Device Repository (IoT device management)');
+  console.log('┌─ OBJECTIVE: Manage IoT sensors and actuators');
+  console.log('│  Features: create, findById, findByRoom, findAll');
   console.log('│  Relations: device -> room (FK constraint)');
   console.log('└─ Structure: device_id (PK), device_uid, room_id (FK), label');
   console.log('');
 
-  console.log('📤 Test 3.1: Création d\'un device température');
+  console.log('📤 Test 3.1: Creating a temperature device');
   console.log('   📍 Device ID: "temp001"');
   console.log('   🆔 UID: "temp001-uid"');
   console.log('   🏠 Room: "salon"');
-  console.log('   🏷️  Label: "Capteur Température Salon"');
+  console.log('   🏷️  Label: "Living Room Temperature Sensor"');
   const device = await memRepo.devices.create({
     device_id: 'temp001',
     device_uid: 'temp001-uid',
     room_id: 'salon',
-    label: 'Capteur Température Salon'
+    label: 'Living Room Temperature Sensor'
   });
-  console.log('   ✅ Device créé avec succès');
-  console.log(`   📊 Device: ${device.device_id} dans room ${device.room_id}`);
+  console.log('   ✅ Device created successfully');
+  console.log(`   📊 Device: ${device.device_id} in room ${device.room_id}`);
 
-  console.log('📤 Test 3.2: Recherche device par ID');
-  console.log('   🔍 Recherche: device_id = "temp001"');
+  console.log('📤 Test 3.2: Search device by ID');
+  console.log('   🔍 Search: device_id = "temp001"');
   const foundDevice = await memRepo.devices.findById('temp001');
-  console.log(`   ✅ Device trouvé: ${foundDevice?.label || 'Non trouvé'}`);
-  console.log(`   📊 Infos: ID=${foundDevice?.device_id}, Room=${foundDevice?.room_id || 'N/A'}`);
+  console.log(`   ✅ Device found: ${foundDevice?.label || 'Not found'}`);
+  console.log(`   📊 Info: ID=${foundDevice?.device_id}, Room=${foundDevice?.room_id || 'N/A'}`);
 
-  console.log('📤 Test 3.3: Création device cuisine');
+  console.log('📤 Test 3.3: Creating kitchen device');
   console.log('   📍 Device ID: "temp002"');
   console.log('   🏠 Room: "cuisine"');
   const device2 = await memRepo.devices.create({
     device_id: 'temp002',
     device_uid: 'temp002-uid',
     room_id: 'cuisine',
-    label: 'Capteur Cuisine'
+    label: 'Kitchen Sensor'
   });
-  console.log('   ✅ Device cuisine créé');
+  console.log('   ✅ Kitchen device created');
 
-  console.log('📤 Test 3.4: Vérification des devices créés');
-  console.log('   🔍 Recherche: validation des devices par ID');
+  console.log('📤 Test 3.4: Verifying created devices');
+  console.log('   🔍 Search: validate devices by ID');
   const device1Check = await memRepo.devices.findById('temp001');
   const device2Check = await memRepo.devices.findById('temp002');
-  console.log(`   ✅ Device temp001: ${device1Check ? 'trouvé' : 'non trouvé'}`);
-  console.log(`   ✅ Device temp002: ${device2Check ? 'trouvé' : 'non trouvé'}`);
-  console.log('   📊 Devices validés:');
+  console.log(`   ✅ Device temp001: ${device1Check ? 'found' : 'not found'}`);
+  console.log(`   ✅ Device temp002: ${device2Check ? 'found' : 'not found'}`);
+  console.log('   📊 Validated devices:');
   if (device1Check) console.log(`       • ${device1Check.device_id}: ${device1Check.label} (${device1Check.room_id || 'N/A'})`);
   if (device2Check) console.log(`       • ${device2Check.device_id}: ${device2Check.label} (${device2Check.room_id || 'N/A'})`);
   console.log('═'.repeat(80) + '\n');
@@ -162,18 +162,18 @@ async function demonstrateDatabaseRepository() {
   // ═══════════════════════════════════════════════════════════════════════════════
   // 4️⃣  TEST: Readings Repository
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('📈 4️⃣  TEST: Readings Repository (données capteurs)');
-  console.log('┌─ OBJECTIF: Stocker et requêter les mesures des capteurs');
-  console.log('│  Fonctionnalités: create, getLatestByDevice, findByDevice, findRecent');
+  console.log('📈 4️⃣  TEST: Readings Repository (sensor data)');
+  console.log('┌─ OBJECTIVE: Store and query sensor measurements');
+  console.log('│  Features: create, getLatestByDevice, findByDevice, findRecent');
   console.log('│  Relations: reading -> device (FK), reading -> room (FK)');
   console.log('└─ Structure: ts (PK), device_id (FK), room_id (FK), temperature, humidity, source');
   console.log('');
 
-  console.log('📤 Test 4.1: Création d\'une reading température');
+  console.log('📤 Test 4.1: Creating a temperature reading');
   console.log('   📍 Device: "temp001"');
   console.log('   🌡️  Temperature: 23.5°C');
   console.log('   💧 Humidity: 65.2%');
-  console.log('   📅 Timestamp: maintenant');
+  console.log('   📅 Timestamp: now');
   const reading = await memRepo.readings.create({
     device_id: 'temp001',
     room_id: 'salon',
@@ -182,13 +182,13 @@ async function demonstrateDatabaseRepository() {
     humidity: 65.2,
     source: 'example-test'
   });
-  console.log(`   ✅ Reading créée: ${reading.success ? 'succès' : 'échec'}`);
+  console.log(`   ✅ Reading created: ${reading.success ? 'success' : 'failed'}`);
   if (reading.success) {
-    console.log(`   📊 Données stockées: device=temp001, 23.5°C, 65.2%`);
+    console.log(`   📊 Data stored: device=temp001, 23.5°C, 65.2%`);
   }
 
-  console.log('📤 Test 4.2: Ajout d\'une seconde reading');
-  await new Promise(resolve => setTimeout(resolve, 100)); // Petit délai pour timestamp différent
+  console.log('📤 Test 4.2: Adding a second reading');
+  await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for different timestamp
   const reading2 = await memRepo.readings.create({
     device_id: 'temp001',
     room_id: 'salon',
@@ -197,9 +197,9 @@ async function demonstrateDatabaseRepository() {
     humidity: 63.8,
     source: 'example-test'
   });
-  console.log(`   ✅ Seconde reading: ${reading2.success ? 'succès' : 'échec'}`);
+  console.log(`   ✅ Second reading: ${reading2.success ? 'success' : 'failed'}`);
 
-  console.log('📤 Test 4.3: Reading depuis device cuisine');
+  console.log('📤 Test 4.3: Reading from kitchen device');
   const reading3 = await memRepo.readings.create({
     device_id: 'temp002',
     room_id: 'cuisine',
@@ -208,100 +208,100 @@ async function demonstrateDatabaseRepository() {
     humidity: 58.7,
     source: 'example-test'
   });
-  console.log(`   ✅ Reading cuisine: ${reading3.success ? 'succès' : 'échec'}`);
+  console.log(`   ✅ Kitchen reading: ${reading3.success ? 'success' : 'failed'}`);
 
-  console.log('📤 Test 4.4: Récupération dernière reading');
-  console.log('   🔍 Recherche: dernière reading de temp001');
+  console.log('📤 Test 4.4: Getting latest reading');
+  console.log('   🔍 Search: latest reading from temp001');
   const latestReading = await memRepo.readings.getLatestByDevice('temp001');
-  console.log(`   ✅ Latest reading: ${latestReading ? latestReading.temperature + '°C' : 'Aucune'}`);
+  console.log(`   ✅ Latest reading: ${latestReading ? latestReading.temperature + '°C' : 'None'}`);
   if (latestReading) {
-    console.log(`   📊 Détails: ${latestReading.temperature}°C, ${latestReading.humidity}%, ${new Date(latestReading.ts).toLocaleTimeString()}`);
+    console.log(`   📊 Details: ${latestReading.temperature}°C, ${latestReading.humidity}%, ${new Date(latestReading.ts).toLocaleTimeString()}`);
   }
 
-  console.log('📤 Test 4.5: Recherche readings par room et période');
-  console.log('   🔍 Recherche: room "salon" sur dernière minute');
+  console.log('📤 Test 4.5: Search readings by room and time period');
+  console.log('   🔍 Search: room "salon" over last minute');
   const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
   const now = new Date().toISOString();
   try {
     const roomReadings = await memRepo.readings.findByRoomAndTimeRange('salon', oneMinuteAgo, now);
-    console.log(`   📊 Readings dans salon (dernière minute): ${roomReadings.length}`);
+    console.log(`   📊 Readings in salon (last minute): ${roomReadings.length}`);
     if (roomReadings.length > 0) {
-      console.log('   📊 Statistiques calculées:');
+      console.log('   📊 Calculated statistics:');
       const avgTemp = roomReadings.reduce((sum, r) => sum + (r.temperature || 0), 0) / roomReadings.length;
       const avgHum = roomReadings.reduce((sum, r) => sum + (r.humidity || 0), 0) / roomReadings.length;
-      console.log(`       Température moyenne: ${avgTemp.toFixed(1)}°C`);
-      console.log(`       Humidité moyenne: ${avgHum.toFixed(1)}%`);
-      console.log(`       Première mesure: ${new Date(roomReadings[0].ts).toLocaleTimeString()}`);
+      console.log(`       Average temperature: ${avgTemp.toFixed(1)}°C`);
+      console.log(`       Average humidity: ${avgHum.toFixed(1)}%`);
+      console.log(`       First measurement: ${new Date(roomReadings[0].ts).toLocaleTimeString()}`);
     }
   } catch (error) {
-    console.log(`   ⚠️  Erreur recherche readings: ${error.message}`);
+    console.log(`   ⚠️  Error searching readings: ${error.message}`);
   }
   console.log('═'.repeat(80) + '\n');
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // 5️⃣  TEST: Base de données fichier
+  // 5️⃣  TEST: File database
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('💾 5️⃣  TEST: Base de données fichier (persistance)');
-  console.log('┌─ OBJECTIF: Démontrer persistance sur disque avec SQLite');
-  console.log('│  Avantages: Données persistantes, transactions ACID, concurrent access');
-  console.log('│  Gestion: Auto-création fichier, gestion duplicatas, WAL mode');
-  console.log('└─ Usage: Production, stockage long terme, données partagées');
+  console.log('💾 5️⃣  TEST: File database (persistence)');
+  console.log('┌─ OBJECTIVE: Demonstrate disk persistence with SQLite');
+  console.log('│  Advantages: Persistent data, ACID transactions, concurrent access');
+  console.log('│  Management: Auto file creation, duplicate handling, WAL mode');
+  console.log('└─ Usage: Production, long-term storage, shared data');
   console.log('');
 
   const dbPath = join(__dirname, '../../../examples/db-data-examples/example-db.db');
-  console.log('📤 Test 5.1: Création/ouverture DB fichier');
-  console.log(`   📁 Chemin: ${dbPath}`);
+  console.log('📤 Test 5.1: Creating/opening file DB');
+  console.log(`   📁 Path: ${dbPath}`);
   const fileDb = initDb(dbPath);
-  // Note: initDb() applique automatiquement le schéma
+  // Note: initDb() automatically applies schema
   const fileRepo = createRepository(fileDb);
-  console.log('   ✅ Base fichier initialisée');
+  console.log('   ✅ File database initialized');
 
-  console.log('� Test 5.2: Gestion des duplicatas');
-  console.log('   🔍 Tentative création room "cuisine" (peut exister)');
+  console.log('📤 Test 5.2: Duplicate handling');
+  console.log('   🔍 Attempting to create room "bureau" (may exist)');
   try {
     await fileRepo.rooms.create({ room_id: 'bureau', name: 'Bureau' });
-    console.log('   ✅ Room "bureau" créée');
+    console.log('   ✅ Room "bureau" created');
   } catch (error) {
     if (error.message.includes('already exists')) {
-      console.log('   ⚠️  Room existe déjà (normal lors de tests répétés)');
+      console.log('   ⚠️  Room already exists (normal during repeated tests)');
     } else {
       throw error;
     }
   }
 
-  console.log('📤 Test 5.3: Vérification rooms dans fichier');
-  console.log('   🔍 Recherche: room "bureau" (nouvellement créée)');
+  console.log('📤 Test 5.3: Verifying rooms in file');
+  console.log('   🔍 Search: room "bureau" (newly created)');
   const bureauRoom = await fileRepo.rooms.findById('bureau');
-  console.log(`   ✅ Room bureau: ${bureauRoom ? 'trouvée' : 'non trouvée'}`);
+  console.log(`   ✅ Room bureau: ${bureauRoom ? 'found' : 'not found'}`);
   if (bureauRoom) {
     console.log(`       • ${bureauRoom.room_id}: ${bureauRoom.name}`);
   }
 
-  console.log('   🔍 Test: Autres rooms potentielles');
+  console.log('   🔍 Test: Other potential rooms');
   const salonFileCheck = await fileRepo.rooms.findById('salon');
   const cuisineFileCheck = await fileRepo.rooms.findById('cuisine');
   if (salonFileCheck) console.log(`       • ${salonFileCheck.room_id}: ${salonFileCheck.name}`);
   if (cuisineFileCheck) console.log(`       • ${cuisineFileCheck.room_id}: ${cuisineFileCheck.name}`);
 
-  console.log('📤 Test 5.4: Device avec gestion duplicatas');
-  const targetRoom = bureauRoom ? bureauRoom.room_id : 'bureau'; // Utiliser bureau ou fallback
+  console.log('📤 Test 5.4: Device with duplicate handling');
+  const targetRoom = bureauRoom ? bureauRoom.room_id : 'bureau'; // Use bureau or fallback
   try {
     await fileRepo.devices.create({
       device_id: 'temp003',
       device_uid: 'temp003-uid',
       room_id: targetRoom,
-      label: 'Capteur Bureau'
+      label: 'Office Sensor'
     });
-    console.log('   ✅ Device "temp003" créé dans fichier');
+    console.log('   ✅ Device "temp003" created in file');
   } catch (error) {
     if (error.message.includes('already exists')) {
-      console.log('   ⚠️  Device existe déjà (normal lors de tests répétés)');
+      console.log('   ⚠️  Device already exists (normal during repeated tests)');
     } else {
       throw error;
     }
   }
 
-  console.log('📤 Test 5.5: Reading dans fichier persistant');
+  console.log('📤 Test 5.5: Reading in persistent file');
   try {
     const fileReading = await fileRepo.readings.create({
       device_id: 'temp003',
@@ -311,76 +311,76 @@ async function demonstrateDatabaseRepository() {
       humidity: 62.3,
       source: 'example-file-test'
     });
-    console.log(`   ✅ Reading fichier: ${fileReading.success ? 'succès' : 'échec'}`);
+    console.log(`   ✅ File reading: ${fileReading.success ? 'success' : 'failed'}`);
   } catch (error) {
-    console.log(`   ⚠️  Reading échec (device peut ne pas exister): ${error.message}`);
+    console.log(`   ⚠️  Reading failed (device may not exist): ${error.message}`);
   }
   console.log('═'.repeat(80) + '\n');
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // 6️⃣  TEST: Nettoyage et fermeture
+  // 6️⃣  TEST: Cleanup and closure
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('🧹 6️⃣  TEST: Nettoyage et fermeture des connexions');
-  console.log('┌─ OBJECTIF: Fermer proprement les connexions DB');
-  console.log('│  Importance: Éviter corruption, libérer ressources, finaliser transactions');
-  console.log('│  Mémoire: Données perdues (attendu)');
-  console.log('└─ Fichier: Données conservées pour prochaine exécution');
+  console.log('🧹 6️⃣  TEST: Cleanup and connection closure');
+  console.log('┌─ OBJECTIVE: Properly close DB connections');
+  console.log('│  Importance: Avoid corruption, free resources, finalize transactions');
+  console.log('│  Memory: Data lost (expected)');
+  console.log('└─ File: Data preserved for next execution');
   console.log('');
 
-  console.log('📤 Test 6.1: Fermeture DB mémoire');
-  console.log('   💾 Type: Base mémoire (:memory:)');
-  console.log('   📊 Données stockées: Rooms, Devices, Readings temporaires');
+  console.log('📤 Test 6.1: Closing memory DB');
+  console.log('   💾 Type: Memory database (:memory:)');
+  console.log('   📊 Stored data: Temporary Rooms, Devices, Readings');
   memDb.close();
-  console.log('   ✅ Base mémoire fermée (données perdues)');
+  console.log('   ✅ Memory database closed (data lost)');
 
-  console.log('📤 Test 6.2: Fermeture DB fichier');
-  console.log(`   💾 Type: Base fichier (${dbPath})`);
-  console.log('   📁 Persistance: Données conservées sur disque');
+  console.log('📤 Test 6.2: Closing file DB');
+  console.log(`   💾 Type: File database (${dbPath})`);
+  console.log('   📁 Persistence: Data preserved on disk');
   fileDb.close();
-  console.log('   ✅ Base fichier fermée (données conservées)');
+  console.log('   ✅ File database closed (data preserved)');
 
-  console.log('📤 Test 6.3: Vérification intégrité');
-  console.log('   🔍 Vérification: Fichier existe et n\'est pas corrompu');
+  console.log('📤 Test 6.3: Integrity verification');
+  console.log('   🔍 Verification: File exists and is not corrupted');
   const fs = await import('fs');
   const fileExists = fs.existsSync(dbPath);
-  console.log(`   ✅ Fichier DB existe: ${fileExists ? 'Oui' : 'Non'}`);
+  console.log(`   ✅ DB file exists: ${fileExists ? 'Yes' : 'No'}`);
   if (fileExists) {
     const stats = fs.statSync(dbPath);
-    console.log(`   📊 Taille fichier: ${(stats.size / 1024).toFixed(1)} KB`);
-    console.log(`   📅 Dernière modification: ${stats.mtime.toLocaleString()}`);
+    console.log(`   📊 File size: ${(stats.size / 1024).toFixed(1)} KB`);
+    console.log(`   📅 Last modified: ${stats.mtime.toLocaleString()}`);
   }
   console.log('═'.repeat(80) + '\n');
 
-  // Fermer les bases
-  console.log('✅ === EXEMPLE DATABASE + REPOSITORY TERMINÉ ===');
-  console.log('🎯 Module démontré avec succès:');
-  console.log('   • initDb (bases mémoire et fichier)');
-  console.log('   • migrateSchema (schema SQLite intégré)');
+  // Close databases
+  console.log('✅ === DATABASE + REPOSITORY EXAMPLE COMPLETED ===');
+  console.log('🎯 Module successfully demonstrated:');
+  console.log('   • initDb (memory and file databases)');
+  console.log('   • migrateSchema (integrated SQLite schema)');
   console.log('   • createRepository (CRUD operations)');
   console.log('   • rooms.* (create, findById, findAll)');
   console.log('   • devices.* (create, findById, findByRoom)');
   console.log('   • readings.* (create, getLatestByDevice, findByDevice)');
-  console.log('   • Gestion duplicatas et erreurs');
-  console.log('   • Persistance fichier vs mémoire');
+  console.log('   • Duplicate and error handling');
+  console.log('   • File vs memory persistence');
   console.log('');
-  console.log('📊 STATISTIQUES:');
-  console.log('   • Rooms créées: 3 (salon, cuisine, bureau)');
-  console.log('   • Devices créés: 3+ (temp001, temp002, temp003)');
-  console.log('   • Readings stockées: 3+ (avec timestamps)');
-  console.log('   • Types DB testés: 2 (mémoire + fichier)');
+  console.log('📊 STATISTICS:');
+  console.log('   • Rooms created: 3 (salon, cuisine, bureau)');
+  console.log('   • Devices created: 3+ (temp001, temp002, temp003)');
+  console.log('   • Readings stored: 3+ (with timestamps)');
+  console.log('   • DB types tested: 2 (memory + file)');
   console.log('');
-  console.log(`📁 Données persistées dans: ${dbPath}`);
-  console.log('💡 Conseil: Relancez ce script pour voir la gestion des duplicatas\n');
+  console.log(`📁 Data persisted in: ${dbPath}`);
+  console.log('💡 Tip: Re-run this script to see duplicate handling\n');
 }
 
 // Usage help
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  console.log('🗄️  Exemple Database + Repository');
+  console.log('🗄️  Database + Repository Example');
   console.log('==================================');
   console.log('');
-  console.log('Ce script démontre:');
-  console.log('• 📊 initDb (bases mémoire et fichier)');
-  console.log('• � migrateSchema (schema SQLite automatique)');
+  console.log('This script demonstrates:');
+  console.log('• 📊 initDb (memory and file databases)');
+  console.log('• 🏗️  migrateSchema (automatic SQLite schema)');
   console.log('• 📦 createRepository (CRUD operations)');
   console.log('• 🏠 Room Repository (create, findAll, findById)');
   console.log('• 📱 Device Repository (create, findAll, findByRoom)');
@@ -388,9 +388,9 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log('');
   console.log('Usage: node src/db/examples/example-db.js');
   console.log('');
-  console.log('Fichiers utilisés:');
+  console.log('Files used:');
   console.log('• src/db/index.js');
-  console.log('• src/db/index.js (migrateSchema intégré)');
+  console.log('• src/db/index.js (migrateSchema integrated)');
   console.log('• src/repositories/index.js');
   process.exit(0);
 }

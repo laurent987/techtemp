@@ -2,13 +2,32 @@
 /**
  * @file Example Ingestion Pipeline
  * 
- * ✅ OBJECTIF: Démontrer le pipeline d'ingestion MQTT → Database
- * 📦 MODULES DÉMONTRÉS:
+ * ✅ OBJECTIVE: Demonstrate MQTT → Database ingestion pipeline
+ * 📦 DEMONSTRATED MODULES:
  *    - src/ingestion/parseTopic.js
  *    - src/ingestion/validateReading.js  
- *    - src/ingestion/ingestMessage.js
+ *    - src  console.log('🔄 5️⃣  TEST: Device Reuse');
+  console.log('┌─ OBJECTIVE: Demonstrate auto-creation vs device reuse');
+  console.log('│  First message: device created automatically');
+  console.log('│  Following messages: same device reused');
+  console.log('└─ Optimization: avoids device duplicates\n');
+
+  const deviceReuseMessage = {
+    topic: 'sensors/temp004/readings',
+    payload: {
+      temperature_c: 25.0,
+      humidity_pct: 60.0,
+      timestamp: '2025-09-08T10:35:00Z'
+    }
+  };
+
+  console.log(`📤 Base message for device temp004:`);
+  console.log(`   📍 Topic: "${deviceReuseMessage.topic}"`);
+  console.log(`   📋 Payload:`, JSON.stringify(deviceReuseMessage.payload, null, 2).replace(/\n/g, '\n       '));
+
+  // First sendsage.js
  * 
- * 🚫 PAS DÉMONTRÉ: Client MQTT réel, HTTP API
+ * 🚫 NOT DEMONSTRATED: Real MQTT Client, HTTP API
  */
 
 import { initDb } from '../../db/index.js';
@@ -22,36 +41,36 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 async function demonstrateIngestionPipeline() {
-  console.log('⚙️  === EXEMPLE INGESTION PIPELINE ===');
+  console.log('⚙️  === INGESTION PIPELINE EXAMPLE ===');
   console.log('🎯 Modules: parseTopic + validateReading + ingestMessage\n');
 
-  console.log('📖 APERÇU DES TESTS:');
-  console.log('1️⃣  parseTopic      → Validation format topic MQTT');
-  console.log('2️⃣  validateReading → Validation payload JSON');
-  console.log('3️⃣  ingestMessage   → Pipeline complet avec messages valides');
-  console.log('4️⃣  ingestMessage   → Gestion messages invalides');
-  console.log('5️⃣  Réutilisation   → Device auto-création vs réutilisation');
-  console.log('6️⃣  Déduplication   → Protection contre messages dupliqués');
-  console.log('7️⃣  Statistiques    → Bilan des opérations\n');
+  console.log('📖 TEST OVERVIEW:');
+  console.log('1️⃣  parseTopic      → MQTT topic format validation');
+  console.log('2️⃣  validateReading → JSON payload validation');
+  console.log('3️⃣  ingestMessage   → Complete pipeline with valid messages');
+  console.log('4️⃣  ingestMessage   → Invalid message handling');
+  console.log('5️⃣  Reuse           → Device auto-creation vs reuse');
+  console.log('6️⃣  Deduplication   → Protection against duplicate messages');
+  console.log('7️⃣  Statistics      → Operations summary\n');
 
   // Setup database (clean start)
   const dbPath = join(__dirname, '../../../examples/db-data-examples/example-ingestion.db');
 
-  // Supprimer l'ancienne base pour un test propre
+  // Delete old database for clean test
   try {
     unlinkSync(dbPath);
-    console.log('🧹 Ancienne base supprimée pour un test propre');
+    console.log('🧹 Old database deleted for clean test');
   } catch (error) {
-    // Fichier n'existe pas, c'est normal
+    // File doesn't exist, that's normal
   }
 
   const db = initDb(dbPath);
-  // Note: initDb() applique automatiquement le schéma
+  // Note: initDb() automatically applies schema
   const repository = createRepository(db);
-  console.log('📊 Database initialisée pour les tests');
+  console.log('📊 Database initialized for tests');
   console.log('═'.repeat(80) + '\n');
 
-  // Générateur de msg_id unique
+  // Unique msg_id generator
   let msgCounter = 0;
   const generateMsgId = () => `example-msg-${Date.now()}-${++msgCounter}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -59,33 +78,33 @@ async function demonstrateIngestionPipeline() {
   // 1️⃣  TEST MODULE: parseTopic 
   // ═══════════════════════════════════════════════════════════════════════════════
   console.log('📝 1️⃣  MODULE: parseTopic');
-  console.log('┌─ OBJECTIF: Valider le format des topics MQTT et extraire device_id');
-  console.log('│  Topics valides: "sensors/{deviceId}/readings"');
-  console.log('│  Topics invalides: tout autre format');
-  console.log('└─ Extraction: device_id depuis le topic MQTT\n');
+  console.log('┌─ OBJECTIVE: Validate MQTT topic format and extract device_id');
+  console.log('│  Valid topics: "sensors/{deviceId}/readings"');
+  console.log('│  Invalid topics: any other format');
+  console.log('└─ Extraction: device_id from MQTT topic\n');
 
-  // Test 1.1: Topic valide
-  console.log('📤 Test 1.1: Topic valide');
+  // Test 1.1: Valid topic
+  console.log('📤 Test 1.1: Valid topic');
   console.log(`   📍 Input: "sensors/temp001/readings"`);
   try {
     const validTopic = 'sensors/temp001/readings';
     const parsed = parseTopic(validTopic);
-    console.log(`   ✅ Parsing réussi`);
-    console.log(`   📋 Résultat: device_id="${parsed.deviceId}"`);
+    console.log(`   ✅ Parsing successful`);
+    console.log(`   📋 Result: device_id="${parsed.deviceId}"`);
   } catch (error) {
-    console.log(`   ❌ Erreur inattendue: ${error.message}`);
+    console.log(`   ❌ Unexpected error: ${error.message}`);
   }
 
-  // Test 1.2: Topic invalide
-  console.log(`\n📤 Test 1.2: Topic invalide`);
+  // Test 1.2: Invalid topic
+  console.log(`\n📤 Test 1.2: Invalid topic`);
   console.log(`   📍 Input: "invalid/topic"`);
   try {
     const invalidTopic = 'invalid/topic';
     parseTopic(invalidTopic);
-    console.log(`   ❌ Topic invalide accepté (ne devrait pas arriver)`);
+    console.log(`   ❌ Invalid topic accepted (should not happen)`);
   } catch (error) {
-    console.log(`   ✅ Topic invalide correctement rejeté`);
-    console.log(`   📋 Erreur: ${error.message}`);
+    console.log(`   ✅ Invalid topic correctly rejected`);
+    console.log(`   📋 Error: ${error.message}`);
   }
   console.log('═'.repeat(80) + '\n');
 
@@ -93,13 +112,13 @@ async function demonstrateIngestionPipeline() {
   // 2️⃣  TEST MODULE: validateReading
   // ═══════════════════════════════════════════════════════════════════════════════
   console.log('📋 2️⃣  MODULE: validateReading');
-  console.log('┌─ OBJECTIF: Valider et normaliser les données des capteurs');
-  console.log('│  Champs requis: temperature_c, humidity_pct, timestamp');
-  console.log('│  Validation: types, plages de valeurs, format timestamp');
-  console.log('└─ Normalisation: temperature_c → temperature, humidity_pct → humidity\n');
+  console.log('┌─ OBJECTIVE: Validate and normalize sensor data');
+  console.log('│  Required fields: temperature_c, humidity_pct, timestamp');
+  console.log('│  Validation: types, value ranges, timestamp format');
+  console.log('└─ Normalization: temperature_c → temperature, humidity_pct → humidity\n');
 
-  // Test 2.1: Payload valide
-  console.log('📤 Test 2.1: Payload valide');
+  // Test 2.1: Valid payload
+  console.log('📤 Test 2.1: Valid payload');
   const validPayload = {
     temperature_c: 23.5,
     humidity_pct: 65.2,
@@ -108,14 +127,14 @@ async function demonstrateIngestionPipeline() {
   console.log(`   📋 Input:`, JSON.stringify(validPayload, null, 2).replace(/\n/g, '\n           '));
   try {
     const validated = validateReading(validPayload);
-    console.log(`   ✅ Validation réussie`);
-    console.log(`   📋 Résultat: ${validated.temperature}°C, ${validated.humidity}%`);
+    console.log(`   ✅ Validation successful`);
+    console.log(`   📋 Result: ${validated.temperature}°C, ${validated.humidity}%`);
   } catch (error) {
-    console.log(`   ❌ Erreur inattendue: ${error.message}`);
+    console.log(`   ❌ Unexpected error: ${error.message}`);
   }
 
-  // Test 2.2: Payload invalide (type incorrect)
-  console.log(`\n📤 Test 2.2: Payload invalide (type incorrect)`);
+  // Test 2.2: Invalid payload (incorrect type)
+  console.log(`\n📤 Test 2.2: Invalid payload (incorrect type)`);
   const invalidPayload = {
     temperature_c: 'invalid',
     humidity_pct: 65.2,
@@ -124,21 +143,21 @@ async function demonstrateIngestionPipeline() {
   console.log(`   📋 Input:`, JSON.stringify(invalidPayload, null, 2).replace(/\n/g, '\n           '));
   try {
     validateReading(invalidPayload);
-    console.log(`   ❌ Payload invalide accepté (ne devrait pas arriver)`);
+    console.log(`   ❌ Invalid payload accepted (should not happen)`);
   } catch (error) {
-    console.log(`   ✅ Payload invalide correctement rejeté`);
-    console.log(`   📋 Erreur: ${error.message}`);
+    console.log(`   ✅ Invalid payload correctly rejected`);
+    console.log(`   📋 Error: ${error.message}`);
   }
   console.log('═'.repeat(80) + '\n');
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // 3️⃣  TEST MODULE: ingestMessage - Messages Valides
+  // 3️⃣  TEST MODULE: ingestMessage - Valid Messages
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('🔄 3️⃣  MODULE: ingestMessage - Messages Valides');
-  console.log('┌─ OBJECTIF: Pipeline complet MQTT → Database avec messages valides');
-  console.log('│  Étapes: parseTopic → validateReading → création device → stockage reading');
-  console.log('│  Auto-création: devices créés automatiquement s\'ils n\'existent pas');
-  console.log('└─ Stockage: readings enregistrées dans la base SQLite\n');
+  console.log('🔄 3️⃣  MODULE: ingestMessage - Valid Messages');
+  console.log('┌─ OBJECTIVE: Complete MQTT → Database pipeline with valid messages');
+  console.log('│  Steps: parseTopic → validateReading → device creation → reading storage');
+  console.log('│  Auto-creation: devices created automatically if they don\'t exist');
+  console.log('└─ Storage: readings saved in SQLite database\n');
 
   const validMessages = [
     {
@@ -173,52 +192,52 @@ async function demonstrateIngestionPipeline() {
       console.log(`   📍 Topic: "${message.topic}"`);
       console.log(`   📋 Payload:`, JSON.stringify(message.payload, null, 2).replace(/\n/g, '\n       '));
 
-      // Générer un msg_id unique pour chaque message
+      // Generate unique msg_id for each message
       const msgHeaders = { msg_id: generateMsgId() };
       console.log(`   🔑 Headers: msg_id="${msgHeaders.msg_id}"`);
 
       const result = await ingestMessage(message.topic, message.payload, msgHeaders, repository);
 
       if (result.success) {
-        console.log(`   ✅ Pipeline réussi: ${result.deviceId} → ${message.payload.temperature_c}°C`);
+        console.log(`   ✅ Pipeline successful: ${result.deviceId} → ${message.payload.temperature_c}°C`);
         if (result.deviceCreated) {
-          console.log(`     🆕 Nouveau device créé automatiquement`);
+          console.log(`     🆕 New device created automatically`);
         } else {
-          console.log(`     ♻️  Device existant réutilisé`);
+          console.log(`     ♻️  Existing device reused`);
         }
       } else {
-        console.log(`   ❌ Pipeline échoué: ${result.error}`);
+        console.log(`   ❌ Pipeline failed: ${result.error}`);
       }
       console.log('   ' + '─'.repeat(60));
     } catch (error) {
-      console.log(`   ❌ Erreur pipeline: ${error.message}`);
+      console.log(`   ❌ Pipeline error: ${error.message}`);
       console.log('   ' + '─'.repeat(60));
     }
   }
   console.log('═'.repeat(80) + '\n');  // ═══════════════════════════════════════════════════════════════════════════════
-  // 4️⃣  TEST MODULE: ingestMessage - Messages Invalides
+  // 4️⃣  TEST MODULE: ingestMessage - Invalid Messages
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('❌ 4️⃣  MODULE: ingestMessage - Messages Invalides');
-  console.log('┌─ OBJECTIF: Validation robuste avec rejet des messages malformés');
-  console.log('│  Topics invalides: format incorrect');
-  console.log('│  Payloads invalides: types incorrects, valeurs hors limites');
-  console.log('└─ Gestion erreurs: messages rejetés proprement sans crash\n');
+  console.log('❌ 4️⃣  MODULE: ingestMessage - Invalid Messages');
+  console.log('┌─ OBJECTIVE: Robust validation with malformed message rejection');
+  console.log('│  Invalid topics: incorrect format');
+  console.log('│  Invalid payloads: incorrect types, out-of-range values');
+  console.log('└─ Error handling: messages rejected cleanly without crash\n');
 
   const invalidMessages = [
     {
       topic: 'invalid/topic/format',
       payload: { temperature_c: 23.5, humidity_pct: 65.2, timestamp: '2025-09-08T10:30:00Z' },
-      expectError: 'Topic invalide'
+      expectError: 'Invalid topic'
     },
     {
       topic: 'sensors/temp003/readings',
       payload: { temperature_c: 'invalid', humidity_pct: 65.2, timestamp: '2025-09-08T10:30:00Z' },
-      expectError: 'Payload invalide'
+      expectError: 'Invalid payload'
     },
     {
       topic: 'sensors/temp003/readings',
       payload: { temperature_c: 23.5, humidity_pct: 150, timestamp: '2025-09-08T10:30:00Z' },
-      expectError: 'Humidité hors limites'
+      expectError: 'Humidity out of range'
     }
   ];
 
@@ -227,27 +246,27 @@ async function demonstrateIngestionPipeline() {
       console.log(`📤 Test ${index + 1}/${invalidMessages.length} - ${message.expectError}:`);
       console.log(`   📍 Topic: "${message.topic}"`);
       console.log(`   📋 Payload:`, JSON.stringify(message.payload, null, 2).replace(/\n/g, '\n       '));
-      console.log(`   🎯 Erreur attendue: ${message.expectError}`);
+      console.log(`   🎯 Expected error: ${message.expectError}`);
 
-      // Générer un msg_id unique
+      // Generate unique msg_id
       const msgHeaders = { msg_id: generateMsgId() };
       const result = await ingestMessage(message.topic, message.payload, msgHeaders, repository);
-      console.log(`   ❌ Message invalide accepté (ne devrait pas arriver)`);
+      console.log(`   ❌ Invalid message accepted (should not happen)`);
     } catch (error) {
-      console.log(`   ✅ Message correctement rejeté`);
-      console.log(`   📋 Erreur: ${error.message}`);
+      console.log(`   ✅ Message correctly rejected`);
+      console.log(`   📋 Error: ${error.message}`);
     }
     console.log('   ' + '─'.repeat(60));
   }
   // ═══════════════════════════════════════════════════════════════════════════════
   console.log('═'.repeat(80) + '\n');
-  // 5️⃣  TEST: Réutilisation de Device
+  // 5️⃣  TEST: Device Reuse
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('🔄 5️⃣  TEST: Réutilisation de Device');
-  console.log('┌─ OBJECTIF: Démontrer l\'auto-création vs réutilisation des devices');
-  console.log('│  Premier message: device créé automatiquement');
-  console.log('│  Messages suivants: même device réutilisé');
-  console.log('└─ Optimisation: évite les duplicatas de devices\n');
+  console.log('🔄 5️⃣  TEST: Device Reuse');
+  console.log('┌─ OBJECTIVE: Demonstrate auto-creation vs device reuse');
+  console.log('│  First message: device automatically created');
+  console.log('│  Subsequent messages: same device reused');
+  console.log('└─ Optimization: avoids device duplicates\n');
 
   const deviceReuseMessage = {
     topic: 'sensors/temp004/readings',
@@ -262,34 +281,34 @@ async function demonstrateIngestionPipeline() {
   console.log(`   📍 Topic: "${deviceReuseMessage.topic}"`);
   console.log(`   📋 Payload:`, JSON.stringify(deviceReuseMessage.payload, null, 2).replace(/\n/g, '\n       '));
 
-  // Premier envoi
+  // First send
   const msgHeaders1 = { msg_id: generateMsgId() };
-  console.log(`\n📤 Premier envoi (création device):`);
+  console.log(`\n📤 First send (device creation):`);
   console.log(`   🔑 msg_id: "${msgHeaders1.msg_id}"`);
   const result1 = await ingestMessage(deviceReuseMessage.topic, deviceReuseMessage.payload, msgHeaders1, repository);
-  console.log(`   ✅ Résultat: device créé = ${result1.deviceCreated}`);
+  console.log(`   ✅ Result: device created = ${result1.deviceCreated}`);
 
-  // Message différent même device
+  // Different message same device
   const secondPayload = {
     ...deviceReuseMessage.payload,
-    timestamp: '2025-09-08T10:36:00Z' // Timestamp différent
+    timestamp: '2025-09-08T10:36:00Z' // Different timestamp
   };
   const msgHeaders2 = { msg_id: generateMsgId() };
-  console.log(`\n📤 Deuxième envoi (réutilisation device):`);
+  console.log(`\n📤 Second send (device reuse):`);
   console.log(`   🔑 msg_id: "${msgHeaders2.msg_id}"`);
-  console.log(`   📋 Payload modifié:`, JSON.stringify(secondPayload, null, 2).replace(/\n/g, '\n       '));
+  console.log(`   📋 Modified payload:`, JSON.stringify(secondPayload, null, 2).replace(/\n/g, '\n       '));
   const result2 = await ingestMessage(deviceReuseMessage.topic, secondPayload, msgHeaders2, repository);
-  console.log(`   ✅ Résultat: device créé = ${result2.deviceCreated} (device réutilisé)`);
+  console.log(`   ✅ Result: device created = ${result2.deviceCreated} (device reused)`);
   console.log('═'.repeat(80) + '\n');
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // 6️⃣  TEST: Déduplication de Messages
+  // 6️⃣  TEST: Message Deduplication
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('🔁 6️⃣  TEST: Déduplication de Messages');
-  console.log('┌─ OBJECTIF: Protection contre les messages dupliqués');
-  console.log('│  Protection par msg_id: même ID → rejet automatique');
-  console.log('│  Protection par contenu: même payload → détection duplication');
-  console.log('└─ Robustesse: évite les doublons dans la base de données\n');
+  console.log('🔁 6️⃣  TEST: Message Deduplication');
+  console.log('┌─ OBJECTIVE: Protection against duplicate messages');
+  console.log('│  Protection by msg_id: same ID → automatic rejection');
+  console.log('│  Protection by content: same payload → duplication detection');
+  console.log('└─ Robustness: avoids duplicates in database\n');
 
   const duplicateTestMessage = {
     topic: 'sensors/temp005/readings',
@@ -300,100 +319,100 @@ async function demonstrateIngestionPipeline() {
     }
   };
 
-  console.log(`📤 Message test pour déduplication:`);
+  console.log(`📤 Test message for deduplication:`);
   console.log(`   📍 Topic: "${duplicateTestMessage.topic}"`);
   console.log(`   📋 Payload:`, JSON.stringify(duplicateTestMessage.payload, null, 2).replace(/\n/g, '\n       '));
 
-  // Premier envoi - message original
+  // First send - original message
   const originalMsgId2 = generateMsgId();
   const originalHeaders2 = { msg_id: originalMsgId2 };
-  console.log(`\n📤 Étape 1 - Message original:`);
+  console.log(`\n📤 Step 1 - Original message:`);
   console.log(`   🔑 msg_id: "${originalMsgId2}"`);
 
   try {
     const originalResult = await ingestMessage(duplicateTestMessage.topic, duplicateTestMessage.payload, originalHeaders2, repository);
-    console.log(`   ✅ Message original accepté → device créé = ${originalResult.deviceCreated}`);
+    console.log(`   ✅ Original message accepted → device created = ${originalResult.deviceCreated}`);
   } catch (error) {
-    console.log(`   ❌ Message original erreur: ${error.message}`);
+    console.log(`   ❌ Original message error: ${error.message}`);
   }
 
-  // Deuxième envoi - MÊME message (même msg_id, même payload, même timestamp)
-  console.log(`\n📤 Étape 2 - Message dupliqué (même msg_id):`);
-  console.log(`   🔑 msg_id: "${originalMsgId2}" (IDENTIQUE)`);
-  console.log(`   🎯 Test: déduplication par ID`);
+  // Second send - SAME message (same msg_id, same payload, same timestamp)
+  console.log(`\n📤 Step 2 - Duplicate message (same msg_id):`);
+  console.log(`   🔑 msg_id: "${originalMsgId2}" (IDENTICAL)`);
+  console.log(`   🎯 Test: deduplication by ID`);
   try {
     const duplicateResult = await ingestMessage(duplicateTestMessage.topic, duplicateTestMessage.payload, originalHeaders2, repository);
-    console.log(`   ❌ Message dupliqué accepté (ne devrait pas arriver)`);
+    console.log(`   ❌ Duplicate message accepted (should not happen)`);
   } catch (error) {
-    console.log(`   ✅ Message dupliqué correctement rejeté`);
-    console.log(`   📋 Erreur: ${error.message}`);
+    console.log(`   ✅ Duplicate message correctly rejected`);
+    console.log(`   📋 Error: ${error.message}`);
   }
 
-  // Troisième envoi - même payload et timestamp mais msg_id différent (simule retransmission MQTT)
+  // Third send - same payload and timestamp but different msg_id (simulates MQTT retransmission)
   const retransmissionHeaders2 = { msg_id: generateMsgId() };
-  console.log(`\n📤 Étape 3 - Retransmission (msg_id différent):`);
-  console.log(`   🔑 msg_id: "${retransmissionHeaders2.msg_id}" (DIFFÉRENT)`);
-  console.log(`   🎯 Test: déduplication par contenu`);
+  console.log(`\n📤 Step 3 - Retransmission (different msg_id):`);
+  console.log(`   🔑 msg_id: "${retransmissionHeaders2.msg_id}" (DIFFERENT)`);
+  console.log(`   🎯 Test: deduplication by content`);
   try {
     const retransmissionResult = await ingestMessage(duplicateTestMessage.topic, duplicateTestMessage.payload, retransmissionHeaders2, repository);
-    console.log(`   ❌ Retransmission acceptée (ne devrait pas arriver)`);
+    console.log(`   ❌ Retransmission accepted (should not happen)`);
   } catch (error) {
-    console.log(`   ✅ Retransmission correctement rejetée`);
-    console.log(`   📋 Erreur: ${error.message}`);
+    console.log(`   ✅ Retransmission correctly rejected`);
+    console.log(`   📋 Error: ${error.message}`);
   }
   console.log('═'.repeat(80) + '\n');
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // 7️⃣  TEST: Statistiques du Pipeline
+  // 7️⃣  TEST: Pipeline Statistics
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('📊 7️⃣  TEST: Statistiques du Pipeline');
-  console.log('┌─ OBJECTIF: Bilan des opérations effectuées dans la base de données');
-  console.log('│  Compteurs: devices créés, readings ingérées');
-  console.log('│  Détails: liste des devices avec leurs métadonnées');
-  console.log('└─ Validation: vérifier la cohérence des données persistées\n');
+  console.log('📊 7️⃣  TEST: Pipeline Statistics');
+  console.log('┌─ OBJECTIVE: Summary of operations performed in the database');
+  console.log('│  Counters: devices created, readings ingested');
+  console.log('│  Details: list of devices with their metadata');
+  console.log('└─ Validation: verify the consistency of persisted data\n');
 
   const deviceCount = db.prepare('SELECT COUNT(*) as count FROM devices').get();
   const readingCount = db.prepare('SELECT COUNT(*) as count FROM readings_raw').get();
 
-  console.log(`📤 Test 7.1: Compteurs globaux`);
-  console.log(`   📋 Devices créés: ${deviceCount.count}`);
-  console.log(`   📋 Readings ingérées: ${readingCount.count}`);
+  console.log(`📤 Test 7.1: Global counters`);
+  console.log(`   📋 Devices created: ${deviceCount.count}`);
+  console.log(`   📋 Readings ingested: ${readingCount.count}`);
 
-  // Liste des devices créés
+  // List of created devices
   const devices = db.prepare('SELECT device_id, label, last_seen_at FROM devices ORDER BY device_id').all();
-  console.log(`\n📤 Test 7.2: Détail des devices`);
-  console.log(`   📋 Liste complète:`);
+  console.log(`\n📤 Test 7.2: Device details`);
+  console.log(`   📋 Complete list:`);
   devices.forEach(device => {
     console.log(`       • ${device.device_id}: ${device.label || 'Auto-discovered sensor'}`);
   });
-  console.log(`   ✅ Données cohérentes: ${devices.length} devices listés = ${deviceCount.count} devices comptés`);
+  console.log(`   ✅ Consistent data: ${devices.length} devices listed = ${deviceCount.count} devices counted`);
 
   db.close();
 
-  console.log('\n✅ === EXEMPLE INGESTION PIPELINE TERMINÉ ===');
-  console.log('🎯 Modules démontrés avec succès:');
-  console.log('   • parseTopic (validation format topic MQTT)');
-  console.log('   • validateReading (validation payload JSON)');
-  console.log('   • ingestMessage (pipeline complet vers DB)');
-  console.log(`📁 Données persistées dans: ${dbPath}\n`);
+  console.log('\n✅ === INGESTION PIPELINE EXAMPLE COMPLETED ===');
+  console.log('🎯 Modules successfully demonstrated:');
+  console.log('   • parseTopic (MQTT topic format validation)');
+  console.log('   • validateReading (JSON payload validation)');
+  console.log('   • ingestMessage (complete pipeline to DB)');
+  console.log(`📁 Data persisted in: ${dbPath}\n`);
 }
 
 // Usage help
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  console.log('⚙️  Exemple Ingestion Pipeline');
+  console.log('⚙️  Ingestion Pipeline Example');
   console.log('=============================');
   console.log('');
-  console.log('Ce script démontre:');
-  console.log('• 📝 parseTopic (format topic MQTT)');
-  console.log('• 📋 validateReading (validation payload)');
-  console.log('• 🔄 ingestMessage (pipeline complet)');
-  console.log('• 🔄 Device auto-création et réutilisation');
-  console.log('• 🔁 Déduplication de messages identiques');
-  console.log('• ❌ Gestion des erreurs et validation');
+  console.log('This script demonstrates:');
+  console.log('• 📝 parseTopic (MQTT topic format)');
+  console.log('• 📋 validateReading (payload validation)');
+  console.log('• 🔄 ingestMessage (complete pipeline)');
+  console.log('• 🔄 Device auto-creation and reuse');
+  console.log('• 🔁 Deduplication of identical messages');
+  console.log('• ❌ Error handling and validation');
   console.log('');
   console.log('Usage: node src/ingestion/examples/example-ingestion.js');
   console.log('');
-  console.log('Fichiers utilisés:');
+  console.log('Files used:');
   console.log('• src/ingestion/parseTopic.js');
   console.log('• src/ingestion/validateReading.js');
   console.log('• src/ingestion/ingestMessage.js');

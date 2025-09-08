@@ -2,31 +2,31 @@
 /**
  * @file MQTT Subscriber Example
  * 
- * ✅ OBJECTIF: Démontrer l'écoute de messages MQTT avec patterns et wildcards
- * 📦 MODULES DÉMONTRÉS:
+ * ✅ OBJECTIVE: Demonstrate MQTT message listening with patterns and wildcards
+ * 📦 DEMONSTRATED MODULES:
  *    - src/mqtt/client.js (createMqttClient, subscribe, onMessage)
  * 
- * 🚫 PAS DÉMONTRÉ: Publisher MQTT (voir publisher.js)
+ * 🚫 NOT DEMONSTRATED: MQTT Publisher (see publisher.js)
  * 
  * Usage: 
- *   node subscriber.js                    # Topic par défaut avec wildcard
- *   node subscriber.js [broker] [topic]  # Broker et topic personnalisés
+ *   node subscriber.js                    # Default topic with wildcard
+ *   node subscriber.js [broker] [topic]  # Custom broker and topic
  */
 
 import { createMqttClient } from '../client.js';
 
 const BROKER_URL = process.argv[2] || 'mqtt://test.mosquitto.org:1883';
-const TOPIC = process.argv[3] || 'sensors/+/readings'; // Wildcard pattern par défaut
+const TOPIC = process.argv[3] || 'sensors/+/readings'; // Default wildcard pattern
 
 async function demonstrateMqttSubscriber() {
-  console.log('📥 === EXEMPLE MQTT SUBSCRIBER ===');
+  console.log('📥 === MQTT SUBSCRIBER EXAMPLE ===');
   console.log('🎯 Module: createMqttClient + subscribe + onMessage\n');
 
-  console.log('� APERÇU DES TESTS:');
-  console.log('1️⃣  Connexion     → Établir connexion au broker MQTT');
-  console.log('2️⃣  Abonnement    → S\'abonner aux topics avec patterns');
-  console.log('3️⃣  Écoute        → Recevoir et analyser les messages en temps réel');
-  console.log('4️⃣  Déconnexion   → Gestion propre de l\'arrêt (Ctrl+C)\n');
+  console.log('📖 TEST OVERVIEW:');
+  console.log('1️⃣  Connection     → Establish connection to MQTT broker');
+  console.log('2️⃣  Subscription   → Subscribe to topics with patterns');
+  console.log('3️⃣  Listening      → Receive and analyze messages in real time');
+  console.log('4️⃣  Disconnection  → Clean shutdown handling (Ctrl+C)\n');
 
   console.log('⚙️  CONFIGURATION:');
   console.log(`   📡 Broker: ${BROKER_URL}`);
@@ -36,15 +36,15 @@ async function demonstrateMqttSubscriber() {
 
   try {
     // ═══════════════════════════════════════════════════════════════════════════════
-    // 1️⃣  TEST: Connexion au broker MQTT
+    // 1️⃣  TEST: MQTT broker connection
     // ═══════════════════════════════════════════════════════════════════════════════
-    console.log('🔗 1️⃣  TEST: Connexion au broker MQTT');
-    console.log('┌─ OBJECTIF: Établir connexion subscriber au broker');
-    console.log('│  Configuration: client ID unique, mode subscriber');
-    console.log('│  Validation: connexion réussie, prêt pour abonnement');
-    console.log('└─ Préparation: handler de messages configuré\n');
+    console.log('🔗 1️⃣  TEST: MQTT broker connection');
+    console.log('┌─ OBJECTIVE: Establish subscriber connection to broker');
+    console.log('│  Configuration: unique client ID, subscriber mode');
+    console.log('│  Validation: successful connection, ready for subscription');
+    console.log('└─ Preparation: message handler configured\n');
 
-    console.log('📤 Test 1.1: Création du client subscriber');
+    console.log('📤 Test 1.1: Subscriber client creation');
     console.log(`   📋 Broker: "${BROKER_URL}"`);
     console.log(`   🆔 Client ID: "subscriber_${Date.now()}"`);
 
@@ -53,36 +53,36 @@ async function demonstrateMqttSubscriber() {
       clientId: `subscriber_${Date.now()}`
     });
 
-    console.log('   ✅ Client subscriber créé avec succès');
-    console.log('   ✅ Connexion au broker établie');
+    console.log('   ✅ Subscriber client created successfully');
+    console.log('   ✅ Broker connection established');
     console.log('═'.repeat(80) + '\n');
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // 2️⃣  TEST: Abonnement aux topics MQTT
+    // 2️⃣  TEST: MQTT topic subscription
     // ═══════════════════════════════════════════════════════════════════════════════
-    console.log('📋 2️⃣  TEST: Abonnement aux topics MQTT');
-    console.log('┌─ OBJECTIF: S\'abonner aux topics avec patterns et wildcards');
-    console.log('│  Patterns: + (un niveau), # (multi-niveaux), topics exacts');
-    console.log('│  QoS: niveau de garantie de réception des messages');
-    console.log('└─ Validation: abonnements multiples confirmés par le broker\n');
+    console.log('📋 2️⃣  TEST: MQTT topic subscription');
+    console.log('┌─ OBJECTIVE: Subscribe to topics with patterns and wildcards');
+    console.log('│  Patterns: + (single level), # (multi-level), exact topics');
+    console.log('│  QoS: message reception guarantee level');
+    console.log('└─ Validation: multiple subscriptions confirmed by broker\n');
 
-    // Abonnements multiples pour capturer tous les types de messages
+    // Multiple subscriptions to capture all message types
     const subscriptions = [
-      { pattern: 'sensors/+/readings', description: 'Données capteurs' },
-      { pattern: 'system/+', description: 'Messages système' },
-      { pattern: 'alerts/+', description: 'Alertes et notifications' }
+      { pattern: 'sensors/+/readings', description: 'Sensor data' },
+      { pattern: 'system/+', description: 'System messages' },
+      { pattern: 'alerts/+', description: 'Alerts and notifications' }
     ];
 
     for (const [index, sub] of subscriptions.entries()) {
-      console.log(`📤 Test 2.${index + 1}: Abonnement ${sub.description}`);
+      console.log(`📤 Test 2.${index + 1}: Subscription ${sub.description}`);
       console.log(`   📍 Pattern: "${sub.pattern}"`);
-      console.log(`   ⚙️  QoS: 1 (au moins une fois)`);
+      console.log(`   ⚙️  QoS: 1 (at least once)`);
 
       try {
         await subscribe(sub.pattern, 1);
-        console.log(`   ✅ Abonnement confirmé pour ${sub.description}`);
+        console.log(`   ✅ Subscription confirmed for ${sub.description}`);
       } catch (error) {
-        console.log(`   ❌ Erreur abonnement: ${error.message}`);
+        console.log(`   ❌ Subscription error: ${error.message}`);
       }
 
       if (index < subscriptions.length - 1) {
@@ -90,31 +90,31 @@ async function demonstrateMqttSubscriber() {
       }
     }
 
-    console.log('\n📚 Patterns actifs:');
-    console.log('   • sensors/+/readings → Capture: sensors/temp001/readings, sensors/temp002/readings');
-    console.log('   • system/+ → Capture: system/status, system/health');
-    console.log('   • alerts/+ → Capture: alerts/critical, alerts/warning');
-    console.log('   ✅ Abonnement confirmé par le broker');
+    console.log('\n📚 Active patterns:');
+    console.log('   • sensors/+/readings → Captures: sensors/temp001/readings, sensors/temp002/readings');
+    console.log('   • system/+ → Captures: system/status, system/health');
+    console.log('   • alerts/+ → Captures: alerts/critical, alerts/warning');
+    console.log('   ✅ Subscription confirmed by broker');
     console.log('═'.repeat(80) + '\n');
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // 3️⃣  TEST: Écoute et analyse des messages en temps réel
+    // 3️⃣  TEST: Real-time message listening
     // ═══════════════════════════════════════════════════════════════════════════════
-    console.log('👂 3️⃣  TEST: Écoute des messages en temps réel');
-    console.log('┌─ OBJECTIF: Recevoir et analyser tous les messages correspondants');
-    console.log('│  Affichage: topic, payload, métadonnées (QoS, retain, timestamp)');
-    console.log('│  Parsing: détection automatique JSON vs texte');
-    console.log('└─ Compteurs: statistiques de réception en temps réel\n');
+    console.log('👂 3️⃣  TEST: Real-time message listening');
+    console.log('┌─ OBJECTIVE: Receive and analyze all matching messages');
+    console.log('│  Display: topic, payload, metadata (QoS, retain, timestamp)');
+    console.log('│  Parsing: automatic JSON vs text detection');
+    console.log('└─ Counters: real-time reception statistics\n');
 
     let messageCount = 0;
     let jsonMessages = 0;
     let textMessages = 0;
 
-    console.log('🔄 En attente de messages... (Ctrl+C pour arrêter)');
-    console.log('📊 Utilisez publisher.js dans un autre terminal pour envoyer des messages');
+    console.log('🔄 Waiting for messages... (Ctrl+C to stop)');
+    console.log('📊 Use publisher.js in another terminal to send messages');
     console.log('');
 
-    // Handler de messages avec analyse détaillée
+    // Message handler with detailed analysis
     const unsubscribe = onMessage((topic, payload, packet) => {
       messageCount++;
       const timestamp = new Date().toLocaleTimeString();
@@ -122,7 +122,7 @@ async function demonstrateMqttSubscriber() {
       console.log(`📨 [${timestamp}] Message #${messageCount}:`);
       console.log(`   📍 Topic: "${topic}"`);
 
-      // Analyser le payload
+      // Analyze payload
       const payloadStr = payload.toString();
       let isJson = false;
       let parsedPayload = null;
@@ -135,93 +135,93 @@ async function demonstrateMqttSubscriber() {
         console.log(`   📄 Payload:`, JSON.stringify(parsedPayload, null, 2).replace(/\n/g, '\n           '));
       } catch (e) {
         textMessages++;
-        console.log(`   📋 Type: Texte`);
+        console.log(`   📋 Type: Text`);
         console.log(`   📄 Payload: "${payloadStr}"`);
       }
 
-      console.log(`   ⚙️  Métadonnées:`);
+      console.log(`   ⚙️  Metadata:`);
       console.log(`       QoS: ${packet.qos}`);
-      console.log(`       Retain: ${packet.retain ? 'Oui' : 'Non'}`);
-      console.log(`       Taille: ${payload.length} octets`);
+      console.log(`       Retain: ${packet.retain ? 'Yes' : 'No'}`);
+      console.log(`       Size: ${payload.length} bytes`);
 
-      console.log(`   📊 Statistiques:`);
+      console.log(`   📊 Statistics:`);
       console.log(`       Total: ${messageCount} messages`);
-      console.log(`       JSON: ${jsonMessages} | Texte: ${textMessages}`);
+      console.log(`       JSON: ${jsonMessages} | Text: ${textMessages}`);
       console.log('   ' + '─'.repeat(60) + '\n');
     });
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // 4️⃣  TEST: Gestion propre de l'arrêt (Ctrl+C)
+    // 4️⃣  TEST: Clean shutdown handling (Ctrl+C)
     // ═══════════════════════════════════════════════════════════════════════════════
     process.on('SIGINT', async () => {
       console.log('\n' + '═'.repeat(80));
-      console.log('🛑 4️⃣  TEST: Arrêt propre du subscriber');
-      console.log('┌─ OBJECTIF: Fermer la connexion MQTT proprement');
-      console.log('│  Désabonnement: arrêter la réception de messages');
-      console.log('│  Déconnexion: envoi disconnect message au broker');
-      console.log('└─ Statistiques: bilan de la session d\'écoute\n');
+      console.log('🛑 4️⃣  TEST: Clean subscriber shutdown');
+      console.log('┌─ OBJECTIVE: Close MQTT connection cleanly');
+      console.log('│  Unsubscription: stop message reception');
+      console.log('│  Disconnection: send disconnect message to broker');
+      console.log('└─ Statistics: listening session summary\n');
 
-      console.log('� Test 4.1: Désabonnement et déconnexion');
-      console.log(`   📊 Messages reçus: ${messageCount}`);
-      console.log(`   📋 Messages JSON: ${jsonMessages}`);
-      console.log(`   📄 Messages texte: ${textMessages}`);
-      console.log(`   ⏱️  Durée de la session: ${Math.round((Date.now() - startTime) / 1000)}s`);
+      console.log('📤 Test 4.1: Unsubscription and disconnection');
+      console.log(`   📊 Messages received: ${messageCount}`);
+      console.log(`   📋 JSON messages: ${jsonMessages}`);
+      console.log(`   📄 Text messages: ${textMessages}`);
+      console.log(`   ⏱️  Session duration: ${Math.round((Date.now() - startTime) / 1000)}s`);
 
       unsubscribe();
-      console.log('   ✅ Désabonnement effectué');
+      console.log('   ✅ Unsubscription completed');
 
       await close();
-      console.log('   ✅ Connexion fermée proprement');
+      console.log('   ✅ Connection closed cleanly');
 
-      console.log('\n✅ === EXEMPLE MQTT SUBSCRIBER TERMINÉ ===');
-      console.log('🎯 Module démontré avec succès:');
-      console.log('   • createMqttClient (connexion au broker)');
-      console.log('   • subscribe (abonnement avec patterns/wildcards)');
-      console.log('   • onMessage (réception et analyse de messages)');
-      console.log('   • close (déconnexion propre)');
-      console.log('📁 Messages reçus depuis:', BROKER_URL);
+      console.log('\n✅ === MQTT SUBSCRIBER EXAMPLE COMPLETED ===');
+      console.log('🎯 Module demonstrated successfully:');
+      console.log('   • createMqttClient (broker connection)');
+      console.log('   • subscribe (subscription with patterns/wildcards)');
+      console.log('   • onMessage (message reception and analysis)');
+      console.log('   • close (clean disconnection)');
+      console.log('📁 Messages received from:', BROKER_URL);
 
       process.exit(0);
     });
 
     const startTime = Date.now();
 
-    // Le processus reste en vie grâce à la connexion MQTT active
+    // Process stays alive thanks to active MQTT connection
 
   } catch (error) {
     console.error('\n💥 Subscriber failed:', error);
-    console.error('📋 Erreur détaillée:', error.message);
-    console.error('🔧 Vérifiez que le broker MQTT est accessible');
+    console.error('📋 Detailed error:', error.message);
+    console.error('🔧 Check that the MQTT broker is accessible');
     process.exit(1);
   }
 }
 
 // Usage help
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  console.log('📥 Exemple MQTT Subscriber');
+  console.log('📥 MQTT Subscriber Example');
   console.log('==========================');
   console.log('');
-  console.log('Ce script démontre:');
-  console.log('• 🔗 Connexion au broker MQTT');
-  console.log('• 📋 Abonnement avec patterns/wildcards');
-  console.log('• 👂 Écoute en temps réel de messages');
-  console.log('• 📊 Analyse et statistiques des messages');
-  console.log('• 🛑 Arrêt propre avec Ctrl+C');
+  console.log('This script demonstrates:');
+  console.log('• 🔗 Connection to MQTT broker');
+  console.log('• 📋 Subscription with patterns/wildcards');
+  console.log('• 👂 Real-time message listening');
+  console.log('• 📊 Message analysis and statistics');
+  console.log('• 🛑 Clean shutdown with Ctrl+C');
   console.log('');
   console.log('Usage:');
-  console.log('  node subscriber.js                    # Topic par défaut');
-  console.log('  node subscriber.js [broker] [topic]  # Broker et topic personnalisés');
+  console.log('  node subscriber.js                    # Default topic');
+  console.log('  node subscriber.js [broker] [topic]  # Custom broker and topic');
   console.log('');
-  console.log('Patterns MQTT:');
-  console.log('  sensors/+/readings    # Un seul niveau: temp001, temp002, etc.');
-  console.log('  sensors/#             # Tous niveaux: temp001/readings, alerts, etc.');
-  console.log('  sensors/temp001/+     # Tous sous-topics de temp001');
+  console.log('MQTT Patterns:');
+  console.log('  sensors/+/readings    # Single level: temp001, temp002, etc.');
+  console.log('  sensors/#             # All levels: temp001/readings, alerts, etc.');
+  console.log('  sensors/temp001/+     # All sub-topics of temp001');
   console.log('');
-  console.log('Exemples:');
+  console.log('Examples:');
   console.log('  node subscriber.js');
   console.log('  node subscriber.js mqtt://test.mosquitto.org "sensors/#"');
   console.log('');
-  console.log('Fichiers utilisés:');
+  console.log('Files used:');
   console.log('• src/mqtt/client.js');
   process.exit(0);
 }

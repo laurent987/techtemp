@@ -35,7 +35,7 @@ async function demonstrateMqttCleaner() {
 
   try {
     // ═══════════════════════════════════════════════════════════════════════════════
-    // 1️⃣  TEST: MQTT broker connection
+    // 1️⃣  TEST: Connexion au broker MQTT
     // ═══════════════════════════════════════════════════════════════════════════════
     console.log('🔗 1️⃣  TEST: MQTT broker connection');
     console.log('┌─ OBJECTIVE: Establish cleaner connection to broker');
@@ -66,7 +66,7 @@ async function demonstrateMqttCleaner() {
     console.log('│  Targets: Topics used by publisher/subscriber examples');
     console.log('└─ Result: Topics cleaned, no more retained messages\n');
 
-    // Topics commonly used by examples
+    // Topics couramment utilisés par les exemples
     const topicsToClean = [
       'sensors/temp001/readings',
       'sensors/temp002/readings',
@@ -104,67 +104,80 @@ async function demonstrateMqttCleaner() {
       } catch (error) {
         console.log(`   ❌ Cleanup error: ${error.message}`);
         errorCount++;
+      } "${topic}"`);
+      console.log(`   📍 Topic: "${topic}"`);
+      console.log(`   � Payload: ""(vide)`);
+      console.log(`   ⚙️  Options: retain = true, QoS = 0`);
+
+      try {
+        // Publier payload vide avec retain=true pour supprimer le message retained
+        await publish(topic, '', { retain: true, qos: 0 });
+        console.log('   ✅ Message retained supprimé');
+        cleanedCount++;
+      } catch (error) {
+        console.log(`   ❌ Erreur de nettoyage: ${ error.message } `);
+        errorCount++;
       }
 
-      // Small delay between cleanups
+      // Petit délai entre les nettoyages
       if (i < topicsToClean.length - 1) {
         await new Promise(r => setTimeout(r, 100));
       }
     }
 
-    console.log('\n' + '═'.repeat(80) + '\n');
+    console.log('\n═'.repeat(80) + '\n');
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // 3️⃣  TEST: Cleanup statistics and verification
+    // 3️⃣  TEST: Statistiques et vérification
     // ═══════════════════════════════════════════════════════════════════════════════
-    console.log('📊 3️⃣  TEST: Cleanup statistics');
-    console.log('┌─ OBJECTIVE: Verify cleanup results');
-    console.log('│  Counters: topics cleaned vs errors');
-    console.log('│  Validation: operation successful if no errors');
-    console.log('└─ Recommendations: follow-up actions if needed\n');
+    console.log('📊 3️⃣  TEST: Statistiques de nettoyage');
+    console.log('┌─ OBJECTIF: Vérifier les résultats du nettoyage');
+    console.log('│  Compteurs: topics nettoyés vs erreurs');
+    console.log('│  Validation: opération réussie si aucune erreur');
+    console.log('└─ Recommandations: actions de suivi si nécessaire\n');
 
-    console.log('📤 Test 3.1: Cleanup summary');
-    console.log(`   📋 Topics processed: ${topicsToClean.length}`);
-    console.log(`   ✅ Successful cleanups: ${cleanedCount}`);
-    console.log(`   ❌ Errors encountered: ${errorCount}`);
-    console.log(`   📊 Success rate: ${Math.round((cleanedCount / topicsToClean.length) * 100)}%`);
+    console.log('📤 Test 3.1: Bilan du nettoyage');
+    console.log(`   📋 Topics traités: ${ topicsToClean.length } `);
+    console.log(`   ✅ Nettoyages réussis: ${ cleanedCount } `);
+    console.log(`   ❌ Erreurs rencontrées: ${ errorCount } `);
+    console.log(`   📊 Taux de réussite: ${ Math.round((cleanedCount / topicsToClean.length) * 100) }% `);
 
     if (errorCount === 0) {
-      console.log('   ✅ Cleanup perfectly successful');
+      console.log('   ✅ Nettoyage parfaitement réussi');
     } else if (cleanedCount > 0) {
-      console.log('   ⚠️  Cleanup partially successful');
-      console.log('   💡 Recommendation: check broker connectivity');
+      console.log('   ⚠️  Nettoyage partiellement réussi');
+      console.log('   💡 Recommandation: vérifier la connectivité au broker');
     } else {
-      console.log('   ❌ Cleanup failed');
-      console.log('   💡 Recommendation: verify MQTT broker access');
+      console.log('   ❌ Nettoyage échoué');
+      console.log('   💡 Recommandation: vérifier l\'accès au broker MQTT');
     }
 
-    console.log('\n' + '═'.repeat(80) + '\n');
+    console.log('\n═'.repeat(80) + '\n');
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // 4️⃣  TEST: Clean broker disconnection
+    // 4️⃣  TEST: Déconnexion propre du broker
     // ═══════════════════════════════════════════════════════════════════════════════
-    console.log('🔚 4️⃣  TEST: Clean broker disconnection');
-    console.log('┌─ OBJECTIVE: Close MQTT connection cleanly');
-    console.log('│  Disconnection: send disconnect message to broker');
-    console.log('│  Cleanup: release network resources');
-    console.log('└─ Validation: no disconnection error\n');
+    console.log('🔚 4️⃣  TEST: Déconnexion propre du broker');
+    console.log('┌─ OBJECTIF: Fermer la connexion MQTT proprement');
+    console.log('│  Déconnexion: envoi disconnect message au broker');
+    console.log('│  Nettoyage: libération des ressources réseau');
+    console.log('└─ Validation: aucune erreur de déconnexion\n');
 
-    console.log('📤 Test 4.1: Connection closure');
+    console.log('📤 Test 4.1: Fermeture de la connexion');
     await close();
-    console.log('   ✅ Connection closed cleanly');
-    console.log('   ✅ Resources released');
+    console.log('   ✅ Connexion fermée proprement');
+    console.log('   ✅ Ressources libérées');
 
-    console.log('\n✅ === MQTT CLEANER EXAMPLE COMPLETED ===');
-    console.log('🎯 Module demonstrated successfully:');
-    console.log('   • createMqttClient (broker connection)');
-    console.log('   • publish with retain=true (retained removal)');
-    console.log('   • close (clean disconnection)');
-    console.log('📁 Cleanup performed on:', BROKER_URL);
+    console.log('\n✅ === EXEMPLE MQTT CLEANER TERMINÉ ===');
+    console.log('🎯 Module démontré avec succès:');
+    console.log('   • createMqttClient (connexion au broker)');
+    console.log('   • publish avec retain=true (suppression retained)');
+    console.log('   • close (déconnexion propre)');
+    console.log('📁 Nettoyage effectué sur:', BROKER_URL);
     console.log('');
-    console.log('💡 INFORMATION: Retained messages removed');
-    console.log('   New subscribers will no longer receive these messages');
-    console.log('   automatically upon connection.');
+    console.log('💡 INFORMATION: Messages retained supprimés');
+    console.log('   Les nouveaux subscribers ne recevront plus ces messages');
+    console.log('   automatiquement à la connexion.');
 
   } catch (error) {
     console.error('\n💥 Cleaner failed:', error);

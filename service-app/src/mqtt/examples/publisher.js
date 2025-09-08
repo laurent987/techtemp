@@ -2,15 +2,34 @@
 /**
  * @file MQTT Publisher Example
  * 
- * ✅ OBJECTIF: Démontrer l'envoi de messages MQTT avec différents QoS
- * 📦 MODULES DÉMONTRÉS:
+ *    console.log('📤 2️⃣  TEST: MQTT message publishing');
+    console.log('┌─ OBJECTIVE: Send different types of messages with varied QoS');
+    console.log('│  QoS 0: Fire and forget (no guarantee)');
+    console.log('│  QoS 1: At least once (with acknowledgment)');
+    console.log('│  QoS 2: Exactly once (with double handshake)');
+    console.log('└─ Formats: Structured JSON + simple text messages\n');
+
+    if (MESSAGE) {
+      // Single message mode
+      console.log('📤 Test 2.1: Single message (argument mode)');
+      console.log(`   📍 Topic: "${TOPIC}"`);
+      console.log(`   📋 Message: "${MESSAGE}"`);
+      console.log(`   ⚙️  Options: QoS 1, Retain false`);
+
+      await publish(TOPIC, MESSAGE, { qos: 1, retain: false });
+      console.log('   ✅ Message published successfully');
+
+    } else {
+      // Demo mode with different message types
+      console.log('🎭 Demo mode: Multiple messages with different QoS\n');trate MQTT message sending with different QoS
+ * 📦 DEMONSTRATED MODULES:
  *    - src/mqtt/client.js (createMqttClient, publish)
  * 
- * 🚫 PAS DÉMONTRÉ: Subscriber MQTT (voir subscriber.js)
+ * 🚫 NOT DEMONSTRATED: MQTT Subscriber (see subscriber.js)
  * 
  * Usage: 
- *   node publisher.js                              # Mode démo
- *   node publisher.js [broker] [topic] [message]  # Message unique
+ *   node publisher.js                              # Demo mode
+ *   node publisher.js [broker] [topic] [message]  # Single message
  */
 
 import { createMqttClient } from '../client.js';
@@ -20,13 +39,13 @@ const TOPIC = process.argv[3] || 'techtemp/demo/sensors';
 const MESSAGE = process.argv[4];
 
 async function demonstrateMqttPublisher() {
-  console.log('📤 === EXEMPLE MQTT PUBLISHER ===');
+  console.log('📤 === MQTT PUBLISHER EXAMPLE ===');
   console.log('🎯 Module: createMqttClient + publish\n');
 
-  console.log('📖 APERÇU DES TESTS:');
-  console.log('1️⃣  Connexion     → Établir connexion au broker MQTT');
-  console.log('2️⃣  Publication   → Envoyer messages avec différents QoS');
-  console.log('3️⃣  Déconnexion   → Fermeture propre de la connexion\n');
+  console.log('📖 TEST OVERVIEW:');
+  console.log('1️⃣  Connection     → Establish connection to MQTT broker');
+  console.log('2️⃣  Publishing     → Send messages with different QoS');
+  console.log('3️⃣  Disconnection  → Clean connection closure\n');
 
   console.log('⚙️  CONFIGURATION:');
   console.log(`   📡 Broker: ${BROKER_URL}`);
@@ -38,13 +57,13 @@ async function demonstrateMqttPublisher() {
     // ═══════════════════════════════════════════════════════════════════════════════
     // 1️⃣  TEST: Connexion au broker MQTT
     // ═══════════════════════════════════════════════════════════════════════════════
-    console.log('🔗 1️⃣  TEST: Connexion au broker MQTT');
-    console.log('┌─ OBJECTIF: Établir connexion sécurisée au broker');
-    console.log('│  Configuration: client ID unique, options de connexion');
-    console.log('│  Validation: connexion réussie sans erreur');
-    console.log('└─ Préparation: prêt pour publication de messages\n');
+    console.log('🔗 1️⃣  TEST: MQTT broker connection');
+    console.log('┌─ OBJECTIVE: Establish secure connection to broker');
+    console.log('│  Configuration: unique client ID, connection options');
+    console.log('│  Validation: successful connection without error');
+    console.log('└─ Preparation: ready for message publishing\n');
 
-    console.log('📤 Test 1.1: Création du client publisher');
+    console.log('📤 Test 1.1: Publisher client creation');
     console.log(`   📋 Broker: "${BROKER_URL}"`);
     console.log(`   🆔 Client ID: "publisher_${Date.now()}"`);
 
@@ -53,8 +72,8 @@ async function demonstrateMqttPublisher() {
       clientId: `publisher_${Date.now()}`
     });
 
-    console.log('   ✅ Client publisher créé avec succès');
-    console.log('   ✅ Connexion au broker établie');
+    console.log('   ✅ Publisher client created successfully');
+    console.log('   ✅ Broker connection established');
     console.log('═'.repeat(80) + '\n');
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -90,7 +109,7 @@ async function demonstrateMqttPublisher() {
             timestamp: new Date().toISOString()
           }),
           options: { qos: 1, retain: false },
-          description: 'Données capteur (QoS 1)'
+          description: 'Sensor data (QoS 1)'
         },
         {
           topic: 'sensors/temp002/readings',
@@ -100,13 +119,13 @@ async function demonstrateMqttPublisher() {
             timestamp: new Date().toISOString()
           }),
           options: { qos: 1, retain: false },
-          description: 'Données capteur (QoS 1)'
+          description: 'Sensor data (QoS 1)'
         },
         {
           topic: 'system/status',
           payload: 'Publisher online',
           options: { qos: 0, retain: false },
-          description: 'Status système (QoS 0)'
+          description: 'System status (QoS 0)'
         },
         {
           topic: 'alerts/critical',
@@ -116,7 +135,7 @@ async function demonstrateMqttPublisher() {
             timestamp: new Date().toISOString()
           }),
           options: { qos: 2, retain: false },
-          description: 'Alerte critique (QoS 2)'
+          description: 'Critical alert (QoS 2)'
         }
       ];
 
@@ -129,65 +148,65 @@ async function demonstrateMqttPublisher() {
         console.log(`   ⚙️  Options: QoS ${options.qos}, Retain ${options.retain}`);
 
         await publish(topic, payload, options);
-        console.log('   ✅ Message publié avec succès');
+        console.log('   ✅ Message published successfully');
 
         if (i < demoMessages.length - 1) {
-          console.log('   ⏱️  Attente 2 secondes...\n');
+          console.log('   ⏱️  Waiting 2 seconds...\n');
           await new Promise(r => setTimeout(r, 2000));
         }
       }
     }
 
-    console.log('\n✅ Tous les messages publiés avec succès');
+    console.log('\n✅ All messages published successfully');
     // ═══════════════════════════════════════════════════════════════════════════════
-    // 3️⃣  TEST: Déconnexion propre du broker
+    // 3️⃣  TEST: Clean broker disconnection
     // ═══════════════════════════════════════════════════════════════════════════════
-    console.log('🔚 3️⃣  TEST: Déconnexion propre du broker');
-    console.log('┌─ OBJECTIF: Fermer la connexion MQTT proprement');
-    console.log('│  Déconnexion: envoi disconnect message au broker');
-    console.log('│  Nettoyage: libération des ressources réseau');
-    console.log('└─ Validation: aucune erreur de déconnexion\n');
+    console.log('🔚 3️⃣  TEST: Clean broker disconnection');
+    console.log('┌─ OBJECTIVE: Close MQTT connection cleanly');
+    console.log('│  Disconnection: send disconnect message to broker');
+    console.log('│  Cleanup: release network resources');
+    console.log('└─ Validation: no disconnection error\n');
 
-    console.log('📤 Test 3.1: Fermeture de la connexion');
+    console.log('📤 Test 3.1: Connection closure');
     await close();
-    console.log('   ✅ Connexion fermée proprement');
-    console.log('   ✅ Ressources libérées');
+    console.log('   ✅ Connection closed cleanly');
+    console.log('   ✅ Resources released');
 
-    console.log('\n✅ === EXEMPLE MQTT PUBLISHER TERMINÉ ===');
-    console.log('🎯 Module démontré avec succès:');
-    console.log('   • createMqttClient (connexion au broker)');
-    console.log('   • publish (envoi de messages avec QoS)');
-    console.log('   • close (déconnexion propre)');
-    console.log('📁 Messages envoyés vers:', BROKER_URL);
+    console.log('\n✅ === MQTT PUBLISHER EXAMPLE COMPLETED ===');
+    console.log('🎯 Module demonstrated successfully:');
+    console.log('   • createMqttClient (broker connection)');
+    console.log('   • publish (message sending with QoS)');
+    console.log('   • close (clean disconnection)');
+    console.log('📁 Messages sent to:', BROKER_URL);
 
   } catch (error) {
     console.error('\n💥 Publisher failed:', error);
-    console.error('📋 Erreur détaillée:', error.message);
-    console.error('🔧 Vérifiez que le broker MQTT est accessible');
+    console.error('📋 Detailed error:', error.message);
+    console.error('🔧 Check that the MQTT broker is accessible');
     process.exit(1);
   }
 }
 
 // Usage help
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  console.log('📤 Exemple MQTT Publisher');
+  console.log('📤 MQTT Publisher Example');
   console.log('=========================');
   console.log('');
-  console.log('Ce script démontre:');
-  console.log('• 🔗 Connexion au broker MQTT');
-  console.log('• 📤 Publication de messages avec différents QoS');
-  console.log('• 📋 Formats JSON et texte');
-  console.log('• 🔚 Déconnexion propre');
+  console.log('This script demonstrates:');
+  console.log('• 🔗 Connection to MQTT broker');
+  console.log('• 📤 Publishing messages with different QoS');
+  console.log('• 📋 JSON and text formats');
+  console.log('• 🔚 Clean disconnection');
   console.log('');
   console.log('Usage:');
-  console.log('  node publisher.js                              # Mode démo');
-  console.log('  node publisher.js [broker] [topic] [message]  # Message unique');
+  console.log('  node publisher.js                              # Demo mode');
+  console.log('  node publisher.js [broker] [topic] [message]  # Single message');
   console.log('');
-  console.log('Exemples:');
+  console.log('Examples:');
   console.log('  node publisher.js');
   console.log('  node publisher.js mqtt://test.mosquitto.org sensors/temp "Hello MQTT"');
   console.log('');
-  console.log('Fichiers utilisés:');
+  console.log('Files used:');
   console.log('• src/mqtt/client.js');
   process.exit(0);
 }
