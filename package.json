@@ -12,6 +12,8 @@
   },
   "devDependencies": {
     "aedes": "^0.50.0",
+    "node-fetch": "^3.3.2",
+    "supertest": "^7.1.4",
     "vitest": "^3.2.4"
   }
 }

@@ -20,8 +20,8 @@ export function createHttpServer(config = {}) {
   // Middleware
   app.use(express.json());
 
-  // Routes setup (will be implemented in later phases)
-  // app.use('/health', healthRouter());
+  // Routes setup
+  app.use('/health', healthRouter(config.deps || {}));
   // app.use('/api/v1/readings', readingsRouter(config.deps || {}));
 
   return {
