@@ -40,7 +40,7 @@ export function readingsRouter(deps = {}) {
 
       if (deviceId) {
         // Get latest reading for specific device
-        readings = await deps.repo.readings.findLatestByDevice(deviceId);
+        readings = await deps.repo.readings.getLatestByDevice(deviceId);
         readings = readings ? [readings] : [];
       } else if (roomId) {
         // Get latest readings for all devices in a room (not implemented in repository yet)

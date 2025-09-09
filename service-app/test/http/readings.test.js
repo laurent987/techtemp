@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { readingsRouter } from '../../src/http/routes/reading.js';
+import { readingsRouter } from '../../src/http/routes/readings.js';
 import { initDb } from '../../src/db/index.js';
 import { createRepository } from '../../src/repositories/index.js';
 import express from 'express';

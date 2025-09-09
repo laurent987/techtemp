@@ -150,14 +150,6 @@ export function createRepository(db) {
         const reading = await dataAccess.findLatestReadingByDevice(deviceId);
         return reading;
       },
-      findLatestByDevice: async (deviceId) => {
-        if (!deviceId) {
-          throw new Error('Device ID is required');
-        }
-
-        const reading = await dataAccess.findLatestReadingByDevice(deviceId);
-        return reading;
-      },
       findLatestPerDevice: async () => {
         // Get the latest reading for each device
         const readings = await dataAccess.findLatestReadingPerDevice();

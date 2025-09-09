@@ -4,7 +4,7 @@
 
 import express from 'express';
 import { healthRouter } from './routes/health.js';
-import { readingsRouter } from './routes/reading.js';
+import { readingsRouter } from './routes/readings.js';
 
 /**
  * Create and start an HTTP server.
