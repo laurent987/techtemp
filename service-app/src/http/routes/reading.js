@@ -1,3 +1,4 @@
+/**
  * @file readings.js – Reading routes – /api/v1/readings/latest
  */
 

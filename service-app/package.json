@@ -1,0 +1,19 @@
+{
+  "name": "techtemp-service-app",
+  "version": "1.0.0",
+  "description": "IoT Temperature Service App",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "express": "^5.1.0",
+    "mqtt": "^5.10.1"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.1"
+  }
+}
