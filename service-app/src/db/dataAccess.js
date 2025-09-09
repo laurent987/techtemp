@@ -24,7 +24,10 @@ export function createDataAccess(db) {
     insertReading: createInsertReading(db),
     findLatestReadingByDevice: createFindLatestReadingByDevice(db),
     findLatestReadingPerDevice: createFindLatestReadingPerDevice(db),
-    findReadingsByRoomAndTimeRange: createFindReadingsByRoomAndTimeRange(db)
+    findReadingsByRoomAndTimeRange: createFindReadingsByRoomAndTimeRange(db),
+
+    // Device placement operations
+    findCurrentDevicePlacement: createFindCurrentDevicePlacement(db)
   };
 }
 
@@ -39,6 +42,7 @@ export function createDataAccess(db) {
  * @property {Function} findLatestReadingByDevice
  * @property {Function} findLatestReadingPerDevice
  * @property {Function} findReadingsByRoomAndTimeRange
+ * @property {Function} findCurrentDevicePlacement
  */
 
 // ====== DEVICE OPERATIONS ======
@@ -170,5 +174,20 @@ function createFindReadingsByRoomAndTimeRange(db) {
 
   return function findReadingsByRoomAndTimeRange(roomId, fromTs, toTs) {
     return stmt.all(roomId, fromTs, toTs);
+  };
+}
+
+// ====== DEVICE PLACEMENT OPERATIONS ======
+
+function createFindCurrentDevicePlacement(db) {
+  const stmt = db.prepare(`
+    SELECT * FROM device_room_placements 
+    WHERE device_id = ? AND to_ts IS NULL
+    ORDER BY from_ts DESC 
+    LIMIT 1
+  `);
+
+  return function findCurrentDevicePlacement(deviceId) {
+    return stmt.get(deviceId) || null;
   };
 }

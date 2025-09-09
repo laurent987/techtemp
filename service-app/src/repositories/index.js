@@ -73,15 +73,8 @@ export function createRepository(db) {
           throw new Error('Device ID is required');
         }
 
-        // Find current placement (to_ts is NULL)
-        const placement = db.prepare(`
-          SELECT * FROM device_room_placements 
-          WHERE device_id = ? AND to_ts IS NULL
-          ORDER BY from_ts DESC 
-          LIMIT 1
-        `).get(deviceId);
-
-        return placement || null;
+        // Use data access layer for consistency
+        return await dataAccess.findCurrentDevicePlacement(deviceId);
       }
     },
     rooms: {
