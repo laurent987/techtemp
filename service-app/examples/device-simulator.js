@@ -6,9 +6,10 @@
  * 📦 FEATURES:
  *    - Simulation of 3 sensors (living room, kitchen, bedroom)
  *    - Realistic data (temperature, humidity)
- *    - Cconsole.log('• JSON payload with temperature, humidity, timestamp');
+ *    - console.log('• JSON payload with temperature, humidity, timestamp');
 console.log('• MQTT topics: home/{homeId}/sensors/{deviceId}/reading');
-console.log('• QoS 1 for reliable delivery');inuous MQTT sending with variations
+console.log('• QoS 1 for reliable delivery');
+console.log('• Continuous MQTT sending with variations');
  *    - Interactive interface (Ctrl+C to stop)
  * 
  * 🚀 USAGE:
