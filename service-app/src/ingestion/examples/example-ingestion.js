@@ -6,26 +6,7 @@
  * 📦 DEMONSTRATED MODULES:
  *    - src/ingestion/parseTopic.js
  *    - src/ingestion/validateReading.js  
- *    - src  console.log('🔄 5️⃣  TEST: Device Reuse');
-  console.log('┌─ OBJECTIVE: Demonstrate auto-creation vs device reuse');
-  console.log('│  First message: device created automatically');
-  console.log('│  Following messages: same device reused');
-  console.log('└─ Optimization: avoids device duplicates\n');
-
-  const deviceReuseMessage = {
-    topic: 'sensors/temp004/readings',
-    payload: {
-      temperature_c: 25.0,
-      humidity_pct: 60.0,
-      timestamp: '2025-09-08T10:35:00Z'
-    }
-  };
-
-  console.log(`📤 Base message for device temp004:`);
-  console.log(`   📍 Topic: "${deviceReuseMessage.topic}"`);
-  console.log(`   📋 Payload:`, JSON.stringify(deviceReuseMessage.payload, null, 2).replace(/\n/g, '\n       '));
-
-  // First sendsage.js
+ *    - src/ingestion/ingestMessage.js
  * 
  * 🚫 NOT DEMONSTRATED: Real MQTT Client, HTTP API
  */
@@ -79,18 +60,18 @@ async function demonstrateIngestionPipeline() {
   // ═══════════════════════════════════════════════════════════════════════════════
   console.log('📝 1️⃣  MODULE: parseTopic');
   console.log('┌─ OBJECTIVE: Validate MQTT topic format and extract device_id');
-  console.log('│  Valid topics: "sensors/{deviceId}/readings"');
+  console.log('│  Valid topics: "home/{homeId}/sensors/{deviceId}/reading"');
   console.log('│  Invalid topics: any other format');
-  console.log('└─ Extraction: device_id from MQTT topic\n');
+  console.log('└─ Extraction: device_id and home_id from MQTT topic\n');
 
   // Test 1.1: Valid topic
   console.log('📤 Test 1.1: Valid topic');
-  console.log(`   📍 Input: "sensors/temp001/readings"`);
+  console.log(`   📍 Input: "home/home-001/sensors/temp001/reading"`);
   try {
-    const validTopic = 'sensors/temp001/readings';
+    const validTopic = 'home/home-001/sensors/temp001/reading';
     const parsed = parseTopic(validTopic);
     console.log(`   ✅ Parsing successful`);
-    console.log(`   📋 Result: device_id="${parsed.deviceId}"`);
+    console.log(`   📋 Result: device_id="${parsed.deviceId}", home_id="${parsed.homeId}"`);
   } catch (error) {
     console.log(`   ❌ Unexpected error: ${error.message}`);
   }
@@ -113,7 +94,7 @@ async function demonstrateIngestionPipeline() {
   // ═══════════════════════════════════════════════════════════════════════════════
   console.log('📋 2️⃣  MODULE: validateReading');
   console.log('┌─ OBJECTIVE: Validate and normalize sensor data');
-  console.log('│  Required fields: temperature_c, humidity_pct, timestamp');
+  console.log('│  Required fields: temperature_c, humidity_pct, ts');
   console.log('│  Validation: types, value ranges, timestamp format');
   console.log('└─ Normalization: temperature_c → temperature, humidity_pct → humidity\n');
 
@@ -122,7 +103,7 @@ async function demonstrateIngestionPipeline() {
   const validPayload = {
     temperature_c: 23.5,
     humidity_pct: 65.2,
-    timestamp: '2025-09-08T10:30:00Z'
+    ts: 1725720600000  // 2025-09-08T10:30:00Z
   };
   console.log(`   📋 Input:`, JSON.stringify(validPayload, null, 2).replace(/\n/g, '\n           '));
   try {
@@ -138,7 +119,7 @@ async function demonstrateIngestionPipeline() {
   const invalidPayload = {
     temperature_c: 'invalid',
     humidity_pct: 65.2,
-    timestamp: '2025-09-08T10:30:00Z'
+    ts: 1725720600000
   };
   console.log(`   📋 Input:`, JSON.stringify(invalidPayload, null, 2).replace(/\n/g, '\n           '));
   try {
@@ -161,27 +142,27 @@ async function demonstrateIngestionPipeline() {
 
   const validMessages = [
     {
-      topic: 'sensors/temp001/readings',
+      topic: 'home/home-001/sensors/temp001/reading',
       payload: {
         temperature_c: 23.5,
         humidity_pct: 65.2,
-        timestamp: '2025-09-08T10:30:00Z'
+        ts: 1725720600000
       }
     },
     {
-      topic: 'sensors/temp002/readings',
+      topic: 'home/home-001/sensors/temp002/reading',
       payload: {
         temperature_c: 22.1,
         humidity_pct: 58.7,
-        timestamp: '2025-09-08T10:31:00Z'
+        ts: 1725720660000
       }
     },
     {
-      topic: 'sensors/temp001/readings',
+      topic: 'home/home-001/sensors/temp001/reading',
       payload: {
         temperature_c: 24.0,
         humidity_pct: 67.5,
-        timestamp: '2025-09-08T10:32:00Z'
+        ts: 1725720720000
       }
     }
   ];
@@ -214,7 +195,9 @@ async function demonstrateIngestionPipeline() {
       console.log('   ' + '─'.repeat(60));
     }
   }
-  console.log('═'.repeat(80) + '\n');  // ═══════════════════════════════════════════════════════════════════════════════
+  console.log('═'.repeat(80) + '\n');
+
+  // ═══════════════════════════════════════════════════════════════════════════════
   // 4️⃣  TEST MODULE: ingestMessage - Invalid Messages
   // ═══════════════════════════════════════════════════════════════════════════════
   console.log('❌ 4️⃣  MODULE: ingestMessage - Invalid Messages');
@@ -226,17 +209,17 @@ async function demonstrateIngestionPipeline() {
   const invalidMessages = [
     {
       topic: 'invalid/topic/format',
-      payload: { temperature_c: 23.5, humidity_pct: 65.2, timestamp: '2025-09-08T10:30:00Z' },
+      payload: { temperature_c: 23.5, humidity_pct: 65.2, ts: 1725720600000 },
       expectError: 'Invalid topic'
     },
     {
-      topic: 'sensors/temp003/readings',
-      payload: { temperature_c: 'invalid', humidity_pct: 65.2, timestamp: '2025-09-08T10:30:00Z' },
+      topic: 'home/home-001/sensors/temp003/reading',
+      payload: { temperature_c: 'invalid', humidity_pct: 65.2, ts: 1725720600000 },
       expectError: 'Invalid payload'
     },
     {
-      topic: 'sensors/temp003/readings',
-      payload: { temperature_c: 23.5, humidity_pct: 150, timestamp: '2025-09-08T10:30:00Z' },
+      topic: 'home/home-001/sensors/temp003/reading',
+      payload: { temperature_c: 23.5, humidity_pct: 150, ts: 1725720600000 },
       expectError: 'Humidity out of range'
     }
   ];
@@ -258,8 +241,9 @@ async function demonstrateIngestionPipeline() {
     }
     console.log('   ' + '─'.repeat(60));
   }
-  // ═══════════════════════════════════════════════════════════════════════════════
   console.log('═'.repeat(80) + '\n');
+
+  // ═══════════════════════════════════════════════════════════════════════════════
   // 5️⃣  TEST: Device Reuse
   // ═══════════════════════════════════════════════════════════════════════════════
   console.log('🔄 5️⃣  TEST: Device Reuse');
@@ -269,15 +253,15 @@ async function demonstrateIngestionPipeline() {
   console.log('└─ Optimization: avoids device duplicates\n');
 
   const deviceReuseMessage = {
-    topic: 'sensors/temp004/readings',
+    topic: 'home/home-001/sensors/temp004/reading',
     payload: {
       temperature_c: 25.0,
       humidity_pct: 60.0,
-      timestamp: '2025-09-08T10:35:00Z'
+      ts: 1725720900000
     }
   };
 
-  console.log(`� Message de base pour device temp004:`);
+  console.log(`📤 Base message for device temp004:`);
   console.log(`   📍 Topic: "${deviceReuseMessage.topic}"`);
   console.log(`   📋 Payload:`, JSON.stringify(deviceReuseMessage.payload, null, 2).replace(/\n/g, '\n       '));
 
@@ -291,7 +275,7 @@ async function demonstrateIngestionPipeline() {
   // Different message same device
   const secondPayload = {
     ...deviceReuseMessage.payload,
-    timestamp: '2025-09-08T10:36:00Z' // Different timestamp
+    ts: 1725720960000 // Different timestamp
   };
   const msgHeaders2 = { msg_id: generateMsgId() };
   console.log(`\n📤 Second send (device reuse):`);
@@ -311,11 +295,11 @@ async function demonstrateIngestionPipeline() {
   console.log('└─ Robustness: avoids duplicates in database\n');
 
   const duplicateTestMessage = {
-    topic: 'sensors/temp005/readings',
+    topic: 'home/home-001/sensors/temp005/reading',
     payload: {
       temperature_c: 26.5,
       humidity_pct: 70.0,
-      timestamp: '2025-09-08T10:40:00Z'
+      ts: 1725721200000
     }
   };
 
@@ -324,13 +308,13 @@ async function demonstrateIngestionPipeline() {
   console.log(`   📋 Payload:`, JSON.stringify(duplicateTestMessage.payload, null, 2).replace(/\n/g, '\n       '));
 
   // First send - original message
-  const originalMsgId2 = generateMsgId();
-  const originalHeaders2 = { msg_id: originalMsgId2 };
+  const originalMsgId = generateMsgId();
+  const originalHeaders = { msg_id: originalMsgId };
   console.log(`\n📤 Step 1 - Original message:`);
-  console.log(`   🔑 msg_id: "${originalMsgId2}"`);
+  console.log(`   🔑 msg_id: "${originalMsgId}"`);
 
   try {
-    const originalResult = await ingestMessage(duplicateTestMessage.topic, duplicateTestMessage.payload, originalHeaders2, repository);
+    const originalResult = await ingestMessage(duplicateTestMessage.topic, duplicateTestMessage.payload, originalHeaders, repository);
     console.log(`   ✅ Original message accepted → device created = ${originalResult.deviceCreated}`);
   } catch (error) {
     console.log(`   ❌ Original message error: ${error.message}`);
@@ -338,10 +322,10 @@ async function demonstrateIngestionPipeline() {
 
   // Second send - SAME message (same msg_id, same payload, same timestamp)
   console.log(`\n📤 Step 2 - Duplicate message (same msg_id):`);
-  console.log(`   🔑 msg_id: "${originalMsgId2}" (IDENTICAL)`);
+  console.log(`   🔑 msg_id: "${originalMsgId}" (IDENTICAL)`);
   console.log(`   🎯 Test: deduplication by ID`);
   try {
-    const duplicateResult = await ingestMessage(duplicateTestMessage.topic, duplicateTestMessage.payload, originalHeaders2, repository);
+    const duplicateResult = await ingestMessage(duplicateTestMessage.topic, duplicateTestMessage.payload, originalHeaders, repository);
     console.log(`   ❌ Duplicate message accepted (should not happen)`);
   } catch (error) {
     console.log(`   ✅ Duplicate message correctly rejected`);
@@ -349,12 +333,12 @@ async function demonstrateIngestionPipeline() {
   }
 
   // Third send - same payload and timestamp but different msg_id (simulates MQTT retransmission)
-  const retransmissionHeaders2 = { msg_id: generateMsgId() };
+  const retransmissionHeaders = { msg_id: generateMsgId() };
   console.log(`\n📤 Step 3 - Retransmission (different msg_id):`);
-  console.log(`   🔑 msg_id: "${retransmissionHeaders2.msg_id}" (DIFFERENT)`);
+  console.log(`   🔑 msg_id: "${retransmissionHeaders.msg_id}" (DIFFERENT)`);
   console.log(`   🎯 Test: deduplication by content`);
   try {
-    const retransmissionResult = await ingestMessage(duplicateTestMessage.topic, duplicateTestMessage.payload, retransmissionHeaders2, repository);
+    const retransmissionResult = await ingestMessage(duplicateTestMessage.topic, duplicateTestMessage.payload, retransmissionHeaders, repository);
     console.log(`   ❌ Retransmission accepted (should not happen)`);
   } catch (error) {
     console.log(`   ✅ Retransmission correctly rejected`);

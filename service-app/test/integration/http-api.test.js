@@ -48,7 +48,7 @@ describe('HTTP API End-to-End Integration', () => {
         topic: 'home/home-001/sensors/sensor-001/reading',
         payload: {
           device_id: 'sensor-001',
-          timestamp: '2025-09-09T14:30:00Z',
+          ts: 1757442988279,
           temperature_c: 22.5,
           humidity_pct: 65.0
         }
@@ -82,7 +82,7 @@ describe('HTTP API End-to-End Integration', () => {
           topic: 'home/home-001/sensors/sensor-001/reading',
           payload: {
             device_id: 'sensor-001',
-            timestamp: '2025-09-09T14:30:00Z',
+            ts: 1757442988279,
             temperature_c: 22.5,
             humidity_pct: 65.0
           }
@@ -91,7 +91,7 @@ describe('HTTP API End-to-End Integration', () => {
           topic: 'home/home-001/sensors/sensor-002/reading',
           payload: {
             device_id: 'sensor-002',
-            timestamp: '2025-09-09T14:31:00Z',
+            ts: 1757442988279,
             temperature_c: 24.0,
             humidity_pct: 58.0
           }
@@ -100,7 +100,7 @@ describe('HTTP API End-to-End Integration', () => {
           topic: 'home/home-001/sensors/sensor-003/reading',
           payload: {
             device_id: 'sensor-003',
-            timestamp: '2025-09-09T14:32:00Z',
+            ts: 1757442988279,
             temperature_c: 26.5,
             humidity_pct: 72.0
           }
@@ -130,7 +130,7 @@ describe('HTTP API End-to-End Integration', () => {
       // Step 1: Ingest older reading
       await ingestMessage('home/home-001/sensors/sensor-001/reading', {
         device_id: 'sensor-001',
-        timestamp: '2025-09-09T14:00:00Z',
+        ts: 1757442988000, // Earlier timestamp
         temperature_c: 20.0,
         humidity_pct: 60.0
       }, {}, repository);
@@ -138,7 +138,7 @@ describe('HTTP API End-to-End Integration', () => {
       // Step 2: Ingest newer reading
       await ingestMessage('home/home-001/sensors/sensor-001/reading', {
         device_id: 'sensor-001',
-        timestamp: '2025-09-09T15:00:00Z',
+        ts: 1757442989000, // Later timestamp,
         temperature_c: 23.0,
         humidity_pct: 68.0
       }, {}, repository);
@@ -160,14 +160,14 @@ describe('HTTP API End-to-End Integration', () => {
       // Step 1: Ingest multiple devices
       await ingestMessage('home/home-001/sensors/sensor-001/reading', {
         device_id: 'sensor-001',
-        timestamp: '2025-09-09T14:30:00Z',
+        ts: 1757442988279,
         temperature_c: 22.5,
         humidity_pct: 65.0
       }, {}, repository);
 
       await ingestMessage('home/home-001/sensors/sensor-002/reading', {
         device_id: 'sensor-002',
-        timestamp: '2025-09-09T14:31:00Z',
+        ts: 1757442988279,
         temperature_c: 24.0,
         humidity_pct: 58.0
       }, {}, repository);
@@ -199,7 +199,7 @@ describe('HTTP API End-to-End Integration', () => {
       // Insert some data and verify health still works
       await ingestMessage('home/test-home/sensors/test-sensor/reading', {
         device_id: 'test-sensor',
-        timestamp: '2025-09-09T14:30:00Z',
+        ts: 1757442988279,
         temperature_c: 20.0,
         humidity_pct: 50.0
       }, {}, repository);
@@ -251,7 +251,7 @@ describe('HTTP API End-to-End Integration', () => {
       for (let i = 0; i < 50; i++) {
         await ingestMessage(`home/home-001/sensors/sensor-${String(i % 10).padStart(3, '0')}/reading`, {
           device_id: `sensor-${String(i % 10).padStart(3, '0')}`,
-          timestamp: new Date(Date.now() + i * 1000).toISOString(),
+          ts: Date.now() + i * 10, // Add offset to ensure uniqueness
           temperature_c: 20 + Math.random() * 10,
           humidity_pct: 50 + Math.random() * 30
         }, {}, repository);

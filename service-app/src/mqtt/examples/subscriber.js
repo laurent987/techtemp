@@ -16,7 +16,7 @@
 import { createMqttClient } from '../client.js';
 
 const BROKER_URL = process.argv[2] || 'mqtt://test.mosquitto.org:1883';
-const TOPIC = process.argv[3] || 'sensors/+/readings'; // Default wildcard pattern
+const TOPIC = process.argv[3] || 'home/+/sensors/+/reading'; // Default wildcard pattern
 
 async function demonstrateMqttSubscriber() {
   console.log('📥 === MQTT SUBSCRIBER EXAMPLE ===');
@@ -68,7 +68,7 @@ async function demonstrateMqttSubscriber() {
 
     // Multiple subscriptions to capture all message types
     const subscriptions = [
-      { pattern: 'sensors/+/readings', description: 'Sensor data' },
+      { pattern: 'home/+/sensors/+/reading', description: 'IoT sensor data' },
       { pattern: 'system/+', description: 'System messages' },
       { pattern: 'alerts/+', description: 'Alerts and notifications' }
     ];
@@ -91,7 +91,7 @@ async function demonstrateMqttSubscriber() {
     }
 
     console.log('\n📚 Active patterns:');
-    console.log('   • sensors/+/readings → Captures: sensors/temp001/readings, sensors/temp002/readings');
+    console.log('   • home/+/sensors/+/reading → Captures: home/home-001/sensors/temp001/reading, home/home-002/sensors/humidity001/reading');
     console.log('   • system/+ → Captures: system/status, system/health');
     console.log('   • alerts/+ → Captures: alerts/critical, alerts/warning');
     console.log('   ✅ Subscription confirmed by broker');
@@ -213,8 +213,9 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log('  node subscriber.js [broker] [topic]  # Custom broker and topic');
   console.log('');
   console.log('MQTT Patterns:');
-  console.log('  sensors/+/readings    # Single level: temp001, temp002, etc.');
-  console.log('  sensors/#             # All levels: temp001/readings, alerts, etc.');
+  console.log('  home/+/sensors/+/reading  # IoT sensors: temp001, humidity001, etc.');
+  console.log('  home/home-001/sensors/#   # All sensors in specific home');
+  console.log('  home/#                    # All topics for all homes');
   console.log('  sensors/temp001/+     # All sub-topics of temp001');
   console.log('');
   console.log('Examples:');

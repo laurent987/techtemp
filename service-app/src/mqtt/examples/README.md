@@ -85,10 +85,11 @@ node cleaner.js --help
 
 | Pattern | Description | Examples |
 |---------|-------------|----------|
-| `sensors/+/readings` | Single level | `sensors/temp001/readings`, `sensors/temp002/readings` |
-| `sensors/#` | All levels | `sensors/temp001/readings`, `sensors/alerts/critical` |
+| `home/+/sensors/+/reading` | IoT sensor data | `home/home-001/sensors/temp001/reading`, `home/home-002/sensors/humidity001/reading` |
+| `home/home-001/sensors/#` | All sensors in home | `home/home-001/sensors/temp001/reading`, `home/home-001/sensors/humidity001/reading` |
+| `home/+/sensors/temp001/reading` | Specific sensor across homes | `home/home-001/sensors/temp001/reading`, `home/home-002/sensors/temp001/reading` |
 | `+/status` | All device status | `temp001/status`, `humidity001/status` |
-| `sensors/temp001/+` | All sub-topics | `sensors/temp001/readings`, `sensors/temp001/status` |
+| `sensors/+` | All sensor topics | `sensors/temp001`, `sensors/humidity001` |
 
 ## 🔧 Test MQTT Brokers
 

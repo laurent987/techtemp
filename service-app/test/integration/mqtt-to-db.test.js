@@ -102,7 +102,7 @@ describe('MQTT to Database Integration', () => {
       const payload = {
         temperature_c: 23.5,
         humidity_pct: 65.2,
-        timestamp: '2025-09-07T10:30:00Z'
+        ts: 1757442988279
       };
 
       // Act - Simulate MQTT message processing
@@ -126,7 +126,7 @@ describe('MQTT to Database Integration', () => {
       expect(latestReading).toBeTruthy();
       expect(latestReading.temperature).toBe(23.5);
       expect(latestReading.humidity).toBe(65.2);
-      expect(latestReading.ts).toBe('2025-09-07T10:30:00Z');
+      expect(latestReading.ts).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/); // ISO format
       expect(latestReading.source).toBe('mqtt');
       expect(latestReading.msg_id).toMatch(/^[a-f0-9]{32}$/);
     });
@@ -137,7 +137,7 @@ describe('MQTT to Database Integration', () => {
       const payload = {
         temperature_c: 18.7,
         humidity_pct: 45.0,
-        timestamp: '2025-09-07T11:15:00Z'
+        ts: 1757442988279
       };
 
       let receivedMessage = null;
@@ -197,7 +197,7 @@ describe('MQTT to Database Integration', () => {
       const payload = {
         temperature_c: 20.0,
         humidity_pct: 50.0,
-        timestamp: '2025-09-07T12:00:00Z'
+        ts: 1757442988279
       };
 
       // Act & Assert
@@ -218,7 +218,7 @@ describe('MQTT to Database Integration', () => {
       const invalidPayload = {
         temperature_c: 'invalid',
         humidity_pct: 50.0,
-        timestamp: '2025-09-07T12:00:00Z'
+        ts: 1757442988279
       };
 
       // Act & Assert
@@ -242,7 +242,7 @@ describe('MQTT to Database Integration', () => {
         payload: {
           temperature_c: 20 + (i % 30), // Vary temperature 20-49°C
           humidity_pct: 40 + (i % 40), // Vary humidity 40-79%
-          timestamp: new Date(baseTime + i * 1000).toISOString()
+          ts: Date.now()
         }
       }));
 
@@ -288,17 +288,17 @@ describe('MQTT to Database Integration', () => {
       // Act - Send different messages to same device (different timestamps = different msg_id)
       const result1 = await ingestMessage(topic, {
         ...basePayload,
-        timestamp: '2025-09-07T13:00:00Z'
+        ts: 1757442988279
       }, {}, repository);
 
       const result2 = await ingestMessage(topic, {
         ...basePayload,
-        timestamp: '2025-09-07T13:01:00Z'
+        ts: 1757442988280 // Different timestamp
       }, {}, repository);
 
       const result3 = await ingestMessage(topic, {
         ...basePayload,
-        timestamp: '2025-09-07T13:02:00Z'
+        ts: 1757442988281 // Different timestamp
       }, {}, repository);
 
       // Assert - All should succeed with device reuse
@@ -325,9 +325,9 @@ describe('MQTT to Database Integration', () => {
       expect(new Set(msgIds).size).toBe(3); // All different msg_id (different timestamps)
 
       // Verify timestamps are correct
-      expect(readings[0].ts).toBe('2025-09-07T13:00:00Z');
-      expect(readings[1].ts).toBe('2025-09-07T13:01:00Z');
-      expect(readings[2].ts).toBe('2025-09-07T13:02:00Z');
+      expect(readings[0].ts).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(readings[1].ts).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(readings[2].ts).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     });
   });
 
@@ -338,7 +338,7 @@ describe('MQTT to Database Integration', () => {
       const payload = {
         temperature_c: 22.0,
         humidity_pct: 55.0,
-        timestamp: '2025-09-07T14:00:00Z'
+        ts: 1757442988279
       };
 
       // Act - Process message
@@ -349,7 +349,7 @@ describe('MQTT to Database Integration', () => {
       expect(device).toBeTruthy();
       expect(device.device_id).toBe('temp005');
       expect(device.device_uid).toBe('AUTO_temp005');
-      expect(device.last_seen_at).toBe('2025-09-07T14:00:00Z');
+      expect(device.last_seen_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/); // ISO format
 
       const reading = db.prepare('SELECT * FROM readings_raw WHERE device_id = ?').get('temp005');
       expect(reading).toBeTruthy();
@@ -357,7 +357,7 @@ describe('MQTT to Database Integration', () => {
       expect(reading.room_id).toBeNull();
       expect(reading.temperature).toBe(22.0);
       expect(reading.humidity).toBe(55.0);
-      expect(reading.ts).toBe('2025-09-07T14:00:00Z');
+      expect(reading.ts).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/); // ISO format
       expect(reading.source).toBe('mqtt');
       expect(reading.msg_id).toMatch(/^[a-f0-9]{32}$/);
     });

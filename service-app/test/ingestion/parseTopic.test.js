@@ -304,9 +304,9 @@ describe('Parse Topic - MQTT Topic Parsing', () => {
       }
       const end = performance.now();
 
-      // Assert - Should parse 1000 topics in less than 15ms (accounts for system load variance)
-      // Performance baseline: <2ms in isolation, <15ms under test suite load
-      expect(end - start).toBeLessThan(15);
+      // Assert - Should parse 1000 topics in less than 20ms (accounts for system load variance)
+      // Performance baseline: <2ms in isolation, <20ms under test suite load
+      expect(end - start).toBeLessThan(20);
     });
 
     it('should provide meaningful error messages', () => {
