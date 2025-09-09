@@ -25,27 +25,27 @@ class IoTDeviceSimulator {
     this.mqttClient = null;
     this.devices = [
       {
-        id: 'rpi-living-room-01',
+        id: 'rpi-salon-01',
         name: 'Living Room Sensor',
-        room: 'living-room',
+        room: 'salon',
         baseTemp: 22,
         baseHumidity: 55,
         tempVariation: 3,    // ±3°C
         humidityVariation: 15 // ±15%
       },
       {
-        id: 'rpi-kitchen-01',
+        id: 'rpi-cuisine-01',
         name: 'Kitchen Sensor',
-        room: 'kitchen',
+        room: 'cuisine',
         baseTemp: 25,
         baseHumidity: 60,
         tempVariation: 4,    // ±4°C (more variable, cooking)
         humidityVariation: 20 // ±20%
       },
       {
-        id: 'rpi-bedroom-01',
+        id: 'rpi-chambre-01',
         name: 'Bedroom Sensor',
-        room: 'bedroom',
+        room: 'chambre1',
         baseTemp: 20,
         baseHumidity: 50,
         tempVariation: 2,    // ±2°C (more stable)
@@ -114,7 +114,7 @@ class IoTDeviceSimulator {
         console.log(`   🌡️  Base Temperature: ${device.baseTemp}°C (±${device.tempVariation}°C)`);
         console.log(`   💧 Base Humidity: ${device.baseHumidity}% (±${device.humidityVariation}%)`);
         console.log(`   ✅ Device configured and ready`);
-        
+
         if (index < this.devices.length - 1) {
           console.log('   ────────────────────────────────────────────────────');
         }
@@ -164,34 +164,30 @@ class IoTDeviceSimulator {
     // Simulate realistic sensor variations
     const tempVariation = (Math.random() - 0.5) * 2 * device.tempVariation;
     const humidityVariation = (Math.random() - 0.5) * 2 * device.humidityVariation;
-    
+
     const temperature = Math.round((device.baseTemp + tempVariation) * 10) / 10;
     const humidity = Math.round(Math.max(0, Math.min(100, device.baseHumidity + humidityVariation)) * 10) / 10;
-    
+
     return {
-      device_id: device.id,
-      room: device.room,
+      ts: Date.now(),
       temperature_c: temperature,
-      humidity_pct: humidity,
-      timestamp: new Date().toISOString(),
-      sensor_type: 'DHT22',
-      home_id: DEMO_HOME_ID
+      humidity_pct: humidity
     };
   }
 
   async sendAllDeviceData() {
     this.messagesSent++;
     const timestamp = new Date().toLocaleTimeString();
-    
+
     console.log(`📨 [${timestamp}] Transmission #${this.messagesSent}:`);
-    
+
     for (const device of this.devices) {
       const sensorData = this.generateSensorData(device);
-      const topic = `techtemp/devices/${device.room}/readings`;
-      
+      const topic = `home/${DEMO_HOME_ID}/sensors/${device.id}/reading`;
+
       try {
         await this.mqttClient.publish(topic, JSON.stringify(sensorData), { qos: 1, retain: false });
-        
+
         console.log(`   📊 ${device.name}:`);
         console.log(`       🌡️  ${sensorData.temperature_c}°C | 💧 ${sensorData.humidity_pct}%`);
         console.log(`       📍 Topic: "${topic}"`);
@@ -199,7 +195,7 @@ class IoTDeviceSimulator {
         console.log(`   ❌ ${device.name}: Send error - ${error.message}`);
       }
     }
-    
+
     const uptime = Math.round((Date.now() - this.startTime) / 1000);
     console.log(`   📈 Stats: ${this.messagesSent} transmissions | ⏱️  ${uptime}s uptime`);
     console.log('   ' + '─'.repeat(60) + '\n');
@@ -214,24 +210,24 @@ class IoTDeviceSimulator {
     console.log('└─ Statistics: simulation session summary\n');
 
     console.log('📤 Test 4.1: Simulation shutdown');
-    
+
     // Stop the interval
     if (this.intervalId) {
       clearInterval(this.intervalId);
       console.log('   ✅ Data transmission stopped');
     }
-    
+
     // Close MQTT connection
     if (this.mqttClient) {
       await this.mqttClient.close();
       console.log('   ✅ MQTT connection closed cleanly');
     }
-    
+
     // Display session statistics
     const uptime = Math.round((Date.now() - this.startTime) / 1000);
     const totalMessages = this.messagesSent * this.devices.length;
     const avgMessagesPerSecond = this.messagesSent > 0 ? (totalMessages / uptime).toFixed(2) : 0;
-    
+
     console.log('   📊 Session Statistics:');
     console.log(`       Transmission cycles: ${this.messagesSent}`);
     console.log(`       Total messages sent: ${totalMessages}`);
@@ -272,7 +268,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log('');
   console.log('Data Format:');
   console.log('• JSON payload with temperature, humidity, timestamp');
-  console.log('• MQTT topics: techtemp/devices/{room}/readings');
+  console.log('• MQTT topics: home/{homeId}/sensors/{deviceId}/reading');
   console.log('• QoS 1 for reliable delivery');
   console.log('');
   console.log('Usage:');

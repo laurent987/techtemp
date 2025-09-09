@@ -102,21 +102,21 @@ async function demonstrateMqttPublisher() {
 
       const demoMessages = [
         {
-          topic: 'sensors/temp001/readings',
+          topic: 'home/home-001/sensors/temp001/reading',
           payload: JSON.stringify({
             temperature_c: 23.5,
             humidity_pct: 65.2,
-            timestamp: new Date().toISOString()
+            ts: Date.now()
           }),
           options: { qos: 1, retain: false },
           description: 'Sensor data (QoS 1)'
         },
         {
-          topic: 'sensors/temp002/readings',
+          topic: 'home/home-001/sensors/temp002/reading',
           payload: JSON.stringify({
             temperature_c: 22.1,
             humidity_pct: 58.7,
-            timestamp: new Date().toISOString()
+            ts: Date.now() + 1000 // Slightly different timestamp
           }),
           options: { qos: 1, retain: false },
           description: 'Sensor data (QoS 1)'
@@ -132,7 +132,7 @@ async function demonstrateMqttPublisher() {
           payload: JSON.stringify({
             level: 'critical',
             message: 'Test critical alert',
-            timestamp: new Date().toISOString()
+            ts: Date.now() + 2000
           }),
           options: { qos: 2, retain: false },
           description: 'Critical alert (QoS 2)'

@@ -45,10 +45,10 @@ describe('HTTP API End-to-End Integration', () => {
     it('should handle complete data flow from MQTT message to HTTP response', async () => {
       // Step 1: Simulate MQTT message ingestion
       const mqttMessage = {
-        topic: 'sensors/sensor-001/readings',
+        topic: 'home/home-001/sensors/sensor-001/reading',
         payload: {
           device_id: 'sensor-001',
-          timestamp: '2025-09-09T14:30:00Z',
+          ts: 1757442988279,
           temperature_c: 22.5,
           humidity_pct: 65.0
         }
@@ -79,28 +79,28 @@ describe('HTTP API End-to-End Integration', () => {
       // Step 1: Ingest multiple MQTT messages
       const messages = [
         {
-          topic: 'sensors/sensor-001/readings',
+          topic: 'home/home-001/sensors/sensor-001/reading',
           payload: {
             device_id: 'sensor-001',
-            timestamp: '2025-09-09T14:30:00Z',
+            ts: 1757442988279,
             temperature_c: 22.5,
             humidity_pct: 65.0
           }
         },
         {
-          topic: 'sensors/sensor-002/readings',
+          topic: 'home/home-001/sensors/sensor-002/reading',
           payload: {
             device_id: 'sensor-002',
-            timestamp: '2025-09-09T14:31:00Z',
+            ts: 1757442988279,
             temperature_c: 24.0,
             humidity_pct: 58.0
           }
         },
         {
-          topic: 'sensors/sensor-003/readings',
+          topic: 'home/home-001/sensors/sensor-003/reading',
           payload: {
             device_id: 'sensor-003',
-            timestamp: '2025-09-09T14:32:00Z',
+            ts: 1757442988279,
             temperature_c: 26.5,
             humidity_pct: 72.0
           }
@@ -128,17 +128,17 @@ describe('HTTP API End-to-End Integration', () => {
 
     it('should return latest reading when multiple readings exist for same device', async () => {
       // Step 1: Ingest older reading
-      await ingestMessage('sensors/sensor-001/readings', {
+      await ingestMessage('home/home-001/sensors/sensor-001/reading', {
         device_id: 'sensor-001',
-        timestamp: '2025-09-09T14:00:00Z',
+        ts: 1757442988000, // Earlier timestamp
         temperature_c: 20.0,
         humidity_pct: 60.0
       }, {}, repository);
 
       // Step 2: Ingest newer reading
-      await ingestMessage('sensors/sensor-001/readings', {
+      await ingestMessage('home/home-001/sensors/sensor-001/reading', {
         device_id: 'sensor-001',
-        timestamp: '2025-09-09T15:00:00Z',
+        ts: 1757442989000, // Later timestamp,
         temperature_c: 23.0,
         humidity_pct: 68.0
       }, {}, repository);
@@ -158,16 +158,16 @@ describe('HTTP API End-to-End Integration', () => {
 
     it('should handle device filtering in complete pipeline', async () => {
       // Step 1: Ingest multiple devices
-      await ingestMessage('sensors/sensor-001/readings', {
+      await ingestMessage('home/home-001/sensors/sensor-001/reading', {
         device_id: 'sensor-001',
-        timestamp: '2025-09-09T14:30:00Z',
+        ts: 1757442988279,
         temperature_c: 22.5,
         humidity_pct: 65.0
       }, {}, repository);
 
-      await ingestMessage('sensors/sensor-002/readings', {
+      await ingestMessage('home/home-001/sensors/sensor-002/reading', {
         device_id: 'sensor-002',
-        timestamp: '2025-09-09T14:31:00Z',
+        ts: 1757442988279,
         temperature_c: 24.0,
         humidity_pct: 58.0
       }, {}, repository);
@@ -197,9 +197,9 @@ describe('HTTP API End-to-End Integration', () => {
       expect(response.status).toBe(200);
 
       // Insert some data and verify health still works
-      await ingestMessage('sensors/test-sensor/readings', {
+      await ingestMessage('home/test-home/sensors/test-sensor/reading', {
         device_id: 'test-sensor',
-        timestamp: '2025-09-09T14:30:00Z',
+        ts: 1757442988279,
         temperature_c: 20.0,
         humidity_pct: 50.0
       }, {}, repository);
@@ -249,9 +249,9 @@ describe('HTTP API End-to-End Integration', () => {
       const startTime = Date.now();
 
       for (let i = 0; i < 50; i++) {
-        await ingestMessage(`sensors/sensor-${String(i % 10).padStart(3, '0')}/readings`, {
+        await ingestMessage(`home/home-001/sensors/sensor-${String(i % 10).padStart(3, '0')}/reading`, {
           device_id: `sensor-${String(i % 10).padStart(3, '0')}`,
-          timestamp: new Date(Date.now() + i * 1000).toISOString(),
+          ts: Date.now() + i * 10, // Add offset to ensure uniqueness
           temperature_c: 20 + Math.random() * 10,
           humidity_pct: 50 + Math.random() * 30
         }, {}, repository);

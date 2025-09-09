@@ -67,6 +67,14 @@ export function createRepository(db) {
           ...device,
           last_seen_at: lastSeen
         };
+      },
+      getCurrentPlacement: async (deviceId) => {
+        if (!deviceId) {
+          throw new Error('Device ID is required');
+        }
+
+        // Use data access layer for consistency
+        return await dataAccess.findCurrentDevicePlacement(deviceId);
       }
     },
     rooms: {

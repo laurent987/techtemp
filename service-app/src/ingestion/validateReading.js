@@ -7,7 +7,7 @@
  * @typedef {Object} RawReading Raw MQTT payload from sensor
  * @property {number} temperature_c Temperature in Celsius
  * @property {number} humidity_pct Humidity percentage
- * @property {string} timestamp ISO timestamp string
+ * @property {number} ts Unix timestamp in milliseconds (epoch ms UTC)
  */
 
 /**
@@ -26,9 +26,9 @@
  * const validated = validateReading({
  *   temperature_c: 23.7,
  *   humidity_pct: 52.5,
- *   timestamp: '2025-09-07T10:30:00Z'
+ *   ts: 1725427200000
  * });
- * // → { temperature: 23.7, humidity: 52.5, ts: '2025-09-07T10:30:00Z' }
+ * // → { temperature: 23.7, humidity: 52.5, ts: '2025-09-07T10:30:00.000Z' }
  */
 export function validateReading(payload) {
   // Step 1: Basic payload validation
@@ -41,7 +41,7 @@ export function validateReading(payload) {
   }
 
   // Step 2: Validate required fields
-  const { temperature_c, humidity_pct, timestamp } = payload;
+  const { temperature_c, humidity_pct, ts } = payload;
 
   if (temperature_c === undefined) {
     throw new Error('temperature_c field is required');
@@ -51,8 +51,8 @@ export function validateReading(payload) {
     throw new Error('humidity_pct field is required');
   }
 
-  if (timestamp === undefined) {
-    throw new Error('timestamp field is required');
+  if (ts === undefined) {
+    throw new Error('ts field is required');
   }
 
   // Step 3: Validate field types
@@ -64,8 +64,8 @@ export function validateReading(payload) {
     throw new Error('Humidity must be a number');
   }
 
-  if (typeof timestamp !== 'string') {
-    throw new Error('Timestamp must be a string');
+  if (typeof ts !== 'number') {
+    throw new Error('Timestamp must be a number (epoch ms)');
   }
 
   // Step 4: Validate special number values and ranges
@@ -77,22 +77,22 @@ export function validateReading(payload) {
     throw new Error('Humidity out of valid range (0% to 100%)');
   }
 
-  // Step 5: Validate timestamp format (ISO 8601)
-  // Check for basic ISO 8601 format pattern first
-  const isoPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})$/;
-  if (!isoPattern.test(timestamp)) {
-    throw new Error('Timestamp has invalid ISO format');
+  // Step 5: Validate timestamp format (Unix timestamp in ms)
+  // Check for valid timestamp range (positive number, reasonable range)
+  if (!isFinite(ts) || ts < 0 || ts > Date.now() + 86400000) { // Allow up to 24h in future
+    throw new Error('Timestamp out of valid range');
   }
 
-  const timestampDate = new Date(timestamp);
+  // Convert Unix timestamp to ISO string for database storage
+  const timestampDate = new Date(ts);
   if (isNaN(timestampDate.getTime())) {
-    throw new Error('Timestamp has invalid ISO format');
+    throw new Error('Invalid timestamp value');
   }
 
   // Step 6: Transform and return normalized reading
   const result = {
     temperature: temperature_c,
-    ts: timestamp
+    ts: timestampDate.toISOString()
   };
 
   // Only include humidity if provided

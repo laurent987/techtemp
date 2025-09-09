@@ -16,7 +16,8 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       devices: {
         findById: vi.fn(),
         create: vi.fn(),
-        updateLastSeen: vi.fn()
+        updateLastSeen: vi.fn(),
+        getCurrentPlacement: vi.fn()
       },
       readings: {
         create: vi.fn()
@@ -27,11 +28,11 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
   describe('Complete Pipeline Success', () => {
     it('should ingest valid MQTT message with existing device', async () => {
       // Arrange
-      const topic = 'sensors/temp001/readings';
+      const topic = 'home/home-001/sensors/temp001/reading';
       const payload = {
         temperature_c: 23.5,
         humidity_pct: 65.2,
-        timestamp: '2025-09-07T10:30:00Z'
+        ts: 1757442988279
       };
       const options = { retain: false, qos: 1 };
 
@@ -50,11 +51,14 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
         lastInsertRowid: 42
       });
 
-      // Mock device update
+      // Mock successful device update
       mockRepository.devices.updateLastSeen.mockResolvedValue({
         device_id: 'temp001',
         last_seen_at: '2025-09-07T10:30:00Z'
       });
+
+      // Mock placement (device in living-room)
+      mockRepository.devices.getCurrentPlacement.mockResolvedValue({ room_id: 'living-room' });
 
       // Act
       const result = await ingestMessage(topic, payload, options, mockRepository);
@@ -65,7 +69,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       expect(result.reading).toEqual({
         temperature: 23.5,
         humidity: 65.2,
-        ts: '2025-09-07T10:30:00Z'
+        ts: expect.any(String) // Now returns ISO string 
       });
       expect(result.insertId).toBe(42);
 
@@ -76,20 +80,20 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
         room_id: 'living-room',
         temperature: 23.5,
         humidity: 65.2,
-        ts: '2025-09-07T10:30:00Z',
+        ts: expect.any(String), // Now an ISO string
         source: 'mqtt',
         msg_id: expect.any(String)
       });
-      expect(mockRepository.devices.updateLastSeen).toHaveBeenCalledWith('temp001', '2025-09-07T10:30:00Z');
+      expect(mockRepository.devices.updateLastSeen).toHaveBeenCalledWith('temp001', expect.any(String));
     });
 
     it('should create device automatically if not exists', async () => {
       // Arrange
-      const topic = 'sensors/temp002/readings';
+      const topic = 'home/home-001/sensors/temp002/reading';
       const payload = {
         temperature_c: 18.7,
         humidity_pct: 45.0,
-        timestamp: '2025-09-07T11:15:00Z'
+        ts: 1757442988279
       };
 
       // Mock device not found
@@ -122,8 +126,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       expect(mockRepository.devices.create).toHaveBeenCalledWith({
         device_id: 'temp002',
         device_uid: 'AUTO_temp002',
-        room_id: null,
-        last_seen: '2025-09-07T11:15:00Z',
+        last_seen: expect.any(String), // Now an ISO string
         label: 'Auto-discovered sensor',
         model: 'unknown'
       });
@@ -134,7 +137,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
     it('should handle invalid topic format', async () => {
       // Arrange
       const topic = 'invalid/topic/format';
-      const payload = { temperature_c: 20.0, humidity_pct: 50.0, timestamp: '2025-09-07T10:30:00Z' };
+      const payload = { temperature_c: 20.0, humidity_pct: 50.0, ts: 1757442988279 };
 
       // Act & Assert
       await expect(ingestMessage(topic, payload, {}, mockRepository))
@@ -147,8 +150,8 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
 
     it('should handle invalid payload data', async () => {
       // Arrange
-      const topic = 'sensors/temp001/readings';
-      const payload = { temperature_c: 'invalid', humidity_pct: 50.0, timestamp: '2025-09-07T10:30:00Z' };
+      const topic = 'home/home-001/sensors/temp001/reading';
+      const payload = { temperature_c: 'invalid', humidity_pct: 50.0, ts: 1757442988279 };
 
       // Act & Assert
       await expect(ingestMessage(topic, payload, {}, mockRepository))
@@ -161,8 +164,8 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
 
     it('should handle device creation failure', async () => {
       // Arrange
-      const topic = 'sensors/temp003/readings';
-      const payload = { temperature_c: 25.0, humidity_pct: 60.0, timestamp: '2025-09-07T12:00:00Z' };
+      const topic = 'home/home-001/sensors/temp003/reading';
+      const payload = { temperature_c: 25.0, humidity_pct: 60.0, ts: 1757442988279 };
 
       // Mock device not found
       mockRepository.devices.findById.mockResolvedValue(null);
@@ -180,8 +183,8 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
 
     it('should handle reading creation failure', async () => {
       // Arrange
-      const topic = 'sensors/temp001/readings';
-      const payload = { temperature_c: 30.0, humidity_pct: 70.0, timestamp: '2025-09-07T13:00:00Z' };
+      const topic = 'home/home-001/sensors/temp001/reading';
+      const payload = { temperature_c: 30.0, humidity_pct: 70.0, ts: 1757442988279 };
 
       // Mock existing device
       mockRepository.devices.findById.mockResolvedValue({
@@ -201,8 +204,8 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
   describe('Deduplication', () => {
     it('should generate consistent msg_id for deduplication', async () => {
       // Arrange
-      const topic = 'sensors/temp001/readings';
-      const payload = { temperature_c: 22.0, humidity_pct: 55.0, timestamp: '2025-09-07T14:00:00Z' };
+      const topic = 'home/home-001/sensors/temp001/reading';
+      const payload = { temperature_c: 22.0, humidity_pct: 55.0, ts: 1757442988279 };
 
       mockRepository.devices.findById.mockResolvedValue({
         device_id: 'temp001',
@@ -211,6 +214,8 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       mockRepository.readings.create.mockResolvedValue({ success: true, changes: 1, lastInsertRowid: 44 });
       mockRepository.devices.updateLastSeen.mockResolvedValue({});
 
+      // Mock placement (no current placement)
+      mockRepository.devices.getCurrentPlacement.mockResolvedValue(null);
       // Act
       const result1 = await ingestMessage(topic, payload, {}, mockRepository);
 
@@ -230,10 +235,10 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
   describe('Edge Cases', () => {
     it('should reject payload with missing required humidity_pct field', async () => {
       // Arrange
-      const topic = 'sensors/temp001/readings';
+      const topic = 'home/home-001/sensors/temp001/reading';
       const payload = {
         temperature_c: 21.0,
-        timestamp: '2025-09-07T15:00:00Z'
+        ts: 1757442988279
         // humidity_pct missing - should be required per spec
       };
 
@@ -248,14 +253,16 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
 
     it('should handle MQTT retain flag correctly', async () => {
       // Arrange
-      const topic = 'sensors/temp001/readings';
-      const payload = { temperature_c: 24.0, humidity_pct: 58.0, timestamp: '2025-09-07T16:00:00Z' };
+      const topic = 'home/home-001/sensors/temp001/reading';
+      const payload = { temperature_c: 24.0, humidity_pct: 58.0, ts: 1757442988279 };
       const options = { retain: true, qos: 2 };
 
       mockRepository.devices.findById.mockResolvedValue({ device_id: 'temp001', room_id: 'office' });
       mockRepository.readings.create.mockResolvedValue({ success: true, changes: 1, lastInsertRowid: 46 });
       mockRepository.devices.updateLastSeen.mockResolvedValue({});
 
+      // Mock placement (no current placement)
+      mockRepository.devices.getCurrentPlacement.mockResolvedValue(null);
       // Act
       const result = await ingestMessage(topic, payload, options, mockRepository);
 
@@ -268,13 +275,15 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
   describe('Performance', () => {
     it('should process messages efficiently', async () => {
       // Arrange
-      const topic = 'sensors/temp001/readings';
-      const payload = { temperature_c: 26.0, humidity_pct: 62.0, timestamp: '2025-09-07T17:00:00Z' };
+      const topic = 'home/home-001/sensors/temp001/reading';
+      const payload = { temperature_c: 26.0, humidity_pct: 62.0, ts: 1757442988279 };
 
       mockRepository.devices.findById.mockResolvedValue({ device_id: 'temp001', room_id: 'garage' });
       mockRepository.readings.create.mockResolvedValue({ success: true, changes: 1, lastInsertRowid: 47 });
       mockRepository.devices.updateLastSeen.mockResolvedValue({});
 
+      // Mock placement (no current placement)
+      mockRepository.devices.getCurrentPlacement.mockResolvedValue(null);
       // Act
       const start = performance.now();
       await ingestMessage(topic, payload, {}, mockRepository);

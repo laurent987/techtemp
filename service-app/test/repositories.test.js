@@ -99,13 +99,13 @@ describe('Repository Pattern - Business Logic Layer', () => {
         device_uid: 'uid-12345'
       };
       await repository.devices.create(device);
-      const customTimestamp = '2025-09-06T12:00:00Z';
+      const customTs = '2025-09-06T12:00:00Z';
 
       // Act
-      const result = await repository.devices.updateLastSeen('dev001', customTimestamp);
+      const result = await repository.devices.updateLastSeen('dev001', customTs);
 
       // Assert
-      expect(result.last_seen_at).toBe(customTimestamp);
+      expect(result.last_seen_at).toBe(customTs);
     });
 
     it('should default to current timestamp when updating last seen', async () => {

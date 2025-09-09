@@ -36,9 +36,18 @@ export const configSchema = Joi.object({
  */
 export function loadConfig() {
   // Valider l'environnement avec le schéma Joi
-  const { error, value } = configSchema.validate(process.env);
 
+  const { error, value } = configSchema.validate(process.env);
   if (error) {
+    // Message d'erreur user-friendly
+    console.error('\n[FATAL] Configuration invalide :', error.message);
+    console.error('\nExemple de variables d\'environnement à définir :');
+    console.error('  NODE_ENV=development');
+    console.error('  DB_PATH=/chemin/vers/db.sqlite');
+    console.error('  MQTT_URL=mqtt://localhost:1883');
+    console.error('  HTTP_PORT=3000');
+    console.error("\nVous pouvez lancer l\'application ainsi :");
+    console.error('  NODE_ENV=development DB_PATH=./test.db MQTT_URL=mqtt://localhost:1883 HTTP_PORT=3000 node main.js\n');
     throw new Error(`Configuration validation failed: ${error.message}`);
   }
 
