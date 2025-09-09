@@ -22,7 +22,7 @@ export function createHttpServer(config = {}) {
 
   // Routes setup
   app.use('/health', healthRouter(config.deps || {}));
-  // app.use('/api/v1/readings', readingsRouter(config.deps || {}));
+  app.use('/api/v1/readings', readingsRouter(config.deps || {}));
 
   return {
     /**

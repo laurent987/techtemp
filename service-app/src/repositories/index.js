@@ -150,6 +150,19 @@ export function createRepository(db) {
         const reading = await dataAccess.findLatestReadingByDevice(deviceId);
         return reading;
       },
+      findLatestByDevice: async (deviceId) => {
+        if (!deviceId) {
+          throw new Error('Device ID is required');
+        }
+
+        const reading = await dataAccess.findLatestReadingByDevice(deviceId);
+        return reading;
+      },
+      findLatestPerDevice: async () => {
+        // Get the latest reading for each device
+        const readings = await dataAccess.findLatestReadingPerDevice();
+        return readings;
+      },
       findByRoomAndTimeRange: async (roomId, fromTs, toTs) => {
         if (!roomId || !fromTs || !toTs) {
           throw new Error('Room ID, from timestamp, and to timestamp are required');
