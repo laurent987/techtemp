@@ -1,6 +1,23 @@
-# service-app/examples
+# serv### 1. 🎬 `service-complete-demo.js` - Service IoT complet avec Express.js API (MODERNIZED)
+```bash
+node service-complete-demo.js
+```
 
-Collection d'exemples pratiques pour démontrer le pipeline IoT complet du Journal #004.
+Service production-ready qui démontre un pipeline IoT complet **avec l'API Express.js du Journal #005** :
+- 🌐 **Express.js API** : Endpoints REST modernes (`/health`, `/api/v1/readings/latest`) selon Contract 001
+- 📡 **Ingestion MQTT** : Temps réel depuis broker public (`test.mosquitto.org`)
+- 💾 **Persistance SQLite** : Repository pattern avec migrations automatiques
+- 📊 **Monitoring** : Statistiques en temps réel et logs explicites
+- 🔄 **Pipeline complet** : MQTT → Validation → Database → API Express.js
+
+**Fonctionnalités modernisées (Journal #005) :**
+- ✅ **Express.js server** : Serveur HTTP moderne avec lifecycle management
+- ✅ **Contract 001 API** : Format `{device_id, room_id, ts, temperature, humidity}`
+- ✅ **Production-ready** : Graceful shutdown et gestion d'erreurs robuste
+- ✅ **Architecture unifiée** : Utilise tous les composants du Journal #005
+- ✅ **API testable** : Endpoints conformes aux spécifications
+- ✅ **Monitoring temps réel** : Statistiques automatiques toutes les 30s
+- ✅ **Pipeline validé** : Architecture end-to-end complètement testéellection d'exemples pratiques pour démontrer le pipeline IoT complet du Journal #004.
 
 ## 🎯 Exemples disponibles
 
@@ -131,47 +148,25 @@ msg_id: "rpi-salon-01-1757340000000"  -- déduplication
 
 ### Endpoints disponibles
 
-**GET /health** - Health check complet
+**GET /health** - Health check avec dépendances (Express.js)
 ```json
 {
-  "status": "ok",
-  "service": "techtemp-service", 
-  "components": {
-    "database": "connected",
-    "mqtt": "connected",
-    "http": "active"
-  },
-  "stats": {
-    "receivedMessages": 42,
-    "uptime": 1234.56
-  }
+  "status": "ok"
 }
 ```
 
-**GET /api/v1/readings/latest** - Dernières mesures par device
+**GET /api/v1/readings/latest** - Dernières mesures selon Contract 001
 ```json
 {
   "data": [
     {
       "device_id": "rpi-salon-01",
       "room_id": "salon",
+      "ts": "2025-09-08T14:24:23.277Z",
       "temperature": 23.5,
-      "humidity": 65.2,
-      "ts": "2025-09-08T14:24:23.277Z"
+      "humidity": 65.2
     }
   ]
-}
-```
-
-**GET /api/v1/stats** - Statistiques globales
-```json
-{
-  "stats": {
-    "total_readings": 158,
-    "total_devices": 3,
-    "first_reading": "2025-09-08T14:20:00.000Z",
-    "last_reading": "2025-09-08T14:24:23.277Z"
-  }
 }
 ```
 
