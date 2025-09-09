@@ -115,24 +115,20 @@ describe('Readings API', () => {
 
       // Check temp-001 (should be the latest, not the older one)
       expect(temp001Reading).toEqual({
-        home_id: 'living-room',
+        room_id: 'living-room',
         device_id: 'temp-001',
-        ts_utc: expect.any(Number),
-        values: {
-          temperature_c: 22.5,
-          humidity_pct: 45.0
-        }
+        ts: expect.any(String),
+        temperature: 22.5,
+        humidity: 45.0
       });
 
       // Check temp-002
       expect(temp002Reading).toEqual({
-        home_id: 'bedroom',
+        room_id: 'bedroom',
         device_id: 'temp-002',
-        ts_utc: expect.any(Number),
-        values: {
-          temperature_c: 20.1,
-          humidity_pct: 50.2
-        }
+        ts: expect.any(String),
+        temperature: 20.1,
+        humidity: 50.2
       });
     });
 
@@ -163,7 +159,7 @@ describe('Readings API', () => {
 
       expect(response.body.data).toHaveLength(1);
       expect(response.body.data[0].device_id).toBe('temp-001');
-      expect(response.body.data[0].values.temperature_c).toBe(22.5);
+      expect(response.body.data[0].temperature).toBe(22.5);
     });
 
     it('should return error when repository is not configured', async () => {
@@ -212,7 +208,7 @@ describe('Readings API', () => {
       expect(response.status).toBe(200);
       expect(data.data).toHaveLength(1);
       expect(data.data[0].device_id).toBe('temp-001');
-      expect(data.data[0].values.temperature_c).toBe(23.0);
+      expect(data.data[0].temperature).toBe(23.0);
     });
   });
 });
