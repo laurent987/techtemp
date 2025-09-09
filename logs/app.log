@@ -1,0 +1,7 @@
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T15:11:39.897Z"}
+{"dbPath":"./test.db","level":"info","message":"Database initialized","service":"iot-service","timestamp":"2025-09-09T15:11:39.929Z"}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T15:11:40.125Z"}
+{"dbPath":"./test.db","level":"info","message":"Database initialized","service":"iot-service","timestamp":"2025-09-09T15:11:40.125Z"}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T15:11:40.145Z"}
+{"dbPath":"./test.db","level":"info","message":"Database initialized","service":"iot-service","timestamp":"2025-09-09T15:11:40.145Z"}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T15:11:40.184Z"}

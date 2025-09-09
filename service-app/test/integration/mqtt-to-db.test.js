@@ -98,7 +98,7 @@ describe('MQTT to Database Integration', () => {
   describe('Complete Pipeline Integration', () => {
     it('should process MQTT message through complete pipeline to database', async () => {
       // Arrange
-      const topic = 'sensors/temp001/readings';
+      const topic = 'home/home-001/sensors/temp001/reading';
       const payload = {
         temperature_c: 23.5,
         humidity_pct: 65.2,
@@ -133,7 +133,7 @@ describe('MQTT to Database Integration', () => {
 
     it('should handle real MQTT publish-subscribe flow', async () => {
       // Arrange
-      const topic = 'sensors/temp002/readings';
+      const topic = 'home/home-001/sensors/temp002/reading';
       const payload = {
         temperature_c: 18.7,
         humidity_pct: 45.0,
@@ -214,7 +214,7 @@ describe('MQTT to Database Integration', () => {
 
     it('should handle invalid payloads gracefully', async () => {
       // Arrange
-      const topic = 'sensors/temp003/readings';
+      const topic = 'home/home-001/sensors/temp003/reading';
       const invalidPayload = {
         temperature_c: 'invalid',
         humidity_pct: 50.0,
@@ -238,7 +238,7 @@ describe('MQTT to Database Integration', () => {
       const baseTime = new Date('2025-09-07T10:00:00Z').getTime();
 
       const messages = Array.from({ length: messageCount }, (_, i) => ({
-        topic: `sensors/temp${String(i).padStart(3, '0')}/readings`,
+        topic: `home/home-001/sensors/temp${String(i).padStart(3, '0')}/reading`,
         payload: {
           temperature_c: 20 + (i % 30), // Vary temperature 20-49°C
           humidity_pct: 40 + (i % 40), // Vary humidity 40-79%
@@ -279,7 +279,7 @@ describe('MQTT to Database Integration', () => {
 
     it('should handle message deduplication correctly', async () => {
       // Arrange
-      const topic = 'sensors/temp004/readings';
+      const topic = 'home/home-001/sensors/temp004/reading';
       const basePayload = {
         temperature_c: 25.0,
         humidity_pct: 60.0
@@ -334,7 +334,7 @@ describe('MQTT to Database Integration', () => {
   describe('Database Schema Validation', () => {
     it('should enforce database constraints correctly', async () => {
       // Arrange
-      const topic = 'sensors/temp005/readings';
+      const topic = 'home/home-001/sensors/temp005/reading';
       const payload = {
         temperature_c: 22.0,
         humidity_pct: 55.0,

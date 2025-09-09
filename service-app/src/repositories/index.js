@@ -67,6 +67,21 @@ export function createRepository(db) {
           ...device,
           last_seen_at: lastSeen
         };
+      },
+      getCurrentPlacement: async (deviceId) => {
+        if (!deviceId) {
+          throw new Error('Device ID is required');
+        }
+
+        // Find current placement (to_ts is NULL)
+        const placement = db.prepare(`
+          SELECT * FROM device_room_placements 
+          WHERE device_id = ? AND to_ts IS NULL
+          ORDER BY from_ts DESC 
+          LIMIT 1
+        `).get(deviceId);
+
+        return placement || null;
       }
     },
     rooms: {

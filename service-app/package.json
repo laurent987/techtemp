@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "dependencies": {
+    "winston": "^3.17.0"
+  }
+}

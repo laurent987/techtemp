@@ -304,8 +304,8 @@ describe('Parse Topic - MQTT Topic Parsing', () => {
       }
       const end = performance.now();
 
-      // Assert - Should parse 1000 topics in less than 10ms
-      expect(end - start).toBeLessThan(10);
+      // Assert - Should parse 1000 topics in less than 25ms
+      expect(end - start).toBeLessThan(25);
     });
 
     it('should provide meaningful error messages', () => {

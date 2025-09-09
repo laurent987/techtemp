@@ -8,8 +8,7 @@ import { validateReading } from './validateReading.js';
 import crypto from 'crypto';
 
 // Create a parser for the standard MQTT topic pattern used in tests
-const parseTopic = buildTopicParser('sensors/{deviceId}/readings');
-
+const parseTopic = buildTopicParser('home/{homeId}/sensors/{deviceId}/reading');
 /**
  * @typedef {Object} IngestResult
  * @property {boolean} success - Whether ingestion succeeded
@@ -53,7 +52,6 @@ export async function ingestMessage(topic, payload, options = {}, repository) {
     device = await repository.devices.create({
       device_id: parsedTopic.deviceId,
       device_uid: `AUTO_${parsedTopic.deviceId}`,
-      room_id: null,
       last_seen: validatedReading.ts,
       label: 'Auto-discovered sensor',
       model: 'unknown'
@@ -65,9 +63,14 @@ export async function ingestMessage(topic, payload, options = {}, repository) {
   const msgId = generateMessageId(parsedTopic.deviceId, validatedReading);
 
   // Step 5: Prepare reading data for database
+
+  // Resolve room from current placement (can be null)
+  const currentPlacement = await repository.devices.getCurrentPlacement(parsedTopic.deviceId);
+  const roomId = currentPlacement ? currentPlacement.room_id : null;
+
   const readingData = {
     device_id: parsedTopic.deviceId,
-    room_id: device.room_id,
+    room_id: roomId,  // ← Utilise le placement actuel
     temperature: validatedReading.temperature,
     humidity: validatedReading.humidity,
     ts: validatedReading.ts,
