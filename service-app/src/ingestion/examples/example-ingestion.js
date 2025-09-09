@@ -378,21 +378,21 @@ async function demonstrateIngestionPipeline() {
   try {
     const orphanResult = await ingestMessage(orphanDeviceMessage.topic, orphanDeviceMessage.payload, orphanHeaders, repository);
     console.log(`   ✅ Message accepted → device created = ${orphanResult.deviceCreated}`);
-    
+
     // Verify the reading was stored with room_id = NULL
     const storedReading = db.prepare(`
       SELECT device_id, room_id, temperature, humidity, ts 
       FROM readings_raw 
       WHERE device_id = ? AND temperature = ? AND humidity = ?
     `).get('orphan001', 21.5, 45.0);
-    
+
     if (storedReading) {
       console.log(`   📊 Reading stored:`);
       console.log(`       • device_id: "${storedReading.device_id}"`);
       console.log(`       • room_id: ${storedReading.room_id === null ? 'NULL' : storedReading.room_id} ✅`);
       console.log(`       • temperature: ${storedReading.temperature}°C`);
       console.log(`       • humidity: ${storedReading.humidity}%`);
-      
+
       if (storedReading.room_id === null) {
         console.log(`   ✅ SUCCESS: Device without room stored with room_id = NULL`);
       } else {
@@ -401,7 +401,7 @@ async function demonstrateIngestionPipeline() {
     } else {
       console.log(`   ❌ ERROR: Reading not found in database`);
     }
-    
+
   } catch (error) {
     console.log(`   ❌ Orphan device error: ${error.message}`);
   }
@@ -411,14 +411,14 @@ async function demonstrateIngestionPipeline() {
   const orphanDevice = db.prepare('SELECT device_id, label FROM devices WHERE device_id = ?').get('orphan001');
   if (orphanDevice) {
     console.log(`   ✅ Device created: "${orphanDevice.device_id}" - ${orphanDevice.label}`);
-    
+
     // Check for room placement
     const placement = db.prepare(`
       SELECT room_id, from_ts, to_ts 
       FROM device_room_placements 
       WHERE device_id = ?
     `).get('orphan001');
-    
+
     if (placement) {
       console.log(`   ❌ ERROR: Unexpected room placement found: room_id="${placement.room_id}"`);
     } else {
@@ -427,7 +427,7 @@ async function demonstrateIngestionPipeline() {
   } else {
     console.log(`   ❌ ERROR: Orphan device not found in database`);
   }
-  
+
   console.log('═'.repeat(80) + '\n');
 
   // ═══════════════════════════════════════════════════════════════════════════════
