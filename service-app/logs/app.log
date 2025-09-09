@@ -201,3 +201,55 @@
 {"level":"info","message":"Shutting down services...","service":"iot-service","timestamp":"2025-09-09T16:03:32.531Z"}
 {"level":"info","message":"All services stopped","service":"iot-service","timestamp":"2025-09-09T16:03:32.531Z"}
 {"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T16:03:32.547Z"}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T18:07:46.806Z"}
+{"dbPath":"./test.db","level":"info","message":"Database initialized","service":"iot-service","timestamp":"2025-09-09T18:07:46.809Z"}
+{"level":"info","message":"Repository created","service":"iot-service","timestamp":"2025-09-09T18:07:46.857Z"}
+{"level":"info","message":"MQTT client connected","mqttUrl":"mqtt://localhost","service":"iot-service","timestamp":"2025-09-09T18:07:46.857Z"}
+{"level":"info","message":"MQTT subscribed to topics","pattern":"home/+/sensors/+/reading","service":"iot-service","timestamp":"2025-09-09T18:07:46.858Z"}
+{"actualPort":3000,"httpPort":3000,"level":"info","message":"HTTP server listening","service":"iot-service","timestamp":"2025-09-09T18:07:46.858Z"}
+{"level":"info","message":"All services started successfully","service":"iot-service","services":["database","repository","mqtt","http","ingestion"],"timestamp":"2025-09-09T18:07:46.858Z","uptime":0}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T18:07:46.891Z"}
+{"dbPath":"./test.db","level":"info","message":"Database initialized","service":"iot-service","timestamp":"2025-09-09T18:07:46.891Z"}
+{"level":"info","message":"Repository created","service":"iot-service","timestamp":"2025-09-09T18:07:46.892Z"}
+{"level":"info","message":"MQTT client connected","mqttUrl":"mqtt://localhost","service":"iot-service","timestamp":"2025-09-09T18:07:46.892Z"}
+{"level":"info","message":"MQTT subscribed to topics","pattern":"home/+/sensors/+/reading","service":"iot-service","timestamp":"2025-09-09T18:07:46.892Z"}
+{"actualPort":3000,"httpPort":3000,"level":"info","message":"HTTP server listening","service":"iot-service","timestamp":"2025-09-09T18:07:46.893Z"}
+{"level":"info","message":"All services started successfully","service":"iot-service","services":["database","repository","mqtt","http","ingestion"],"timestamp":"2025-09-09T18:07:46.893Z","uptime":0}
+{"level":"info","message":"Shutting down services...","service":"iot-service","timestamp":"2025-09-09T18:07:46.893Z"}
+{"level":"info","message":"All services stopped","service":"iot-service","timestamp":"2025-09-09T18:07:46.893Z"}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T18:07:46.908Z"}
+{"dbPath":"./test.db","level":"info","message":"Database initialized","service":"iot-service","timestamp":"2025-09-09T18:07:46.909Z"}
+{"level":"info","message":"Repository created","service":"iot-service","timestamp":"2025-09-09T18:07:46.910Z"}
+{"level":"info","message":"MQTT client connected","mqttUrl":"mqtt://localhost","service":"iot-service","timestamp":"2025-09-09T18:07:46.910Z"}
+{"level":"info","message":"MQTT subscribed to topics","pattern":"home/+/sensors/+/reading","service":"iot-service","timestamp":"2025-09-09T18:07:46.910Z"}
+{"actualPort":3000,"httpPort":3000,"level":"info","message":"HTTP server listening","service":"iot-service","timestamp":"2025-09-09T18:07:46.910Z"}
+{"level":"info","message":"All services started successfully","service":"iot-service","services":["database","repository","mqtt","http","ingestion"],"timestamp":"2025-09-09T18:07:46.910Z","uptime":0}
+{"level":"info","message":"Shutting down services...","service":"iot-service","timestamp":"2025-09-09T18:07:46.911Z"}
+{"level":"info","message":"All services stopped","service":"iot-service","timestamp":"2025-09-09T18:07:46.911Z"}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T18:07:46.925Z"}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T18:08:38.958Z"}
+{"dbPath":"./test.db","level":"info","message":"Database initialized","service":"iot-service","timestamp":"2025-09-09T18:08:38.961Z"}
+{"level":"info","message":"Repository created","service":"iot-service","timestamp":"2025-09-09T18:08:38.963Z"}
+{"level":"info","message":"MQTT client connected","mqttUrl":"mqtt://localhost","service":"iot-service","timestamp":"2025-09-09T18:08:39.007Z"}
+{"level":"info","message":"MQTT subscribed to topics","pattern":"home/+/sensors/+/reading","service":"iot-service","timestamp":"2025-09-09T18:08:39.042Z"}
+{"actualPort":3000,"httpPort":3000,"level":"info","message":"HTTP server listening","service":"iot-service","timestamp":"2025-09-09T18:08:39.043Z"}
+{"level":"info","message":"All services started successfully","service":"iot-service","services":["database","repository","mqtt","http","ingestion"],"timestamp":"2025-09-09T18:08:39.043Z","uptime":0}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T18:08:39.076Z"}
+{"dbPath":"./test.db","level":"info","message":"Database initialized","service":"iot-service","timestamp":"2025-09-09T18:08:39.077Z"}
+{"level":"info","message":"Repository created","service":"iot-service","timestamp":"2025-09-09T18:08:39.078Z"}
+{"level":"info","message":"MQTT client connected","mqttUrl":"mqtt://localhost","service":"iot-service","timestamp":"2025-09-09T18:08:39.078Z"}
+{"level":"info","message":"MQTT subscribed to topics","pattern":"home/+/sensors/+/reading","service":"iot-service","timestamp":"2025-09-09T18:08:39.078Z"}
+{"actualPort":3000,"httpPort":3000,"level":"info","message":"HTTP server listening","service":"iot-service","timestamp":"2025-09-09T18:08:39.080Z"}
+{"level":"info","message":"All services started successfully","service":"iot-service","services":["database","repository","mqtt","http","ingestion"],"timestamp":"2025-09-09T18:08:39.080Z","uptime":0}
+{"level":"info","message":"Shutting down services...","service":"iot-service","timestamp":"2025-09-09T18:08:39.080Z"}
+{"level":"info","message":"All services stopped","service":"iot-service","timestamp":"2025-09-09T18:08:39.081Z"}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T18:08:39.110Z"}
+{"dbPath":"./test.db","level":"info","message":"Database initialized","service":"iot-service","timestamp":"2025-09-09T18:08:39.111Z"}
+{"level":"info","message":"Repository created","service":"iot-service","timestamp":"2025-09-09T18:08:39.112Z"}
+{"level":"info","message":"MQTT client connected","mqttUrl":"mqtt://localhost","service":"iot-service","timestamp":"2025-09-09T18:08:39.112Z"}
+{"level":"info","message":"MQTT subscribed to topics","pattern":"home/+/sensors/+/reading","service":"iot-service","timestamp":"2025-09-09T18:08:39.112Z"}
+{"actualPort":3000,"httpPort":3000,"level":"info","message":"HTTP server listening","service":"iot-service","timestamp":"2025-09-09T18:08:39.112Z"}
+{"level":"info","message":"All services started successfully","service":"iot-service","services":["database","repository","mqtt","http","ingestion"],"timestamp":"2025-09-09T18:08:39.113Z","uptime":0}
+{"level":"info","message":"Shutting down services...","service":"iot-service","timestamp":"2025-09-09T18:08:39.113Z"}
+{"level":"info","message":"All services stopped","service":"iot-service","timestamp":"2025-09-09T18:08:39.113Z"}
+{"level":"info","message":"Configuration loaded","nodeEnv":"test","service":"iot-service","timestamp":"2025-09-09T18:08:39.141Z"}
