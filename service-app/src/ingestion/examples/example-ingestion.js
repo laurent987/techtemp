@@ -32,7 +32,8 @@ async function demonstrateIngestionPipeline() {
   console.log('4️⃣  ingestMessage   → Invalid message handling');
   console.log('5️⃣  Reuse           → Device auto-creation vs reuse');
   console.log('6️⃣  Deduplication   → Protection against duplicate messages');
-  console.log('7️⃣  Statistics      → Operations summary\n');
+  console.log('7️⃣  Orphan Device   → Device without room placement');
+  console.log('8️⃣  Statistics      → Operations summary\n');
 
   // Setup database (clean start)
   const dbPath = join(__dirname, '../../../examples/db-data-examples/example-ingestion.db');
@@ -347,9 +348,92 @@ async function demonstrateIngestionPipeline() {
   console.log('═'.repeat(80) + '\n');
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // 7️⃣  TEST: Pipeline Statistics
+  // 7️⃣  TEST: Device Without Room Assignment
   // ═══════════════════════════════════════════════════════════════════════════════
-  console.log('📊 7️⃣  TEST: Pipeline Statistics');
+  console.log('🏠 7️⃣  TEST: Device Without Room Assignment');
+  console.log('┌─ OBJECTIVE: Verify devices without room_id can store data properly');
+  console.log('│  Device creation: auto-created device without room placement');
+  console.log('│  Data storage: readings stored with room_id = NULL');
+  console.log('└─ Database validation: verify NULL room_id handling\n');
+
+  const orphanDeviceMessage = {
+    topic: 'home/home-001/sensors/orphan001/reading',
+    payload: {
+      temperature_c: 21.5,
+      humidity_pct: 45.0,
+      ts: 1725721500000
+    }
+  };
+
+  console.log(`📤 Test 7.1: Device without room placement:`);
+  console.log(`   📍 Topic: "${orphanDeviceMessage.topic}"`);
+  console.log(`   📋 Payload:`, JSON.stringify(orphanDeviceMessage.payload, null, 2).replace(/\n/g, '\n       '));
+  console.log(`   🎯 Expected: device auto-created, room_id = NULL`);
+
+  // Send message for orphan device
+  const orphanMsgId = generateMsgId();
+  const orphanHeaders = { msg_id: orphanMsgId };
+  console.log(`   🔑 msg_id: "${orphanMsgId}"`);
+
+  try {
+    const orphanResult = await ingestMessage(orphanDeviceMessage.topic, orphanDeviceMessage.payload, orphanHeaders, repository);
+    console.log(`   ✅ Message accepted → device created = ${orphanResult.deviceCreated}`);
+    
+    // Verify the reading was stored with room_id = NULL
+    const storedReading = db.prepare(`
+      SELECT device_id, room_id, temperature, humidity, ts 
+      FROM readings_raw 
+      WHERE device_id = ? AND temperature = ? AND humidity = ?
+    `).get('orphan001', 21.5, 45.0);
+    
+    if (storedReading) {
+      console.log(`   📊 Reading stored:`);
+      console.log(`       • device_id: "${storedReading.device_id}"`);
+      console.log(`       • room_id: ${storedReading.room_id === null ? 'NULL' : storedReading.room_id} ✅`);
+      console.log(`       • temperature: ${storedReading.temperature}°C`);
+      console.log(`       • humidity: ${storedReading.humidity}%`);
+      
+      if (storedReading.room_id === null) {
+        console.log(`   ✅ SUCCESS: Device without room stored with room_id = NULL`);
+      } else {
+        console.log(`   ❌ ERROR: Expected room_id = NULL, got "${storedReading.room_id}"`);
+      }
+    } else {
+      console.log(`   ❌ ERROR: Reading not found in database`);
+    }
+    
+  } catch (error) {
+    console.log(`   ❌ Orphan device error: ${error.message}`);
+  }
+
+  console.log(`\n📤 Test 7.2: Verify device creation without room placement:`);
+  // Check that device was created but has no room placement
+  const orphanDevice = db.prepare('SELECT device_id, label FROM devices WHERE device_id = ?').get('orphan001');
+  if (orphanDevice) {
+    console.log(`   ✅ Device created: "${orphanDevice.device_id}" - ${orphanDevice.label}`);
+    
+    // Check for room placement
+    const placement = db.prepare(`
+      SELECT room_id, from_ts, to_ts 
+      FROM device_room_placements 
+      WHERE device_id = ?
+    `).get('orphan001');
+    
+    if (placement) {
+      console.log(`   ❌ ERROR: Unexpected room placement found: room_id="${placement.room_id}"`);
+    } else {
+      console.log(`   ✅ SUCCESS: No room placement (as expected for orphan device)`);
+    }
+  } else {
+    console.log(`   ❌ ERROR: Orphan device not found in database`);
+  }
+  
+  console.log('═'.repeat(80) + '\n');
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // 8️⃣  TEST: Pipeline Statistics
+  // ═══════════════════════════════════════════════════════════════════════════════
+  console.log('📊 8️⃣  TEST: Pipeline Statistics');
   console.log('┌─ OBJECTIVE: Summary of operations performed in the database');
   console.log('│  Counters: devices created, readings ingested');
   console.log('│  Details: list of devices with their metadata');
