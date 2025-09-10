@@ -15,7 +15,6 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
     mockRepository = {
       devices: {
         findByUid: vi.fn(),
-        findByUid: vi.fn(),
         create: vi.fn(),
         updateLastSeen: vi.fn(),
         getCurrentPlacement: vi.fn()
