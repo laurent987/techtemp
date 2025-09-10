@@ -8,16 +8,28 @@
 
 ## 📋 **Prérequis Hardware**
 
+> **🚀 Nouveau sur Raspberry Pi ?**  
+> Consultez notre **[Guide de Préparation Raspberry Pi](RASPBERRY_PI_SETUP.md)** pour :  
+> Configuration carte SD, activation SSH, Wi-Fi, et dépannage connexion.
+
 ### **Raspberry Pi**
-- **Modèle :** Raspberry Pi 3B+ ou 4 (recommandé)
+- **Recommandé :** **Raspberry Pi Zero 2W** (optimal prix/performance pour capteurs)
+- **Alternatives :** Raspberry Pi 3B+, 4B
 - **OS :** Raspberry Pi OS Lite/Desktop (Debian-based)
-- **Connectivité :** Wi-Fi ou Ethernet configuré
+- **Connectivité :** Wi-Fi intégré (Zero 2W) ou Ethernet
 - **GPIO :** I2C activé
 
 ### **Capteur AHT20**
 - **Capteur :** AHT20 température/humidité
 - **Interface :** I2C (SDA/SCL)
 - **Alimentation :** 3.3V ou 5V
+
+> **💡 Pourquoi Pi Zero 2W pour TechTemp ?**  
+> - ✅ **Prix :** ~15€ vs 80€+ pour Pi 4  
+> - ✅ **Consommation :** <1W (parfait pour capteurs 24/7)  
+> - ✅ **Wi-Fi intégré :** Pas besoin d'adaptateur  
+> - ✅ **Performance :** ARM Cortex-A53 suffisant pour notre client C  
+> - ✅ **Compact :** Idéal pour boîtiers capteurs discrets
 
 ### **Câblage I2C**
 ```
@@ -89,6 +101,10 @@ sudo i2cdetect -y 1
 
 ## 📦 **Étape 2 : Déploiement Application**
 
+> **⚡ Installation Ultra-Rapide ?**  
+> Consultez notre **[Guide d'Accès Rapide](ACCESS_GUIDE.md)** pour toutes les  
+> méthodes de téléchargement et d'installation des scripts TechTemp.
+
 ### **🚀 Installation Rapide (One-Liner)**
 ```bash
 # Bootstrap rapide - Télécharge et configure tout automatiquement
@@ -111,7 +127,46 @@ git checkout feature/journal-008-premier-capteur-physique
 chmod +x scripts/*.sh
 ```
 
-#### **2.2 Alternative : Download Scripts Seulement**
+### **2.3 Test Connexion SSH**
+
+#### **📍 Localiser le Raspberry Pi**
+```bash
+# Scan réseau pour trouver votre Pi
+nmap -sn 192.168.0.0/24
+
+# Test par hostname configuré
+ping techtemp-pi-01.local   # Remplacer par votre hostname
+ping raspberrypi.local      # Hostname par défaut
+
+# Identifier spécifiquement les Pi par MAC
+nmap -sn 192.168.0.0/24 | grep -A1 -B1 "B8:27:EB\|DC:A6:32\|E4:5F:01"
+```
+
+#### **🔐 Connexion SSH**
+```bash
+# Méthode recommandée (par hostname)
+ssh pi@techtemp-pi-01.local
+
+# Alternative par IP directe
+ssh pi@192.168.0.XXX        # IP trouvée avec nmap
+
+# Si échec authentification par clé SSH
+ssh -o PreferredAuthentications=password pi@techtemp-pi-01.local
+
+# Debug connexion
+ssh -v pi@techtemp-pi-01.local
+```
+
+#### **✅ Validation Connexion**
+```bash
+# Une fois connecté, vérifier :
+uname -a                    # Système
+hostname                    # Nom configuré
+sudo i2cdetect -y 1        # I2C pour capteurs
+df -h                      # Espace disque
+```
+
+### **2.4 Installation TechTemp**
 ```bash
 # Si vous voulez juste les scripts sans clone complet
 mkdir -p /home/pi/techtemp-scripts

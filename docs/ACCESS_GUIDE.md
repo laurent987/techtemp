@@ -2,6 +2,9 @@
 
 ## **Comment récupérer les scripts sur votre Raspberry Pi ?**
 
+> **🎯 Testé sur :** Raspberry Pi Zero 2W (config recommandée pour capteurs TechTemp)  
+> **Compatible :** Tous Pi 3B+, 4B, Zero 2W avec Raspberry Pi OS
+
 ### **🎯 Solution 1 : One-Liner Bootstrap (RECOMMANDÉ)**
 ```bash
 # Une seule commande - Télécharge tout automatiquement

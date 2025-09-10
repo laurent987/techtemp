@@ -1,7 +1,8 @@
 # 🥧 Préparation Raspberry Pi - Carte SD + SSH
 
 ## **📋 Prérequis**
-- Carte microSD (16GB+ recommandé)
+- **Raspberry Pi Zero 2W** (recommandé pour capteurs IoT) ou Pi 3B+/4B
+- Carte microSD (8GB+ pour Zero 2W, 16GB+ pour Pi 4)
 - Raspberry Pi OS Lite ou Desktop
 - Ordinateur avec lecteur SD
 - Capteur AHT20 (optionnel pour début)
@@ -157,37 +158,104 @@ sudo i2cdetect -y 1
 
 ## **🆘 Dépannage**
 
+### **🔍 Diagnostic Réseau Pi**
+```bash
+# 1. Scan réseau pour détecter nouveaux appareils
+nmap -sn 192.168.0.0/24
+
+# 2. Comparer avant/après boot Pi
+nmap -sn 192.168.0.0/24 > avant.txt  # Pi éteint
+# ... démarrer le Pi, attendre 3-5 minutes
+nmap -sn 192.168.0.0/24 > apres.txt  # Pi allumé
+diff avant.txt apres.txt
+
+# 3. Identifier par adresse MAC (Pi spécifique)
+nmap -sn 192.168.0.0/24 | grep -A1 -B1 "B8:27:EB\|DC:A6:32\|E4:5F:01"
+
+# 4. Test hostname par défaut
+ping raspberrypi.local
+ping techtemp-pi-01.local  # Votre hostname configuré
+```
+
+### **🔧 Problèmes de Connexion Courants**
+
+#### **Pi détecté mais SSH refuse :**
+```bash
+# Test avec hostname
+ssh pi@techtemp-pi-01.local
+
+# Forcer mot de passe si clé SSH échoue
+ssh -o PreferredAuthentications=password pi@techtemp-pi-01.local
+
+# Mode verbose pour debug
+ssh -v pi@techtemp-pi-01.local
+```
+
+#### **Cache réseau Mac qui traîne :**
+```bash
+# Vider cache ARP
+sudo arp -a -d
+
+# Nouveau scan propre
+nmap -sn 192.168.0.0/24
+```
+
 ### **SSH ne fonctionne pas :**
 ```bash
 # Vérifier si SSH est activé
 # Créer fichier ssh vide sur la partition boot de la SD
-touch /Volumes/boot/ssh  # macOS
-touch /media/boot/ssh    # Linux
+touch /Volumes/bootfs/ssh     # macOS (bootfs)
+touch /media/bootfs/ssh       # Linux
 ```
 
 ### **Wi-Fi ne se connecte pas :**
 ```bash
-# Créer fichier wpa_supplicant.conf sur partition boot
-cat > /Volumes/boot/wpa_supplicant.conf << EOF
-country=FR
+# Méthode 1: Créer fichier wpa_supplicant.conf sur partition boot
+cat > /Volumes/bootfs/wpa_supplicant.conf << EOF
+country=BE
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 
 network={
     ssid="VOTRE_WIFI"
     psk="VOTRE_MOT_DE_PASSE"
+    key_mgmt=WPA-PSK
 }
 EOF
+
+# Méthode 2: Configuration directe dans /rootfs
+nano /Volumes/rootfs/etc/wpa_supplicant/wpa_supplicant.conf
 ```
 
 ### **I2C ne fonctionne pas :**
 ```bash
+# Dans config.txt, décommenter :
+dtparam=i2c_arm=on
+
 # Vérifier modules chargés
 lsmod | grep i2c
 
 # Forcer activation
 sudo modprobe i2c-dev
 sudo modprobe i2c-bcm2708
+```
+
+### **🎯 Procédure de Validation Complète**
+```bash
+# 1. Pi physiquement allumé ?
+# LED rouge fixe + LED verte clignote = OK
+
+# 2. Pi sur réseau ?
+ping techtemp-pi-01.local
+
+# 3. SSH accessible ?
+ssh pi@techtemp-pi-01.local
+
+# 4. I2C activé ?
+sudo i2cdetect -y 1
+
+# 5. Prêt pour TechTemp !
+curl -sSL https://raw.../bootstrap.sh | bash
 ```
 
 ---
