@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { initDb, closeDb } from '../src/db/index.js';
-import { createRepository } from '../src/repositories/index.js';
+import { initDb, closeDb } from '../backend/db/index.js';
+import { createRepository } from '../backend/repositories/index.js';
 
 describe('Repository Pattern - Business Logic Layer', () => {
   let db;

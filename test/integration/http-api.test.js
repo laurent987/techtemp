@@ -4,11 +4,11 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createHttpServer } from '../../src/http/server.js';
-import { initDb, closeDb } from '../../src/db/index.js';
-import { createRepository } from '../../src/repositories/index.js';
-import { ingestMessage } from '../../src/ingestion/index.js';
-import { config } from '../../src/config.js';
+import { createHttpServer } from '../../backend/http/server.js';
+import { initDb, closeDb } from '../../backend/db/index.js';
+import { createRepository } from '../../backend/repositories/index.js';
+import { ingestMessage } from '../../backend/ingestion/index.js';
+import { config } from '../../backend/config.js';
 
 describe('HTTP API End-to-End Integration', () => {
   let httpServer;

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { initDb, closeDb } from '../src/db/index.js';
+import { initDb, closeDb } from '../backend/db/index.js';
 import path from 'path';
 import fs from 'fs';
 

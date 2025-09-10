@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { validateReading } from '../../src/ingestion/validateReading.js';
+import { validateReading } from '../../backend/ingestion/validateReading.js';
 
 describe('Validate Reading - MQTT Payload Validation', () => {
 

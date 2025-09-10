@@ -17,7 +17,7 @@ describe('Application Orchestration (main.js)', () => {
     process.env.MQTT_URL = 'mqtt://localhost';
     process.env.HTTP_PORT = '3000';
     process.env.TOPIC_READING_PATTERN = 'home/+/sensors/+/reading';
-    const { loadConfig } = await import('../src/config.js');
+    const { loadConfig } = await import('../backend/config.js');
     const config = loadConfig();
     expect(config).toHaveProperty('dbPath');
     expect(config).toHaveProperty('mqttUrl');
@@ -30,7 +30,7 @@ describe('Application Orchestration (main.js)', () => {
     delete process.env.DB_PATH;
     delete process.env.MQTT_URL;
     delete process.env.HTTP_PORT;
-    const { loadConfig } = await import('../src/config.js');
+    const { loadConfig } = await import('../backend/config.js');
     expect(() => loadConfig()).toThrow();
   });
 
@@ -42,7 +42,7 @@ describe('Application Orchestration (main.js)', () => {
     process.env.TOPIC_READING_PATTERN = 'home/+/sensors/+/reading';
     const order = [];
     const httpClose = vi.fn();
-    await vi.doMock('../src/db/index.js', () => ({
+    await vi.doMock('../backend/db/index.js', () => ({
       initDb: vi.fn(() => {
         order.push('db');
         return {
@@ -52,7 +52,7 @@ describe('Application Orchestration (main.js)', () => {
         };
       })
     }));
-    await vi.doMock('../src/mqtt/client.js', () => ({
+    await vi.doMock('../backend/mqtt/client.js', () => ({
       createMqttClient: vi.fn(() => {
         order.push('mqtt');
         return {
@@ -62,10 +62,10 @@ describe('Application Orchestration (main.js)', () => {
         };
       })
     }));
-    await vi.doMock('../src/http/server.js', () => ({
+    await vi.doMock('../backend/http/server.js', () => ({
       createHttpServer: vi.fn(() => { order.push('http'); return { start: vi.fn().mockResolvedValue({ port: 3000 }), stop: httpClose }; })
     }));
-    const { start } = await import('../src/main.js');
+    const { start } = await import('../backend/main.js');
     await start();
     expect(order).toEqual(['db', 'mqtt', 'http']);
   });
@@ -79,16 +79,16 @@ describe('Application Orchestration (main.js)', () => {
     const dbClose = vi.fn();
     const mqttDisconnect = vi.fn();
     const httpClose = vi.fn();
-    await vi.doMock('../src/db/index.js', () => ({
+    await vi.doMock('../backend/db/index.js', () => ({
       initDb: vi.fn(() => ({ close: dbClose, prepare: vi.fn(() => ({ run: vi.fn(), get: vi.fn(), all: vi.fn() })), pragma: vi.fn() }))
     }));
-    await vi.doMock('../src/mqtt/client.js', () => ({
+    await vi.doMock('../backend/mqtt/client.js', () => ({
       createMqttClient: vi.fn(() => ({ disconnect: mqttDisconnect, onMessage: vi.fn(() => vi.fn()), subscribe: vi.fn() }))
     }));
-    await vi.doMock('../src/http/server.js', () => ({
+    await vi.doMock('../backend/http/server.js', () => ({
       createHttpServer: vi.fn(() => ({ start: vi.fn().mockResolvedValue({ port: 3000 }), stop: httpClose, close: httpClose }))
     }));
-    const { start } = await import('../src/main.js');
+    const { start } = await import('../backend/main.js');
     const app = await start();
     await app.stop();
     expect(dbClose).toHaveBeenCalled();
@@ -105,16 +105,16 @@ describe('Application Orchestration (main.js)', () => {
     const dbClose = vi.fn();
     const mqttDisconnect = vi.fn();
     const httpClose = vi.fn();
-    await vi.doMock('../src/db/index.js', () => ({
+    await vi.doMock('../backend/db/index.js', () => ({
       initDb: vi.fn(() => ({ close: dbClose, prepare: vi.fn(() => ({ run: vi.fn(), get: vi.fn(), all: vi.fn() })), pragma: vi.fn() }))
     }));
-    await vi.doMock('../src/mqtt/client.js', () => ({
+    await vi.doMock('../backend/mqtt/client.js', () => ({
       createMqttClient: vi.fn(() => ({ disconnect: mqttDisconnect, onMessage: vi.fn(() => vi.fn()), subscribe: vi.fn() }))
     }));
-    await vi.doMock('../src/http/server.js', () => ({
+    await vi.doMock('../backend/http/server.js', () => ({
       createHttpServer: vi.fn(() => ({ start: vi.fn().mockResolvedValue({ port: 3000 }), stop: httpClose, close: httpClose }))
     }));
-    const { start } = await import('../src/main.js');
+    const { start } = await import('../backend/main.js');
     const app = await start();
     await app.stop();
     expect(dbClose).toHaveBeenCalled();
@@ -128,11 +128,11 @@ describe('Application Orchestration (main.js)', () => {
     process.env.MQTT_URL = 'mqtt://localhost';
     process.env.HTTP_PORT = '3000';
     process.env.TOPIC_READING_PATTERN = 'home/+/sensors/+/reading';
-    await vi.doMock('../src/db/index.js', () => ({
+    await vi.doMock('../backend/db/index.js', () => ({
       initDb: vi.fn(() => { throw new Error('DB init failed'); })
     }));
-    const { start } = await import('../src/main.js');
+    const { start } = await import('../backend/main.js');
     await expect(start()).rejects.toThrow('DB init failed');
-    vi.unmock('../src/db/index.js');
+    vi.unmock('../backend/db/index.js');
   });
 });
