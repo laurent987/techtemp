@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ingestMessage } from '../../src/ingestion/ingestMessage.js';
+import { ingestMessage } from '../../backend/ingestion/ingestMessage.js';
 
 describe('Ingest Message - MQTT Pipeline Integration', () => {
 
@@ -14,7 +14,8 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
     // Mock repository with all needed methods
     mockRepository = {
       devices: {
-        findById: vi.fn(),
+        findByUid: vi.fn(),
+        findByUid: vi.fn(),
         create: vi.fn(),
         updateLastSeen: vi.fn(),
         getCurrentPlacement: vi.fn()
@@ -37,7 +38,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       const options = { retain: false, qos: 1 };
 
       // Mock existing device
-      mockRepository.devices.findById.mockResolvedValue({
+      mockRepository.devices.findByUid.mockResolvedValue({
         device_id: 'temp001',
         device_uid: 'SENSOR_001',
         room_id: 'living-room',
@@ -74,7 +75,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       expect(result.insertId).toBe(42);
 
       // Verify repository calls
-      expect(mockRepository.devices.findById).toHaveBeenCalledWith('temp001');
+      expect(mockRepository.devices.findByUid).toHaveBeenCalledWith('temp001');
       expect(mockRepository.readings.create).toHaveBeenCalledWith({
         device_id: 'temp001',
         room_id: 'living-room',
@@ -97,7 +98,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       };
 
       // Mock device not found
-      mockRepository.devices.findById.mockResolvedValue(null);
+      mockRepository.devices.findByUid.mockResolvedValue(null);
 
       // Mock device creation
       mockRepository.devices.create.mockResolvedValue({
@@ -125,7 +126,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       // Verify device was created with auto-generated data
       expect(mockRepository.devices.create).toHaveBeenCalledWith({
         device_id: 'temp002',
-        device_uid: 'AUTO_temp002',
+        device_uid: 'temp002',
         last_seen: expect.any(String), // Now an ISO string
         label: 'Auto-discovered sensor',
         model: 'unknown'
@@ -144,7 +145,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
         .rejects.toThrow(/invalid.*topic.*format/i);
 
       // Verify no repository calls were made
-      expect(mockRepository.devices.findById).not.toHaveBeenCalled();
+      expect(mockRepository.devices.findByUid).not.toHaveBeenCalled();
       expect(mockRepository.readings.create).not.toHaveBeenCalled();
     });
 
@@ -158,7 +159,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
         .rejects.toThrow(/temperature.*must.*be.*number/i);
 
       // Verify no repository calls were made
-      expect(mockRepository.devices.findById).not.toHaveBeenCalled();
+      expect(mockRepository.devices.findByUid).not.toHaveBeenCalled();
       expect(mockRepository.readings.create).not.toHaveBeenCalled();
     });
 
@@ -168,7 +169,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       const payload = { temperature_c: 25.0, humidity_pct: 60.0, ts: 1757442988279 };
 
       // Mock device not found
-      mockRepository.devices.findById.mockResolvedValue(null);
+      mockRepository.devices.findByUid.mockResolvedValue(null);
 
       // Mock device creation failure
       mockRepository.devices.create.mockRejectedValue(new Error('Database connection failed'));
@@ -187,7 +188,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       const payload = { temperature_c: 30.0, humidity_pct: 70.0, ts: 1757442988279 };
 
       // Mock existing device
-      mockRepository.devices.findById.mockResolvedValue({
+      mockRepository.devices.findByUid.mockResolvedValue({
         device_id: 'temp001',
         room_id: 'kitchen'
       });
@@ -207,7 +208,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       const topic = 'home/home-001/sensors/temp001/reading';
       const payload = { temperature_c: 22.0, humidity_pct: 55.0, ts: 1757442988279 };
 
-      mockRepository.devices.findById.mockResolvedValue({
+      mockRepository.devices.findByUid.mockResolvedValue({
         device_id: 'temp001',
         room_id: 'bedroom'
       });
@@ -247,7 +248,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
         .rejects.toThrow(/humidity_pct.*required/i);
 
       // Verify no repository calls were made
-      expect(mockRepository.devices.findById).not.toHaveBeenCalled();
+      expect(mockRepository.devices.findByUid).not.toHaveBeenCalled();
       expect(mockRepository.readings.create).not.toHaveBeenCalled();
     });
 
@@ -257,7 +258,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       const payload = { temperature_c: 24.0, humidity_pct: 58.0, ts: 1757442988279 };
       const options = { retain: true, qos: 2 };
 
-      mockRepository.devices.findById.mockResolvedValue({ device_id: 'temp001', room_id: 'office' });
+      mockRepository.devices.findByUid.mockResolvedValue({ device_id: 'temp001', room_id: 'office' });
       mockRepository.readings.create.mockResolvedValue({ success: true, changes: 1, lastInsertRowid: 46 });
       mockRepository.devices.updateLastSeen.mockResolvedValue({});
 
@@ -278,7 +279,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       const topic = 'home/home-001/sensors/temp001/reading';
       const payload = { temperature_c: 26.0, humidity_pct: 62.0, ts: 1757442988279 };
 
-      mockRepository.devices.findById.mockResolvedValue({ device_id: 'temp001', room_id: 'garage' });
+      mockRepository.devices.findByUid.mockResolvedValue({ device_id: 'temp001', room_id: 'garage' });
       mockRepository.readings.create.mockResolvedValue({ success: true, changes: 1, lastInsertRowid: 47 });
       mockRepository.devices.updateLastSeen.mockResolvedValue({});
 

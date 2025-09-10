@@ -44,14 +44,14 @@ export async function ingestMessage(topic, payload, options = {}, repository) {
   const validatedReading = validateReading(payload);
 
   // Step 3: Check if device exists or create it
-  let device = await repository.devices.findById(parsedTopic.deviceId);
+  let device = await repository.devices.findByUid(parsedTopic.deviceId);
   let deviceCreated = false;
 
   if (!device) {
     // Auto-create device if it doesn't exist
     device = await repository.devices.create({
       device_id: parsedTopic.deviceId,
-      device_uid: `AUTO_${parsedTopic.deviceId}`,
+      device_uid: parsedTopic.deviceId,
       last_seen: validatedReading.ts,
       label: 'Auto-discovered sensor',
       model: 'unknown'

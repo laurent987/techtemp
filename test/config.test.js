@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { loadConfig, configSchema } from '../src/config.js';
+import { loadConfig, configSchema } from '../backend/config.js';
 
 describe('Configuration Loading', () => {
   let originalEnv;

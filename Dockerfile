@@ -30,7 +30,7 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY --from=dependencies /app/node_modules ./node_modules
 
 # Copy source code
-COPY src/ ./src/
+COPY backend/ ./backend/
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data && \
@@ -48,4 +48,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "src/main.js"]
+CMD ["node", "backend/main.js"]

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import net from 'node:net';
 import { once } from 'node:events';
-import { createMqttClient } from '../src/mqtt/client.js';
+import { createMqttClient } from '../backend/mqtt/client.js';
 
 // Helper function for test delays
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));

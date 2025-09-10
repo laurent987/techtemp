@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { readingsRouter } from '../../src/http/routes/readings.js';
-import { initDb } from '../../src/db/index.js';
-import { createRepository } from '../../src/repositories/index.js';
+import { readingsRouter } from '../../backend/http/routes/readings.js';
+import { initDb } from '../../backend/db/index.js';
+import { createRepository } from '../../backend/repositories/index.js';
 import express from 'express';
-import { createHttpServer } from '../../src/http/server.js';
+import { createHttpServer } from '../../backend/http/server.js';
 
 describe('Readings API', () => {
   let app;

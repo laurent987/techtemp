@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { healthRouter } from '../../src/http/routes/health.js';
-import { initDb } from '../../src/db/index.js';
-import { createRepository } from '../../src/repositories/index.js';
+import { healthRouter } from '../../backend/http/routes/health.js';
+import { initDb } from '../../backend/db/index.js';
+import { createRepository } from '../../backend/repositories/index.js';
 import express from 'express';
-import { createHttpServer } from '../../src/http/server.js';
+import { createHttpServer } from '../../backend/http/server.js';
 
 describe('Health Route', () => {
   let app;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildTopicParser } from '../../src/ingestion/parseTopic.js';
+import { buildTopicParser } from '../../backend/ingestion/parseTopic.js';
 
 describe('Parse Topic - MQTT Topic Parsing', () => {
   describe('buildTopicParser', () => {

@@ -13,9 +13,9 @@ import { dirname, join } from 'path';
 import { unlinkSync, existsSync } from 'fs';
 import { setTimeout as delay } from 'timers/promises';
 
-import { initDb } from '../../src/db/index.js';
-import { createRepository } from '../../src/repositories/index.js';
-import { ingestMessage } from '../../src/ingestion/ingestMessage.js';
+import { initDb } from '../../backend/db/index.js';
+import { createRepository } from '../../backend/repositories/index.js';
+import { ingestMessage } from '../../backend/ingestion/ingestMessage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -118,7 +118,7 @@ describe('MQTT to Database Integration', () => {
       const device = await repository.devices.findById('temp001');
       expect(device).toBeTruthy();
       expect(device.device_id).toBe('temp001');
-      expect(device.device_uid).toBe('AUTO_temp001');
+      expect(device.device_uid).toBe('temp001');
       expect(device.label).toBe('Auto-discovered sensor');
 
       // Verify reading was stored in database
@@ -348,7 +348,7 @@ describe('MQTT to Database Integration', () => {
       const device = db.prepare('SELECT * FROM devices WHERE device_id = ?').get('temp005');
       expect(device).toBeTruthy();
       expect(device.device_id).toBe('temp005');
-      expect(device.device_uid).toBe('AUTO_temp005');
+      expect(device.device_uid).toBe('temp005');
       expect(device.last_seen_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/); // ISO format
 
       const reading = db.prepare('SELECT * FROM readings_raw WHERE device_id = ?').get('temp005');

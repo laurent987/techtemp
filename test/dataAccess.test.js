@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { initDb, closeDb } from '../src/db/index.js';
-import { createDataAccess } from '../src/db/dataAccess.js';
+import { initDb, closeDb } from '../backend/db/index.js';
+import { createDataAccess } from '../backend/db/dataAccess.js';
 
 describe('Data Access Layer', () => {
   let db;

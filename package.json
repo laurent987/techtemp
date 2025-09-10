@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "TechTemp IoT backend service - MQTT ingestion, data storage, and REST API",
   "type": "module",
-  "main": "src/main.js",
+  "main": "backend/main.js",
   "scripts": {
-    "start": "node src/main.js",
-    "start:prod": "node src/production.js",
+    "start": "node backend/main.js",
+    "start:prod": "node backend/production.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "docker:build": "docker build -t techtemp-service .",

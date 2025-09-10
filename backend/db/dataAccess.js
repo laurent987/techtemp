@@ -14,6 +14,7 @@ export function createDataAccess(db) {
     // Device operations
     insertDevice: createInsertDevice(db),
     findDeviceById: createFindDeviceById(db),
+    findDeviceByUid: createFindDeviceByUid(db),
     updateDeviceLastSeen: createUpdateDeviceLastSeen(db),
 
     // Room operations  
@@ -74,6 +75,16 @@ function createFindDeviceById(db) {
 
   return function findDeviceById(deviceId) {
     return stmt.get(deviceId) || null;
+  };
+}
+
+function createFindDeviceByUid(db) {
+  const stmt = db.prepare(`
+    SELECT * FROM devices WHERE device_uid = ?
+  `);
+
+  return function findDeviceByUid(deviceUid) {
+    return stmt.get(deviceUid) || null;
   };
 }
 

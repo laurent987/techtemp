@@ -22,29 +22,10 @@
 
 ---
 
-## 🚀 **Prochains Journaux Planifiés**
+## 🚀 **Prochains Journaux Planifiés (Lot 1 - MVP)**
 
-### **Journal #008 — Monitoring & Observabilité** 
+### **Journal #008 — Premier Capteur Physique**
 **📅 Prévu: 11-12 septembre 2025**
-**🎯 Objectif**: Implémenter monitoring complet avec Prometheus et Grafana
-
-**Scope:**
-- **Prometheus**: Métriques application (HTTP, MQTT, DB)
-- **Grafana**: Dashboards temps réel + alerting
-- **Logs**: Centralisation et analyse des logs
-- **Health Checks**: Monitoring automatisé des services
-- **Alerting**: Notifications automatiques sur incidents
-
-**Livrables:**
-- Stack monitoring Prometheus + Grafana opérationnelle
-- Dashboards temps réel pour métriques clés
-- Système alerting configuré
-- Documentation monitoring + troubleshooting
-
----
-
-### **Journal #009 — Premier Capteur Physique**
-**📅 Prévu: 13-14 septembre 2025**
 **🎯 Objectif**: Intégrer le premier capteur Raspberry Pi réel
 
 **Scope:**
@@ -62,8 +43,8 @@
 
 ---
 
-### **Journal #010 — Interface Web Simple**
-**📅 Prévu: 15-16 septembre 2025**  
+### **Journal #009 — Interface Web Simple**
+**📅 Prévu: 13-14 septembre 2025**  
 **🎯 Objectif**: Interface utilisateur de base pour visualiser les données
 
 **Scope:**
@@ -82,7 +63,7 @@
 ---
 
 ### **Journal #010 — Multi-Capteurs & Rooms**
-**📅 Prévu: 16-17 septembre 2025**
+**📅 Prévu: 15-16 septembre 2025**
 **🎯 Objectif**: Étendre à plusieurs capteurs et gestion des pièces
 
 **Scope:**
@@ -100,6 +81,8 @@
 
 ---
 
+## 🔄 **Phases Suivantes (Lot 2 - Robustesse)**
+
 ### **Journal #011 — Historique & Graphiques**
 **📅 Prévu: 18-19 septembre 2025**
 **🎯 Objectif**: Consultation historique et visualisation graphique
@@ -111,16 +94,23 @@
 - **Agrégations**: Données horaires/journalières
 - **Export**: CSV + données historiques
 
-**Livrables:**
-- Consultation historique complète
-- Graphiques interactifs temps réel
-- Analyse tendances et patterns
-- Fonctions export données
+---
+
+### **Journal #012 — Monitoring & Observabilité** 
+**📅 Prévu: 20-21 septembre 2025**
+**🎯 Objectif**: Monitoring avancé et observabilité
+
+**Scope:**
+- **Prometheus**: Métriques application (HTTP, MQTT, DB)
+- **Grafana**: Dashboards temps réel + alerting
+- **Logs**: Centralisation et analyse des logs
+- **Health Checks**: Monitoring automatisé des services
+- **Alerting**: Notifications automatiques sur incidents
 
 ---
 
-### **Journal #012 — Alertes & Notifications** 
-**📅 Prévu: 20-21 septembre 2025**
+### **Journal #013 — Alertes & Notifications** 
+**📅 Prévu: 22-23 septembre 2025**
 **🎯 Objectif**: Système d'alertes pour conditions anormales
 
 **Scope:**
@@ -129,24 +119,6 @@
 - **Notifications**: Email + logs + interface
 - **Escalation**: Niveaux gravité + accusé réception
 - **Configuration**: Interface admin pour règles
-
-**Livrables:**
-- Système alertes fonctionnel
-- Notifications automatiques
-- Interface configuration règles
-- Dashboard incidents/alertes
-
----
-
-## 🔄 **Phases Suivantes (Lot 2)**
-
-### **Journal #013-015 — Optimisation & Scalabilité**
-- Performance tuning + caching
-- Agrégations automatiques (hourly/daily)  
-- Rétention données + archivage
-- Load testing + optimisation DB
-
-### **Journal #016-018 — Sécurité & Robustesse**
 - Authentification JWT + autorisation
 - MQTT ACL + sécurité réseau
 - Backup/restore automatisé

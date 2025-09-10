@@ -46,6 +46,13 @@ export function createRepository(db) {
 
         return await dataAccess.findDeviceById(deviceId);
       },
+      findByUid: async (deviceUid) => {
+        if (!deviceUid) {
+          throw new Error('Device UID is required');
+        }
+
+        return await dataAccess.findDeviceByUid(deviceUid);
+      },
       updateLastSeen: async (deviceId, timestamp) => {
         if (!deviceId) {
           throw new Error('Device ID is required');

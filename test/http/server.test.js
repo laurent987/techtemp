@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createHttpServer } from '../../src/http/server.js';
+import { createHttpServer } from '../../backend/http/server.js';
 
 describe('HTTP Server', () => {
   let server;
