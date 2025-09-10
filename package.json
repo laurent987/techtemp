@@ -1,14 +1,24 @@
 {
+  "name": "techtemp-service",
+  "version": "1.0.0",
+  "description": "TechTemp IoT backend service - MQTT ingestion, data storage, and REST API",
   "type": "module",
+  "main": "src/main.js",
   "scripts": {
+    "start": "node src/main.js",
+    "start:prod": "node src/production.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "docker:build": "docker build -t techtemp-service .",
+    "docker:run": "docker-compose up"
   },
+  "keywords": ["iot", "mqtt", "sensors", "temperature", "humidity", "backend"],
   "dependencies": {
     "better-sqlite3": "^12.2.0",
     "express": "^5.1.0",
     "joi": "^18.0.1",
-    "mqtt": "^5.14.1"
+    "mqtt": "^5.14.1",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "aedes": "^0.50.0",

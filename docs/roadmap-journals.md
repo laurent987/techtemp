@@ -1,48 +1,50 @@
 # Planification des Journaux TechTemp
 
-## 📊 **État Actuel (9 septembre 2025)**
+## 📊 **État Actuel (10 septembre 2025)**
 
-### ✅ **Complété (Journaux #001-#006)**
+### ✅ **Complété (Journaux #001-#007)**
 - **Journal #001**: Infrastructure MQTT + Base de données SQLite
 - **Journal #002**: Ingestion Pipeline (parseTopic + validateReading)
 - **Journal #003**: Repository Pattern + Data Access Layer
 - **Journal #004**: Message Ingestion Complete (ingestMessage)
 - **Journal #005**: HTTP Server + REST API (/health, /readings)
 - **Journal #006**: Application Orchestration (main.js, lifecycle management)
+- **Journal #007**: Production Deployment & Infrastructure (Docker, restructuration)
 
 ### 🎯 **Résultats Obtenus**
 - ✅ **164 tests passent** (100% success rate)
 - ✅ **Pipeline MQTT → DB → HTTP** fonctionnel
 - ✅ **Application orchestrée** avec lifecycle management
-- ✅ **Interface stabilisée** (validateReading ts: number → string)
-- ✅ **Devices sans room** supportés (room_id: NULL)
-- ✅ **Performance validée** (<20ms API response)
+- ✅ **Déploiement Docker** production-ready avec stack complète
+- ✅ **Structure projet** cohérente et focalisée (backend service)
+- ✅ **Configuration sécurisée** avec variables d'environnement
+- ✅ **Stack opérationnelle**: TechTemp + Mosquitto MQTT + monitoring
 
 ---
 
 ## 🚀 **Prochains Journaux Planifiés**
 
-### **Journal #007 — Déploiement & Production** 
-**📅 Prévu: 10-11 septembre 2025**
-**🎯 Objectif**: Préparer l'application pour un déploiement production
+### **Journal #008 — Monitoring & Observabilité** 
+**📅 Prévu: 11-12 septembre 2025**
+**🎯 Objectif**: Implémenter monitoring complet avec Prometheus et Grafana
 
 **Scope:**
-- **Docker**: Containerisation complete (Dockerfile + docker-compose)
-- **Monitoring**: Logs structurés + health monitoring avancé
-- **Sécurité**: Variables environnement + secrets management
-- **Scripts**: Scripts déploiement + sauvegarde DB
-- **Documentation**: Guide déploiement production
+- **Prometheus**: Métriques application (HTTP, MQTT, DB)
+- **Grafana**: Dashboards temps réel + alerting
+- **Logs**: Centralisation et analyse des logs
+- **Health Checks**: Monitoring automatisé des services
+- **Alerting**: Notifications automatiques sur incidents
 
 **Livrables:**
-- Application dockerisée prête pour production
-- Stack complète: app + MQTT broker + monitoring
-- Scripts automation déploiement
-- Documentation ops complète
+- Stack monitoring Prometheus + Grafana opérationnelle
+- Dashboards temps réel pour métriques clés
+- Système alerting configuré
+- Documentation monitoring + troubleshooting
 
 ---
 
-### **Journal #008 — Premier Capteur Physique**
-**📅 Prévu: 12-13 septembre 2025**
+### **Journal #009 — Premier Capteur Physique**
+**📅 Prévu: 13-14 septembre 2025**
 **🎯 Objectif**: Intégrer le premier capteur Raspberry Pi réel
 
 **Scope:**
@@ -60,8 +62,8 @@
 
 ---
 
-### **Journal #009 — Interface Web Simple**
-**📅 Prévu: 14-15 septembre 2025**  
+### **Journal #010 — Interface Web Simple**
+**📅 Prévu: 15-16 septembre 2025**  
 **🎯 Objectif**: Interface utilisateur de base pour visualiser les données
 
 **Scope:**
