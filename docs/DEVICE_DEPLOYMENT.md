@@ -89,12 +89,40 @@ sudo i2cdetect -y 1
 
 ## 📦 **Étape 2 : Déploiement Application**
 
-### **2.1 Clonage Repository**
+### **🚀 Installation Rapide (One-Liner)**
+```bash
+# Bootstrap rapide - Télécharge et configure tout automatiquement
+curl -sSL https://raw.githubusercontent.com/laurent987/techtemp/feature/journal-008-premier-capteur-physique/scripts/bootstrap.sh | bash
+```
+
+### **📂 Installation Manuelle**
+
+#### **2.1 Clonage Repository**
 ```bash
 # Cloner le repository TechTemp
 cd /home/pi
 git clone https://github.com/laurent987/techtemp.git
-cd techtemp/device
+cd techtemp/
+
+# Aller sur la bonne branche
+git checkout feature/journal-008-premier-capteur-physique
+
+# Permissions scripts
+chmod +x scripts/*.sh
+```
+
+#### **2.2 Alternative : Download Scripts Seulement**
+```bash
+# Si vous voulez juste les scripts sans clone complet
+mkdir -p /home/pi/techtemp-scripts
+cd /home/pi/techtemp-scripts
+
+# Télécharger scripts individuellement
+wget https://raw.githubusercontent.com/laurent987/techtemp/feature/journal-008-premier-capteur-physique/scripts/test-hardware.sh
+wget https://raw.githubusercontent.com/laurent987/techtemp/feature/journal-008-premier-capteur-physique/scripts/install-device.sh
+wget https://raw.githubusercontent.com/laurent987/techtemp/feature/journal-008-premier-capteur-physique/scripts/bootstrap.sh
+
+chmod +x *.sh
 ```
 
 ### **2.2 Compilation**
