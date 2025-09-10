@@ -136,7 +136,9 @@ export function devicesRouter(deps = {}) {
         // For existing devices, we need to update via direct DB access
         // This is a temporary solution until we implement proper update
         // TODO: Implement proper update method in repository
-        throw new Error('Device update not yet implemented - please delete and recreate');
+        return res.status(501).json({
+          error: 'Device update not yet implemented - please delete and recreate'
+        });
       }
 
       res.status(200).json({
