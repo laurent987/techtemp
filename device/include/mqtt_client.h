@@ -12,7 +12,27 @@
 #define MQTT_CLIENT_H
 
 #include "common.h"
-#include <mosquitto.h>
+#ifdef SIMULATION_MODE
+    // Forward declaration for simulation
+    struct mosquitto;
+#else
+    #include <mosquitto.h>
+#endif
+
+// MQTT configuration structure
+typedef struct {
+    char host[256];
+    int port;
+    char client_id[256];
+    char username[256];
+    char password[256];
+    char topic[512];
+    int qos;
+    int keepalive;
+    int connect_timeout_ms;
+    bool use_tls;
+    char ca_cert_path[256];
+} mqtt_config_t;
 
 // MQTT client constants
 #define MQTT_CLIENT_ID_PREFIX   "techtemp-device-"
@@ -39,10 +59,10 @@ typedef struct {
 
 /**
  * Initialize MQTT client
- * @param config Device configuration containing MQTT settings
+ * @param config MQTT configuration
  * @return TECHTEMP_OK on success, error code on failure
  */
-int mqtt_init(const device_config_t* config);
+int mqtt_init(const mqtt_config_t* config);
 
 /**
  * Connect to MQTT broker
@@ -59,9 +79,10 @@ int mqtt_disconnect(void);
 /**
  * Publish sensor reading to MQTT broker
  * @param reading Sensor reading data to publish
+ * @param device_uid Device unique identifier
  * @return TECHTEMP_OK on success, error code on failure
  */
-int mqtt_publish_reading(const sensor_reading_t* reading);
+int mqtt_publish_reading(const sensor_reading_t* reading, const char* device_uid);
 
 /**
  * Process MQTT events (call regularly in main loop)
@@ -71,23 +92,10 @@ int mqtt_publish_reading(const sensor_reading_t* reading);
 int mqtt_loop(int timeout_ms);
 
 /**
- * Check MQTT connection status
- * @return Current MQTT state
+ * Check if MQTT client is connected
+ * @return true if connected, false otherwise
  */
-mqtt_state_t mqtt_get_state(void);
-
-/**
- * Get MQTT connection statistics
- * @param connected Pointer to bool for connection status
- * @param messages_sent Pointer to counter for sent messages
- * @param last_error Pointer to last error code
- */
-void mqtt_get_stats(bool* connected, int* messages_sent, int* last_error);
-
-/**
- * Cleanup MQTT client and free resources
- */
-void mqtt_cleanup(void);
+bool mqtt_is_connected(void);
 
 /**
  * Get last error message from MQTT operations
@@ -95,10 +103,9 @@ void mqtt_cleanup(void);
  */
 const char* mqtt_get_error(void);
 
-// MQTT callback functions (internal use)
-void on_connect_callback(struct mosquitto* mosq, void* userdata, int result);
-void on_disconnect_callback(struct mosquitto* mosq, void* userdata, int result);
-void on_publish_callback(struct mosquitto* mosq, void* userdata, int mid);
-void on_log_callback(struct mosquitto* mosq, void* userdata, int level, const char* str);
+/**
+ * Cleanup MQTT client and free resources
+ */
+void mqtt_cleanup(void);
 
 #endif // MQTT_CLIENT_H

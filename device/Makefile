@@ -7,6 +7,12 @@ CFLAGS = -Wall -Wextra -std=c99 -O2
 INCLUDES = -Iinclude
 LIBS = -lwiringPi -lmosquitto -lm
 
+# Simulation mode (for testing without hardware dependencies)
+ifeq ($(SIM),1)
+    CFLAGS += -DSIMULATION_MODE
+    LIBS = -lm
+endif
+
 # Cross-compilation for Raspberry Pi (when building on other platforms)
 ifeq ($(CROSS),1)
     CC = arm-linux-gnueabihf-gcc
@@ -72,6 +78,7 @@ help:
 	@echo "Targets:"
 	@echo "  all        - Build the project (default)"
 	@echo "  dev        - Build with debug symbols"
+	@echo "  sim        - Build in simulation mode (no hardware deps)"
 	@echo "  clean      - Clean build artifacts"
 	@echo "  install    - Install to system (requires sudo)"
 	@echo "  check-deps - Check if dependencies are installed"
@@ -79,5 +86,10 @@ help:
 	@echo ""
 	@echo "Cross-compilation:"
 	@echo "  make CROSS=1 - Cross-compile for Raspberry Pi"
+	@echo "  make SIM=1   - Build in simulation mode"
 
-.PHONY: all clean install dev check-deps help
+# Simulation build
+sim: SIM=1
+sim: $(TARGET)
+
+.PHONY: all clean install dev check-deps help sim
