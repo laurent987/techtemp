@@ -5,6 +5,7 @@
 import express from 'express';
 import { healthRouter } from './routes/health.js';
 import { readingsRouter } from './routes/readings.js';
+import { devicesRouter } from './routes/devices.js';
 
 /**
  * Create and start an HTTP server.
@@ -23,6 +24,7 @@ export function createHttpServer(config = {}) {
   // Routes setup
   app.use('/health', healthRouter(config.deps || {}));
   app.use('/api/v1/readings', readingsRouter(config.deps || {}));
+  app.use('/api/v1/devices', devicesRouter(config.deps || {}));
 
   return {
     /**

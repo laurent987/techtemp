@@ -1,10 +1,13 @@
 /**
  * @file aht20.c
- * @brief AHT20 Temperature and Humidity Sensor Driver Implementation
+ * @brief AHT20 Temperature and Humidity Sensor Driver - Version corrigée
  * @author TechTemp Project
  * @date 2025-09-10
+ * 
+ * Basé sur la référence Adafruit et tests validés
  */
 
+#define _DEFAULT_SOURCE  // Pour usleep()
 #include "aht20.h"
 #include <stdarg.h>
 #include <unistd.h>
@@ -15,10 +18,23 @@
     #define wiringPiI2CWrite(fd, data) 0
     #define wiringPiI2CRead(fd) 0x18
     #define usleep(us) 
+    #define write(fd, buf, count) count
+    #define read(fd, buf, count) count
 #else
     #include <wiringPi.h>
     #include <wiringPiI2C.h>
 #endif
+
+// AHT20 Constants (basé sur la référence Adafruit)
+#define AHT20_CMD_SOFTRESET     0xBA
+#define AHT20_CMD_CALIBRATE     0xE1
+#define AHT20_CMD_TRIGGER       0xAC
+#define AHT20_STATUS_BUSY       0x80
+#define AHT20_STATUS_CALIBRATED 0x08
+
+// Timing constants (utilise ceux du header pour les principaux)
+#define AHT20_POWERUP_DELAY_MS  20
+#define AHT20_BUSY_TIMEOUT      10
 
 // Internal state
 static int i2c_handle = -1;
@@ -26,13 +42,89 @@ static bool initialized = false;
 static char last_error[256] = "";
 
 // Internal helper functions
-static int aht20_write_command(uint8_t cmd, uint8_t param1, uint8_t param2);
-static int aht20_read_data(uint8_t* buffer, size_t length);
-static uint8_t aht20_read_status(void);
 static void aht20_delay_ms(int ms);
 static float calculate_temperature(uint32_t raw_temp);
 static float calculate_humidity(uint32_t raw_humidity);
 static void set_error(const char* format, ...);
+static bool write_i2c_block(uint8_t* data, int length);
+static bool read_i2c_block(uint8_t* buffer, int length);
+static uint8_t aht20_get_status(void);
+static bool aht20_wait_not_busy(int timeout_cycles);
+
+/**
+ * Set error message
+ */
+static void set_error(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vsnprintf(last_error, sizeof(last_error), format, args);
+    va_end(args);
+}
+
+/**
+ * Delay in milliseconds
+ */
+static void aht20_delay_ms(int ms) {
+    usleep(ms * 1000);
+}
+
+/**
+ * Write multiple bytes in a single I2C transaction
+ */
+static bool write_i2c_block(uint8_t* data, int length) {
+    ssize_t result = write(i2c_handle, data, length);
+    return (result == length);
+}
+
+/**
+ * Read multiple bytes in a single I2C transaction
+ */
+static bool read_i2c_block(uint8_t* buffer, int length) {
+    ssize_t result = read(i2c_handle, buffer, length);
+    return (result == length);
+}
+
+/**
+ * Get sensor status
+ */
+static uint8_t aht20_get_status(void) {
+    int result = wiringPiI2CRead(i2c_handle);
+    if (result == -1) {
+        return 0xFF;
+    }
+    return (uint8_t)result;
+}
+
+/**
+ * Wait for sensor to not be busy
+ */
+static bool aht20_wait_not_busy(int timeout_cycles) {
+    while (timeout_cycles-- > 0) {
+        uint8_t status = aht20_get_status();
+        if (status == 0xFF) {
+            return false;
+        }
+        if (!(status & AHT20_STATUS_BUSY)) {
+            return true;
+        }
+        aht20_delay_ms(10);
+    }
+    return false;
+}
+
+/**
+ * Calculate temperature from raw value (based on Adafruit formula)
+ */
+static float calculate_temperature(uint32_t raw_temp) {
+    return ((float)raw_temp * 200.0 / 0x100000) - 50.0;
+}
+
+/**
+ * Calculate humidity from raw value (based on Adafruit formula)
+ */
+static float calculate_humidity(uint32_t raw_humidity) {
+    return ((float)raw_humidity * 100.0) / 0x100000;
+}
 
 /**
  * Initialize AHT20 sensor
@@ -40,127 +132,110 @@ static void set_error(const char* format, ...);
 int aht20_init(int i2c_bus, uint8_t address) {
     LOG_DEBUG_F("Initializing AHT20 on I2C bus %d, address 0x%02X", i2c_bus, address);
     
-    // Initialize WiringPi if not already done
     if (wiringPiSetup() == -1) {
         set_error("Failed to initialize WiringPi");
         return TECHTEMP_ERROR;
     }
     
-    // Setup I2C
+    // Initialize I2C
     i2c_handle = wiringPiI2CSetup(address);
     if (i2c_handle == -1) {
-        set_error("Failed to setup I2C communication with AHT20");
+        set_error("Failed to initialize I2C");
         return TECHTEMP_ERROR;
     }
     
     LOG_DEBUG_F("I2C handle: %d", i2c_handle);
     
-    // Wait for sensor to be ready after power-on
-    aht20_delay_ms(AHT20_INIT_DELAY_MS);
+    // Wait for AHT20 to be ready (power-on time)
+    aht20_delay_ms(AHT20_POWERUP_DELAY_MS);
     
     // Perform soft reset
-    int result = aht20_reset();
-    if (result != TECHTEMP_OK) {
-        return result;
-    }
-    
-    // Initialize sensor
-    result = aht20_write_command(AHT20_CMD_INIT, AHT20_INIT_PARAM1, AHT20_INIT_PARAM2);
-    if (result != TECHTEMP_OK) {
-        set_error("Failed to send initialization command");
-        return result;
-    }
-    
-    // Wait for initialization
-    aht20_delay_ms(AHT20_INIT_DELAY_MS);
-    
-    // Check if sensor is calibrated
-    bool calibrated;
-    result = aht20_is_calibrated(&calibrated);
-    if (result != TECHTEMP_OK) {
-        return result;
-    }
-    
-    if (!calibrated) {
-        set_error("AHT20 sensor is not calibrated");
+    int result = wiringPiI2CWrite(i2c_handle, AHT20_CMD_SOFTRESET);
+    if (result == -1) {
+        set_error("Failed to send reset command");
         return TECHTEMP_ERROR;
     }
     
+    // Wait for reset to complete
+    aht20_delay_ms(AHT20_RESET_DELAY_MS);
+    
+    // Wait for sensor to not be busy
+    if (!aht20_wait_not_busy(AHT20_BUSY_TIMEOUT)) {
+        set_error("Timeout waiting for reset completion");
+        return TECHTEMP_TIMEOUT;
+    }
+    
+    // Send calibration command
+    uint8_t cal_cmd[3] = {AHT20_CMD_CALIBRATE, 0x08, 0x00};
+    if (!write_i2c_block(cal_cmd, 3)) {
+        set_error("Failed to send calibration command");
+        return TECHTEMP_ERROR;
+    }
+    
+    // Wait for calibration to complete
+    if (!aht20_wait_not_busy(AHT20_BUSY_TIMEOUT)) {
+        set_error("Timeout waiting for calibration completion");
+        return TECHTEMP_TIMEOUT;
+    }
+    
+    // Check calibration status (optional - some new AHT20s don't set this bit)
+    uint8_t status = aht20_get_status();
+    LOG_DEBUG_F("Final status after calibration: 0x%02X", status);
+    
     initialized = true;
-    LOG_INFO_F("AHT20 sensor initialized successfully");
     return TECHTEMP_OK;
 }
 
 /**
- * Read temperature and humidity from AHT20
+ * Read sensor data
  */
 int aht20_read(sensor_reading_t* reading) {
-    if (!reading) {
-        set_error("Reading pointer is null");
-        return TECHTEMP_ERROR;
-    }
-    
-    if (!initialized) {
+    if (!initialized || i2c_handle == -1) {
         set_error("AHT20 not initialized");
         return TECHTEMP_ERROR;
     }
     
-    // Initialize reading structure
-    memset(reading, 0, sizeof(sensor_reading_t));
-    reading->valid = false;
-    
-    // Check if sensor is busy
-    bool busy;
-    int result = aht20_is_busy(&busy);
-    if (result != TECHTEMP_OK) {
-        return result;
+    if (!reading) {
+        set_error("Invalid reading buffer");
+        return TECHTEMP_ERROR;
     }
     
-    if (busy) {
-        set_error("AHT20 sensor is busy");
-        return TECHTEMP_TIMEOUT;
-    }
-    
-    // Trigger measurement
-    result = aht20_write_command(AHT20_CMD_MEASURE, AHT20_MEASURE_PARAM1, AHT20_MEASURE_PARAM2);
-    if (result != TECHTEMP_OK) {
-        set_error("Failed to trigger measurement");
-        return result;
+    // Send measurement command
+    uint8_t measure_cmd[3] = {AHT20_CMD_TRIGGER, 0x33, 0x00};
+    if (!write_i2c_block(measure_cmd, 3)) {
+        set_error("Failed to send measurement command");
+        return TECHTEMP_ERROR;
     }
     
     // Wait for measurement to complete
-    aht20_delay_ms(AHT20_MEASURE_DELAY_MS);
-    
-    // Wait for sensor to not be busy
-    int timeout = 10; // 100ms timeout
-    while (timeout-- > 0) {
-        result = aht20_is_busy(&busy);
-        if (result != TECHTEMP_OK) {
-            return result;
-        }
-        if (!busy) break;
-        aht20_delay_ms(10);
-    }
-    
-    if (busy) {
+    if (!aht20_wait_not_busy(AHT20_BUSY_TIMEOUT)) {
         set_error("Timeout waiting for measurement completion");
         return TECHTEMP_TIMEOUT;
     }
     
-    // Read measurement data (7 bytes: status + 6 data bytes)
-    uint8_t data[7];
-    result = aht20_read_data(data, sizeof(data));
-    if (result != TECHTEMP_OK) {
+    // Read measurement data (6 bytes)
+    uint8_t data[6];
+    if (!read_i2c_block(data, 6)) {
         set_error("Failed to read measurement data");
-        return result;
+        return TECHTEMP_ERROR;
     }
     
-    // Extract raw values from data
-    // Humidity: data[1][7:0] data[2][7:0] data[3][7:4]
-    uint32_t raw_humidity = ((uint32_t)data[1] << 12) | ((uint32_t)data[2] << 4) | ((data[3] & 0xF0) >> 4);
+    LOG_DEBUG_F("Raw bytes: %02X %02X %02X %02X %02X %02X", 
+                data[0], data[1], data[2], data[3], data[4], data[5]);
     
-    // Temperature: data[3][3:0] data[4][7:0] data[5][7:0]
-    uint32_t raw_temperature = (((uint32_t)data[3] & 0x0F) << 16) | ((uint32_t)data[4] << 8) | data[5];
+    // Extract humidity (based on Adafruit implementation)
+    uint32_t raw_humidity = data[1];
+    raw_humidity <<= 8;
+    raw_humidity |= data[2];
+    raw_humidity <<= 4;
+    raw_humidity |= data[3] >> 4;
+    
+    // Extract temperature (based on Adafruit implementation)
+    uint32_t raw_temperature = data[3] & 0x0F;
+    raw_temperature <<= 8;
+    raw_temperature |= data[4];
+    raw_temperature <<= 8;
+    raw_temperature |= data[5];
     
     // Calculate actual values
     reading->temperature = calculate_temperature(raw_temperature);
@@ -175,171 +250,23 @@ int aht20_read(sensor_reading_t* reading) {
 }
 
 /**
- * Perform soft reset of AHT20 sensor
- */
-int aht20_reset(void) {
-    if (!initialized && i2c_handle == -1) {
-        set_error("AHT20 not initialized");
-        return TECHTEMP_ERROR;
-    }
-    
-    LOG_DEBUG_F("Performing AHT20 soft reset");
-    
-    int result = wiringPiI2CWrite(i2c_handle, AHT20_CMD_RESET);
-    if (result == -1) {
-        set_error("Failed to send reset command");
-        return TECHTEMP_ERROR;
-    }
-    
-    // Wait for reset to complete
-    aht20_delay_ms(AHT20_RESET_DELAY_MS);
-    
-    return TECHTEMP_OK;
-}
-
-/**
- * Check if AHT20 is busy
- */
-int aht20_is_busy(bool* busy) {
-    if (!busy) {
-        set_error("Busy pointer is null");
-        return TECHTEMP_ERROR;
-    }
-    
-    if (!initialized) {
-        set_error("AHT20 not initialized");
-        return TECHTEMP_ERROR;
-    }
-    
-    uint8_t status = aht20_read_status();
-    *busy = (status & AHT20_STATUS_BUSY) != 0;
-    
-    return TECHTEMP_OK;
-}
-
-/**
- * Check if AHT20 is calibrated
- */
-int aht20_is_calibrated(bool* calibrated) {
-    if (!calibrated) {
-        set_error("Calibrated pointer is null");
-        return TECHTEMP_ERROR;
-    }
-    
-    if (!initialized && i2c_handle == -1) {
-        set_error("AHT20 not initialized");
-        return TECHTEMP_ERROR;
-    }
-    
-    uint8_t status = aht20_read_status();
-    *calibrated = (status & AHT20_STATUS_CALIBRATED) != 0;
-    
-    return TECHTEMP_OK;
-}
-
-/**
- * Cleanup AHT20 resources
- */
-void aht20_cleanup(void) {
-    if (initialized) {
-        LOG_DEBUG_F("Cleaning up AHT20 resources");
-        initialized = false;
-        i2c_handle = -1;
-    }
-}
-
-/**
  * Get last error message
  */
 const char* aht20_get_error(void) {
     return last_error;
 }
 
-// Internal helper functions
-
-static int aht20_write_command(uint8_t cmd, uint8_t param1, uint8_t param2) {
-#ifdef SIMULATION_MODE
-    (void)cmd; (void)param1; (void)param2; // Suppress unused warnings
-#endif
-    if (i2c_handle == -1) {
-        return TECHTEMP_ERROR;
+/**
+ * Cleanup AHT20 resources
+ */
+void aht20_cleanup(void) {
+    LOG_DEBUG_F("Cleaning up AHT20 resources");
+    
+    if (i2c_handle != -1) {
+        // Note: wiringPi doesn't provide a close function for I2C
+        i2c_handle = -1;
     }
     
-    // Write command byte
-    if (wiringPiI2CWrite(i2c_handle, cmd) == -1) {
-        return TECHTEMP_ERROR;
-    }
-    
-    // Write parameter bytes
-    if (wiringPiI2CWrite(i2c_handle, param1) == -1) {
-        return TECHTEMP_ERROR;
-    }
-    
-    if (wiringPiI2CWrite(i2c_handle, param2) == -1) {
-        return TECHTEMP_ERROR;
-    }
-    
-    return TECHTEMP_OK;
-}
-
-static int aht20_read_data(uint8_t* buffer, size_t length) {
-    if (!buffer || length == 0) {
-        return TECHTEMP_ERROR;
-    }
-    
-    if (i2c_handle == -1) {
-        return TECHTEMP_ERROR;
-    }
-    
-    for (size_t i = 0; i < length; i++) {
-        int byte = wiringPiI2CRead(i2c_handle);
-        if (byte == -1) {
-            return TECHTEMP_ERROR;
-        }
-        buffer[i] = (uint8_t)byte;
-    }
-    
-    return TECHTEMP_OK;
-}
-
-static uint8_t aht20_read_status(void) {
-    if (i2c_handle == -1) {
-        return 0xFF;
-    }
-    
-    int status = wiringPiI2CRead(i2c_handle);
-    return (status == -1) ? 0xFF : (uint8_t)status;
-}
-
-static void aht20_delay_ms(int ms) {
-#ifdef SIMULATION_MODE
-    (void)ms; // Suppress unused warning
-#else
-    usleep(ms * 1000);
-#endif
-}
-
-static float calculate_temperature(uint32_t raw_temp) {
-    // Temperature calculation: ((raw / 2^20) * 200) - 50
-    float temp = ((float)raw_temp / AHT20_TEMPERATURE_MAX) * 200.0f - 50.0f;
-    return temp;
-}
-
-static float calculate_humidity(uint32_t raw_humidity) {
-    // Humidity calculation: (raw / 2^20) * 100
-    float humidity = ((float)raw_humidity / AHT20_HUMIDITY_MAX) * 100.0f;
-    
-    // Clamp humidity to valid range
-    if (humidity < 0.0f) humidity = 0.0f;
-    if (humidity > 100.0f) humidity = 100.0f;
-    
-    return humidity;
-}
-
-static void set_error(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    vsnprintf(last_error, sizeof(last_error), format, args);
-    va_end(args);
-    last_error[sizeof(last_error) - 1] = '\0';
+    initialized = false;
+    last_error[0] = '\0';
 }

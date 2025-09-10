@@ -4,7 +4,7 @@
 [device]
 # Identifiant unique du capteur (seule information nécessaire côté device)
 device_uid = aht20-b827eb123456
-label = "Capteur AHT20 Test"
+label = "Capteur AHT20"
 
 [sensor]
 # Configuration du capteur AHT20

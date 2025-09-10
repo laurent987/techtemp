@@ -35,19 +35,46 @@ IoT Devices → MQTT → TechTemp Service → Database
 3. **Test the API:**
    ```bash
    curl http://localhost:3000/health
-   curl http://localhost:3000/readings
+   curl http://localhost:3000/api/v1/readings/latest
    ```
+
+## 🖥️ Device Setup
+
+**New Raspberry Pi with sensor?** → Use the bootstrap script:
+
+```bash
+# Interactive setup (recommended)
+./deployment/bootstrap-pi.sh 192.168.1.100
+
+# Automatic setup
+./deployment/bootstrap-pi.sh 192.168.1.100 --non-interactive
+```
+
+**📚 Complete device documentation:** [`device/docs/`](device/docs/README.md)
+
+- **🚀 [Bootstrap Guide](device/docs/setup/bootstrap.md)** - One-command setup
+- **🔌 [Hardware Guide](device/docs/hardware/aht20.md)** - AHT20 wiring
+- **🔧 [Troubleshooting](device/docs/troubleshooting/common-issues.md)** - Problem solving
 
 ## 📁 Project Structure
 
 ```
 techtemp/
-├── src/                    # Service source code
-├── test/                   # Unit & integration tests
-├── infrastructure/         # Docker configs (MQTT, monitoring)
-├── clients/               # Example client implementations
-├── docs/                  # Documentation & ADRs
-└── docker-compose.yml     # Full stack deployment
+├── backend/               # Backend service (Node.js + SQLite)
+├── device/                # Device client code (C + I2C sensors)
+│   ├── src/              # Source code (C)
+│   ├── include/          # Headers
+│   ├── config/           # Configuration files
+│   └── docs/             # 📚 Device documentation
+│       ├── setup/        # Installation & bootstrap guides
+│       ├── hardware/     # Hardware guides (AHT20, wiring)
+│       ├── troubleshooting/ # Problem resolution
+│       └── api/          # Protocol documentation
+├── deployment/           # Scripts (bootstrap, update)
+├── web/                  # Web interface (future)
+├── infrastructure/       # Docker configs
+├── test/                 # Tests
+└── docs/                 # 📚 General documentation
 ```
 
 ## 🔌 Client Examples

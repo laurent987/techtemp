@@ -59,6 +59,7 @@ typedef struct {
     // Device info
     char device_uid[MAX_DEVICE_UID_LEN];
     char home_id[MAX_HOME_ID_LEN];
+    char room_id[MAX_HOME_ID_LEN];
     char label[MAX_STRING_LEN];
     
     // Sensor settings

@@ -8,10 +8,12 @@
  * Reads temperature/humidity and publishes to MQTT broker
  */
 
+#define _DEFAULT_SOURCE  // Pour usleep()
 #include "common.h"
 #include "config.h"
 #include "aht20.h"
 #include "mqtt_client.h"
+#include <unistd.h>  // Pour usleep()
 
 // Global variables
 volatile bool g_running = true;
@@ -52,7 +54,7 @@ int main(int argc, char* argv[]) {
     }
     
     LOG_INFO_F("Device UID: %s", g_config.device_uid);
-    LOG_INFO_F("Home ID: %s", g_config.home_id);
+    LOG_INFO_F("Device Label: %s", g_config.label);
     LOG_INFO_F("Read interval: %d seconds", g_config.read_interval);
     
     // Initialize AHT20 sensor
@@ -74,9 +76,15 @@ int main(int argc, char* argv[]) {
         .connect_timeout_ms = 5000,
         .use_tls = false
     };
+    
+    // Copie sécurisée des chaînes de configuration
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
     strncpy(mqtt_cfg.host, g_config.mqtt_host, sizeof(mqtt_cfg.host) - 1);
     strncpy(mqtt_cfg.username, g_config.mqtt_username, sizeof(mqtt_cfg.username) - 1);
     strncpy(mqtt_cfg.password, g_config.mqtt_password, sizeof(mqtt_cfg.password) - 1);
+#pragma GCC diagnostic pop
+    
     snprintf(mqtt_cfg.client_id, sizeof(mqtt_cfg.client_id), "techtemp-%s", g_config.device_uid);
     snprintf(mqtt_cfg.topic, sizeof(mqtt_cfg.topic), "home/%s/sensors/%s/reading", 
              g_config.home_id, g_config.device_uid);

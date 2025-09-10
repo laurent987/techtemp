@@ -5,11 +5,13 @@
  * @date 2025-09-10
  */
 
+#define _DEFAULT_SOURCE  // Pour usleep()
 #include "mqtt_client.h"
 #include <signal.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <unistd.h>  // Pour usleep()
 #ifdef SIMULATION_MODE
     // Simulation mode - no real MQTT
     typedef struct { int dummy; } mosquitto;
@@ -126,7 +128,7 @@ int mqtt_init(const mqtt_config_t* config) {
     memcpy(&current_config, config, sizeof(mqtt_config_t));
     
     // Set authentication if provided
-    if (config->username && strlen(config->username) > 0) {
+    if (strlen(config->username) > 0) {
         LOG_DEBUG_F("Setting MQTT authentication for user: %s", config->username);
         lib_result = mosquitto_username_pw_set(mosq, config->username, config->password);
         if (lib_result != MOSQ_ERR_SUCCESS) {
@@ -280,23 +282,20 @@ int mqtt_publish_reading(const sensor_reading_t* reading, const char* device_uid
         return TECHTEMP_ERROR;
     }
     
-    // Create JSON payload
+    // Create JSON payload - Backend expects: temperature_c, humidity_pct, ts
     char payload[512];
     int written = snprintf(payload, sizeof(payload),
         "{"
-        "\"device_uid\":\"%s\","
-        "\"timestamp\":%lld,"
-        "\"temperature\":%.2f,"
-        "\"humidity\":%.2f,"
-        "\"sensor_type\":\"AHT20\""
+        "\"temperature_c\":%.2f,"
+        "\"humidity_pct\":%.2f,"
+        "\"ts\":%lu"
         "}",
-        device_uid,
-        reading->timestamp,
         reading->temperature,
-        reading->humidity
+        reading->humidity,
+        (unsigned long)reading->timestamp
     );
     
-    if (written >= sizeof(payload)) {
+    if (written >= (int)sizeof(payload)) {
         set_error("MQTT payload too large");
         return TECHTEMP_ERROR;
     }
@@ -336,7 +335,8 @@ int mqtt_loop(int timeout_ms) {
             connected = false;
             return TECHTEMP_ERROR;
         }
-        if (result != MOSQ_ERR_EAGAIN) {
+        // Skip non-critical errors
+        if (result != MOSQ_ERR_INVAL) {
             set_error("MQTT loop error: %s", mosquitto_strerror(result));
             return TECHTEMP_ERROR;
         }
@@ -462,7 +462,7 @@ static const char* connection_result_to_string(int result) {
 }
 
 static int validate_config(const mqtt_config_t* config) {
-    if (!config->host || strlen(config->host) == 0) {
+    if (strlen(config->host) == 0) {
         set_error("MQTT host is required");
         return TECHTEMP_ERROR;
     }
@@ -472,12 +472,12 @@ static int validate_config(const mqtt_config_t* config) {
         return TECHTEMP_ERROR;
     }
     
-    if (!config->client_id || strlen(config->client_id) == 0) {
+    if (strlen(config->client_id) == 0) {
         set_error("MQTT client ID is required");
         return TECHTEMP_ERROR;
     }
     
-    if (!config->topic || strlen(config->topic) == 0) {
+    if (strlen(config->topic) == 0) {
         set_error("MQTT topic is required");
         return TECHTEMP_ERROR;
     }
@@ -497,7 +497,7 @@ static int validate_config(const mqtt_config_t* config) {
         return TECHTEMP_ERROR;
     }
     
-    if (config->use_tls && (!config->ca_cert_path || strlen(config->ca_cert_path) == 0)) {
+    if (config->use_tls && strlen(config->ca_cert_path) == 0) {
         set_error("TLS enabled but no CA certificate path provided");
         return TECHTEMP_ERROR;
     }

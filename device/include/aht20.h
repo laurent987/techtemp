@@ -17,7 +17,7 @@
 // AHT20 I2C constants
 #define AHT20_DEFAULT_ADDRESS   0x38
 #define AHT20_RESET_DELAY_MS    20
-#define AHT20_MEASURE_DELAY_MS  80
+#define AHT20_MEASURE_DELAY_MS  120
 #define AHT20_INIT_DELAY_MS     40
 
 // AHT20 Commands

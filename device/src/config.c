@@ -5,8 +5,11 @@
  * @date 2025-09-10
  */
 
+#define _GNU_SOURCE  // Pour gethostname()
 #include "config.h"
 #include <limits.h>
+#include <unistd.h>  // Pour gethostname()
+#include <string.h>  // Pour memcpy()
 
 // Internal helper functions
 static int parse_config_line(const char* line, const char* section, device_config_t* config);
@@ -17,6 +20,16 @@ static int parse_logging_section(const char* key, const char* value, device_conf
 static int parse_system_section(const char* key, const char* value, device_config_t* config);
 static void trim_whitespace(char* str);
 static log_level_t parse_log_level(const char* level_str);
+
+// Helper pour copie sécurisée sans warnings
+static void safe_strcpy(char* dest, const char* src, size_t dest_size) {
+    size_t len = strlen(src);
+    if (len >= dest_size) {
+        len = dest_size - 1;
+    }
+    memcpy(dest, src, len);
+    dest[len] = '\0';
+}
 
 /**
  * Load configuration from file
@@ -274,11 +287,11 @@ static int parse_config_line(const char* line, const char* section, device_confi
 
 static int parse_device_section(const char* key, const char* value, device_config_t* config) {
     if (strcmp(key, "device_uid") == 0) {
-        strncpy(config->device_uid, value, sizeof(config->device_uid) - 1);
+        safe_strcpy(config->device_uid, value, sizeof(config->device_uid));
     } else if (strcmp(key, "home_id") == 0) {
-        strncpy(config->home_id, value, sizeof(config->home_id) - 1);
+        safe_strcpy(config->home_id, value, sizeof(config->home_id));
     } else if (strcmp(key, "label") == 0) {
-        strncpy(config->label, value, sizeof(config->label) - 1);
+        safe_strcpy(config->label, value, sizeof(config->label));
     } else {
         return TECHTEMP_ERROR;
     }
@@ -303,6 +316,8 @@ static int parse_sensor_section(const char* key, const char* value, device_confi
 }
 
 static int parse_mqtt_section(const char* key, const char* value, device_config_t* config) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
     if (strcmp(key, "broker_host") == 0) {
         strncpy(config->mqtt_host, value, sizeof(config->mqtt_host) - 1);
     } else if (strcmp(key, "broker_port") == 0) {
@@ -311,6 +326,7 @@ static int parse_mqtt_section(const char* key, const char* value, device_config_
         strncpy(config->mqtt_username, value, sizeof(config->mqtt_username) - 1);
     } else if (strcmp(key, "password") == 0) {
         strncpy(config->mqtt_password, value, sizeof(config->mqtt_password) - 1);
+#pragma GCC diagnostic pop
     } else if (strcmp(key, "qos") == 0) {
         config->mqtt_qos = atoi(value);
     } else if (strcmp(key, "retain") == 0) {
@@ -331,7 +347,7 @@ static int parse_logging_section(const char* key, const char* value, device_conf
     } else if (strcmp(key, "log_to_file") == 0) {
         config->log_to_file = (strcmp(value, "true") == 0);
     } else if (strcmp(key, "log_file_path") == 0) {
-        strncpy(config->log_file, value, sizeof(config->log_file) - 1);
+        safe_strcpy(config->log_file, value, sizeof(config->log_file));
     } else {
         return TECHTEMP_ERROR;
     }
@@ -342,7 +358,7 @@ static int parse_system_section(const char* key, const char* value, device_confi
     if (strcmp(key, "daemon_mode") == 0) {
         config->daemon_mode = (strcmp(value, "true") == 0);
     } else if (strcmp(key, "pid_file") == 0) {
-        strncpy(config->pid_file, value, sizeof(config->pid_file) - 1);
+        safe_strcpy(config->pid_file, value, sizeof(config->pid_file));
     } else {
         return TECHTEMP_ERROR;
     }

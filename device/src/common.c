@@ -5,6 +5,7 @@
  * @date 2025-09-10
  */
 
+#define _GNU_SOURCE  // Pour strdup()
 #include "common.h"
 #include <time.h>
 #include <sys/time.h>
@@ -17,6 +18,9 @@
 #include <pwd.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stdio.h>  // Pour fileno()
+#include <limits.h> // Pour HOST_NAME_MAX
+#include <inttypes.h> // Pour PRIu64
 
 // Global log level
 static log_level_t current_log_level = LOG_LEVEL_INFO;
@@ -392,7 +396,10 @@ int generate_device_uid(char* uid_buffer, size_t buffer_size) {
         hostname[sizeof(hostname) - 1] = '\0';
         
         uint64_t timestamp = get_timestamp_ms();
-        snprintf(serial, sizeof(serial), "%s_%llu", hostname, timestamp);
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wformat-truncation"
+        snprintf(serial, sizeof(serial), "%s_%" PRIu64, hostname, timestamp);
+        #pragma GCC diagnostic pop
     }
     
     // Create UID by taking first 16 characters and padding/truncating as needed
@@ -452,6 +459,8 @@ static void write_log_message(log_level_t level, const char* file, int line, con
     
     // Format log message
     char log_line[1024];
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
     snprintf(log_line, sizeof(log_line), "[%s] %s %s:%d: %s",
         timestamp,
         log_level_to_string(level),
@@ -459,6 +468,7 @@ static void write_log_message(log_level_t level, const char* file, int line, con
         line,
         message
     );
+    #pragma GCC diagnostic pop
     
     // Write to console if enabled
     if (log_to_console) {
