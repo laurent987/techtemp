@@ -279,17 +279,6 @@ export function createRepository(db) {
         const readings = await dataAccess.findLatestReadingPerDevice();
         return readings;
       },
-      findByDevice: async (uid, limit = 10) => {
-        if (!uid) {
-          throw new Error('Device UID is required');
-        }
-        if (limit < 1 || limit > 1000) {
-          throw new Error('Limit must be between 1 and 1000');
-        }
-
-        const readings = await dataAccess.findReadingsByDevice(uid, limit);
-        return readings;
-      },
       findByRoomAndTimeRange: async (roomId, fromTs, toTs) => {
         if (!roomId || !fromTs || !toTs) {
           throw new Error('Room ID, from timestamp, and to timestamp are required');

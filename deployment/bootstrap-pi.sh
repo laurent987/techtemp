@@ -342,29 +342,89 @@ else
     echo "$TEST_OUTPUT" | tail -10
 fi
 
-# 9. Configuration du device dans l'API backend via notre script de provisioning
+# 9. Configuration du device dans l'API backend via l'API REST
 echo -e "${BLUE}🌐 Provisioning du device dans le backend...${NC}"
 
-# Copier le script de provisioning sur le serveur backend et l'exécuter
-PROVISION_CMD="node scripts/provision-device.js --uid '$DEVICE_UID' --label '$DEVICE_LABEL' --room-name '$ROOM_NAME'"
+# Générer l'ID de la room basé sur le nom
+ROOM_ID=$(echo "$ROOM_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
 
 # Si nous avons accès au serveur backend (localhost), provisioner directement
 if curl -s http://localhost:3000/health > /dev/null 2>&1; then
     echo -e "${GREEN}🔍 Backend détecté en local, provisioning direct...${NC}"
     
-    # Exécuter le provisioning localement
-    if $PROVISION_CMD; then
-        echo -e "${GREEN}✅ Device provisionné avec succès${NC}"
-        echo -e "${GREEN}   Room ID généré: $(echo '$ROOM_NAME' | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')${NC}"
+    # D'abord vérifier si le device existe déjà
+    echo -e "${BLUE}🔍 Vérification de l'existence du device '$DEVICE_UID'...${NC}"
+    EXISTING_DEVICE=$(curl -s http://localhost:3000/api/v1/devices/$DEVICE_UID)
+    
+    if [[ "$EXISTING_DEVICE" == *"Device not found"* ]]; then
+        # Device n'existe pas, création normale
+        echo -e "${GREEN}📱 Création du nouveau device '$DEVICE_LABEL' dans la room '$ROOM_NAME'...${NC}"
+        DEVICE_RESPONSE=$(curl -s -X POST http://localhost:3000/api/v1/devices \
+            -H "Content-Type: application/json" \
+            -d "{\"device_uid\":\"$DEVICE_UID\",\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}")
+        
+        if [[ $? -eq 0 ]] && [[ "$DEVICE_RESPONSE" == *"$DEVICE_UID"* ]]; then
+            echo -e "${GREEN}✅ Device créé avec succès${NC}"
+            echo -e "${GREEN}   Device UID: $DEVICE_UID${NC}"
+            echo -e "${GREEN}   Room Name: $ROOM_NAME${NC}"
+            echo -e "${GREEN}   Label: $DEVICE_LABEL${NC}"
+            echo -e "${GREEN}   🏠 Room créée automatiquement si nécessaire${NC}"
+        else
+            echo -e "${YELLOW}⚠️ Erreur lors de la création du device${NC}"
+            echo -e "${YELLOW}💡 Réponse de l'API: $DEVICE_RESPONSE${NC}"
+        fi
     else
-        echo -e "${YELLOW}⚠️ Provisioning local échoué${NC}"
-        echo -e "${YELLOW}💡 Commande pour provisioning manuel:${NC}"
-        echo -e "${YELLOW}   $PROVISION_CMD${NC}"
+        # Device existe déjà, vérifier s'il faut le mettre à jour
+        echo -e "${YELLOW}� Device '$DEVICE_UID' existe déjà${NC}"
+        
+        # Extraire les infos du device existant
+        CURRENT_ROOM=$(echo "$EXISTING_DEVICE" | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
+        CURRENT_LABEL=$(echo "$EXISTING_DEVICE" | grep -o '"label":"[^"]*"' | cut -d'"' -f4)
+        
+        echo -e "${BLUE}   Room actuelle: ${CURRENT_ROOM:-"<aucune>"}${NC}"
+        echo -e "${BLUE}   Label actuel: ${CURRENT_LABEL:-"<aucun>"}${NC}"
+        
+        # Déterminer s'il faut faire une mise à jour
+        NEEDS_UPDATE=false
+        UPDATE_MSG=""
+        
+        if [[ "$CURRENT_ROOM" != "$ROOM_NAME" ]]; then
+            NEEDS_UPDATE=true
+            UPDATE_MSG="${UPDATE_MSG}🏠 Changement de room: '$CURRENT_ROOM' → '$ROOM_NAME'\n"
+        fi
+        
+        if [[ "$CURRENT_LABEL" != "$DEVICE_LABEL" ]]; then
+            NEEDS_UPDATE=true
+            UPDATE_MSG="${UPDATE_MSG}🏷️ Changement de label: '$CURRENT_LABEL' → '$DEVICE_LABEL'\n"
+        fi
+        
+        if [[ "$NEEDS_UPDATE" == "true" ]]; then
+            echo -e "${YELLOW}🔄 Mise à jour nécessaire:${NC}"
+            echo -e "${YELLOW}$UPDATE_MSG${NC}"
+            
+            # Mettre à jour le device
+            UPDATE_RESPONSE=$(curl -s -X PUT http://localhost:3000/api/v1/devices/$DEVICE_UID \
+                -H "Content-Type: application/json" \
+                -d "{\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}")
+            
+            if [[ $? -eq 0 ]] && [[ "$UPDATE_RESPONSE" == *"$DEVICE_UID"* ]]; then
+                echo -e "${GREEN}✅ Device mis à jour avec succès${NC}"
+                echo -e "${GREEN}   📍 Ancien placement fermé automatiquement${NC}"
+                echo -e "${GREEN}   📍 Nouveau placement créé dans '$ROOM_NAME'${NC}"
+                echo -e "${GREEN}   📊 Historique des placements conservé${NC}"
+            else
+                echo -e "${YELLOW}⚠️ Erreur lors de la mise à jour${NC}"
+                echo -e "${YELLOW}💡 Réponse de l'API: $UPDATE_RESPONSE${NC}"
+            fi
+        else
+            echo -e "${GREEN}✅ Device déjà configuré correctement${NC}"
+            echo -e "${GREEN}   Aucune modification nécessaire${NC}"
+        fi
     fi
 else
     echo -e "${YELLOW}⚠️ Backend non accessible - provisioning manuel requis${NC}"
-    echo -e "${YELLOW}💡 Sur le serveur backend, exécuter:${NC}"
-    echo -e "${YELLOW}   $PROVISION_CMD${NC}"
+    echo -e "${YELLOW}💡 Créer le device via l'API (room créée automatiquement):${NC}"
+    echo -e "${YELLOW}   curl -X POST http://backend:3000/api/v1/devices -H 'Content-Type: application/json' -d '{\"device_uid\":\"$DEVICE_UID\",\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}'${NC}"
     echo -e "${YELLOW}💡 Ou via l'interface web d'administration${NC}"
 fi
 

@@ -44,20 +44,20 @@ src/mqtt/examples/
 
 #### Terminal 1 - Subscriber (listening)
 ```bash
-cd service-app
-node src/mqtt/examples/subscriber.js
+cd backend
+node mqtt/examples/subscriber.js
 ```
 
 #### Terminal 2 - Publisher (sending)
 ```bash
-cd service-app  
-node src/mqtt/examples/publisher.js
+cd backend  
+node mqtt/examples/publisher.js
 ```
 
 #### Terminal 3 - Cleaner (cleanup)
 ```bash
-cd service-app
-node src/mqtt/examples/cleaner.js
+cd backend
+node mqtt/examples/cleaner.js
 ```
 
 ### **Custom options**

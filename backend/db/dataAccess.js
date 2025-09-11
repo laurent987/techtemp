@@ -41,7 +41,6 @@ export function createDataAccess(db) {
     insertReading: createInsertReading(db),
     findLatestReadingByDevice: createFindLatestReadingByDevice(db),
     findLatestReadingPerDevice: createFindLatestReadingPerDevice(db),
-    findReadingsByDevice: createFindReadingsByDevice(db),
     findReadingsByRoomAndTimeRange: createFindReadingsByRoomAndTimeRange(db),
 
     // Device placement operations
@@ -63,7 +62,6 @@ export function createDataAccess(db) {
  * @property {Function} insertReading
  * @property {Function} findLatestReadingByDevice
  * @property {Function} findLatestReadingPerDevice
- * @property {Function} findReadingsByDevice
  * @property {Function} findReadingsByRoomAndTimeRange
  * @property {Function} findCurrentDevicePlacement
  */
@@ -229,20 +227,6 @@ function createFindLatestReadingPerDevice(db) {
 
   return function findLatestReadingPerDevice() {
     return stmt.all();
-  };
-}
-
-function createFindReadingsByDevice(db) {
-  const stmt = db.prepare(`
-    SELECT r.*, d.uid FROM readings_raw r
-    JOIN devices d ON r.device_id = d.id
-    WHERE d.uid = ? 
-    ORDER BY r.ts DESC 
-    LIMIT ?
-  `);
-
-  return function findReadingsByDevice(uid, limit = 10) {
-    return stmt.all(uid, limit);
   };
 }
 

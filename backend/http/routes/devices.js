@@ -59,29 +59,14 @@ export function devicesRouter(deps = {}) {
 
       const devices = await deps.repo.devices.findAll();
 
-      // Get room info for each device
-      const devicesWithRooms = await Promise.all(
-        devices.map(async (device) => {
-          let room = null;
-          if (device.room_id) {
-            room = await deps.repo.rooms.findById(device.room_id);
-          }
-
-          return {
-            uid: device.uid,
-            room: room ? {
-              uid: room.uid,
-              name: room.name
-            } : null,
-            label: device.label,
-            created_at: device.created_at,
-            last_seen_at: device.last_seen_at
-          };
-        })
-      );
-
       res.status(200).json({
-        data: devicesWithRooms
+        data: devices.map(device => ({
+          uid: device.uid,
+          room_id: device.room_id,
+          label: device.label,
+          created_at: device.created_at,
+          last_seen_at: device.last_seen_at
+        }))
       });
 
     } catch (error) {
@@ -132,47 +117,6 @@ export function devicesRouter(deps = {}) {
 
     } catch (error) {
       console.error('Device get error:', error.message);
-      res.status(500).json({
-        error: 'Internal server error'
-      });
-    }
-  });
-
-  // GET /api/v1/devices/:deviceUid/readings - Get readings for specific device
-  router.get('/:deviceUid/readings', async (req, res) => {
-    try {
-      if (!deps.repo) {
-        return res.status(500).json({
-          error: 'Repository not configured'
-        });
-      }
-
-      const { deviceUid } = req.params;
-      const limit = Math.min(parseInt(req.query.limit) || 10, 1000);
-
-      // Check if device exists
-      const device = await deps.repo.devices.findByUid(deviceUid);
-      if (!device) {
-        return res.status(404).json({
-          error: 'Device not found'
-        });
-      }
-
-      // Get readings for the device
-      const readings = await deps.repo.readings.findByDevice(deviceUid, limit);
-
-      res.status(200).json({
-        data: readings.map(reading => ({
-          ts: reading.ts,
-          temperature: reading.temperature,
-          humidity: reading.humidity,
-          source: reading.source,
-          created_at: reading.created_at
-        }))
-      });
-
-    } catch (error) {
-      console.error('Device readings get error:', error.message);
       res.status(500).json({
         error: 'Internal server error'
       });
