@@ -19,6 +19,8 @@ NC='\033[0m' # No Color
 # Configuration par défaut
 BROKER_HOST="192.168.0.180"
 BROKER_PORT="1883"
+BACKEND_HOST="192.168.0.42"
+BACKEND_PORT="3000"
 MQTT_USERNAME=""
 MQTT_PASSWORD=""
 I2C_BUS="1"
@@ -37,6 +39,8 @@ usage() {
     echo "Options:"
     echo "  --broker-host HOST    Adresse du broker MQTT (défaut: $BROKER_HOST)"
     echo "  --broker-port PORT    Port du broker MQTT (défaut: $BROKER_PORT)"
+    echo "  --backend-host HOST   Adresse du serveur backend (défaut: $BACKEND_HOST)"
+    echo "  --backend-port PORT   Port du serveur backend (défaut: $BACKEND_PORT)"
     echo "  --username USER       Username MQTT (optionnel)"
     echo "  --password PASS       Password MQTT (optionnel)"
     echo "  --read-interval SEC   Intervalle de lecture en secondes (défaut: $READ_INTERVAL)"
@@ -71,6 +75,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --broker-port)
             BROKER_PORT="$2"
+            shift 2
+            ;;
+        --backend-host)
+            BACKEND_HOST="$2"
+            shift 2
+            ;;
+        --backend-port)
+            BACKEND_PORT="$2"
             shift 2
             ;;
         --username)
@@ -349,17 +361,17 @@ echo -e "${BLUE}🌐 Provisioning du device dans le backend...${NC}"
 ROOM_ID=$(echo "$ROOM_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
 
 # Si nous avons accès au serveur backend (localhost), provisioner directement
-if curl -s http://localhost:3000/health > /dev/null 2>&1; then
+if curl -s http://$BACKEND_HOST:$BACKEND_PORT/health > /dev/null 2>&1; then
     echo -e "${GREEN}🔍 Backend détecté en local, provisioning direct...${NC}"
     
     # D'abord vérifier si le device existe déjà
     echo -e "${BLUE}🔍 Vérification de l'existence du device '$DEVICE_UID'...${NC}"
-    EXISTING_DEVICE=$(curl -s http://localhost:3000/api/v1/devices/$DEVICE_UID)
+    EXISTING_DEVICE=$(curl -s http://$BACKEND_HOST:$BACKEND_PORT/api/v1/devices/$DEVICE_UID)
     
     if [[ "$EXISTING_DEVICE" == *"Device not found"* ]]; then
         # Device n'existe pas, création normale
         echo -e "${GREEN}📱 Création du nouveau device '$DEVICE_LABEL' dans la room '$ROOM_NAME'...${NC}"
-        DEVICE_RESPONSE=$(curl -s -X POST http://localhost:3000/api/v1/devices \
+        DEVICE_RESPONSE=$(curl -s -X POST http://$BACKEND_HOST:$BACKEND_PORT/api/v1/devices \
             -H "Content-Type: application/json" \
             -d "{\"device_uid\":\"$DEVICE_UID\",\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}")
         
@@ -403,7 +415,7 @@ if curl -s http://localhost:3000/health > /dev/null 2>&1; then
             echo -e "${YELLOW}$UPDATE_MSG${NC}"
             
             # Mettre à jour le device
-            UPDATE_RESPONSE=$(curl -s -X PUT http://localhost:3000/api/v1/devices/$DEVICE_UID \
+            UPDATE_RESPONSE=$(curl -s -X PUT http://$BACKEND_HOST:$BACKEND_PORT/api/v1/devices/$DEVICE_UID \
                 -H "Content-Type: application/json" \
                 -d "{\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}")
             
@@ -424,7 +436,7 @@ if curl -s http://localhost:3000/health > /dev/null 2>&1; then
 else
     echo -e "${YELLOW}⚠️ Backend non accessible - provisioning manuel requis${NC}"
     echo -e "${YELLOW}💡 Créer le device via l'API (room créée automatiquement):${NC}"
-    echo -e "${YELLOW}   curl -X POST http://backend:3000/api/v1/devices -H 'Content-Type: application/json' -d '{\"device_uid\":\"$DEVICE_UID\",\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}'${NC}"
+    echo -e "${YELLOW}   curl -X POST http://$BACKEND_HOST:$BACKEND_PORT/api/v1/devices -H 'Content-Type: application/json' -d '{\"device_uid\":\"$DEVICE_UID\",\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}'${NC}"
     echo -e "${YELLOW}💡 Ou via l'interface web d'administration${NC}"
 fi
 
@@ -475,6 +487,6 @@ echo -e "   Logs:        ${YELLOW}ssh pi@$PI_IP 'journalctl -u techtemp-device -
 echo -e "   Test manuel: ${YELLOW}ssh pi@$PI_IP 'cd techtemp/device && sudo ./build/techtemp-device config/device.conf'${NC}"
 echo ""
 echo -e "${BLUE}🌐 API pour vérifier les données:${NC}"
-echo -e "   ${YELLOW}curl 'http://localhost:3000/api/v1/readings/latest?deviceId=$DEVICE_UID'${NC}"
+echo -e "   ${YELLOW}curl 'http://$BACKEND_HOST:$BACKEND_PORT/api/v1/readings/latest?deviceId=$DEVICE_UID'${NC}"
 echo ""
 echo -e "${GREEN}✅ Le device est prêt à fonctionner !${NC}"
