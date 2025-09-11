@@ -29,6 +29,7 @@ export function createDataAccess(db) {
     // Room operations  
     insertRoom: createInsertRoom(db),
     findRoomById: createFindRoomById(db),
+    findRoomByUid: createFindRoomByUid(db),
 
     // Reading operations
     insertReading: createInsertReading(db),
@@ -49,6 +50,7 @@ export function createDataAccess(db) {
  * @property {Function} updateDeviceLastSeen
  * @property {Function} insertRoom
  * @property {Function} findRoomById
+ * @property {Function} findRoomByUid
  * @property {Function} insertReading
  * @property {Function} findLatestReadingByDevice
  * @property {Function} findLatestReadingPerDevice
@@ -122,13 +124,13 @@ function createUpdateDeviceLastSeen(db) {
 
 function createInsertRoom(db) {
   const stmt = db.prepare(`
-    INSERT INTO rooms (room_id, name, floor, side)
+    INSERT INTO rooms (uid, name, floor, side)
     VALUES (?, ?, ?, ?)
   `);
 
   return function insertRoom(roomData) {
     return stmt.run(
-      roomData.room_id,
+      roomData.uid,
       roomData.name,
       roomData.floor || null,
       roomData.side || null
@@ -138,11 +140,21 @@ function createInsertRoom(db) {
 
 function createFindRoomById(db) {
   const stmt = db.prepare(`
-    SELECT * FROM rooms WHERE room_id = ?
+    SELECT * FROM rooms WHERE id = ?
   `);
 
   return function findRoomById(roomId) {
     return stmt.get(roomId) || null;
+  };
+}
+
+function createFindRoomByUid(db) {
+  const stmt = db.prepare(`
+    SELECT * FROM rooms WHERE uid = ?
+  `);
+
+  return function findRoomByUid(roomUid) {
+    return stmt.get(roomUid) || null;
   };
 }
 

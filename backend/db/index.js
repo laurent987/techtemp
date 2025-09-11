@@ -64,10 +64,11 @@ function migrateSchema(db) {
   // Table rooms
   db.exec(`
     CREATE TABLE IF NOT EXISTS rooms (
-      room_id   TEXT PRIMARY KEY,
-      name      TEXT NOT NULL,
-      floor     TEXT,
-      side      TEXT
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid          TEXT UNIQUE NOT NULL,
+      name         TEXT NOT NULL,
+      floor        TEXT,
+      side         TEXT
     )
   `);
 
@@ -89,7 +90,7 @@ function migrateSchema(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS device_room_placements (
       device_id   INTEGER NOT NULL REFERENCES devices(id),
-      room_id     TEXT NOT NULL REFERENCES rooms(room_id),
+      room_id     INTEGER NOT NULL REFERENCES rooms(id),
       from_ts     DATETIME NOT NULL,
       to_ts       DATETIME,
       PRIMARY KEY (device_id, from_ts)
@@ -100,7 +101,7 @@ function migrateSchema(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS readings_raw (
       device_id   INTEGER NOT NULL REFERENCES devices(id),
-      room_id     TEXT,
+      room_id     INTEGER,
       ts          DATETIME NOT NULL,
       temperature REAL,
       humidity    REAL,

@@ -50,6 +50,52 @@ IoT Devices → MQTT → TechTemp Service → Database
 ./deployment/bootstrap-pi.sh 192.168.1.100 --non-interactive
 ```
 
+## 🏷️ Device Provisioning
+
+**Since Journal #009**, devices must be **provisioned before** they can send data.
+
+### Single Device Provisioning
+
+```bash
+# Provision a device with room placement
+node scripts/provision-device.js \
+  --uid "aht20-abc123" \
+  --label "Capteur Salon" \
+  --room-name "Salon"
+
+# Simple device provisioning (no room)
+node scripts/provision-device.js \
+  --uid "aht20-abc123" \
+  --label "Capteur Portable"
+```
+
+### Batch Provisioning
+
+```bash
+# Provision multiple devices from JSON config
+node scripts/batch-provision.js scripts/example-devices.json
+```
+
+Example configuration (`devices.json`):
+```json
+{
+  "devices": [
+    {
+      "uid": "aht20-salon01",
+      "label": "Capteur Salon",
+      "roomName": "Salon"
+    },
+    {
+      "uid": "aht20-cuisine01", 
+      "label": "Capteur Cuisine",
+      "roomName": "Cuisine"
+    }
+  ]
+}
+```
+
+**⚠️ Important:** Devices that haven't been provisioned will have their MQTT messages **rejected**.
+
 **📚 Complete device documentation:** [`device/docs/`](device/docs/README.md)
 
 - **🚀 [Bootstrap Guide](device/docs/setup/bootstrap.md)** - One-command setup

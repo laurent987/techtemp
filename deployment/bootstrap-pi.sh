@@ -151,7 +151,7 @@ if [ "$INTERACTIVE" = true ]; then
         read HOME_ID
     done
     
-    # Room ID  
+    # Room Name
     echo -e "🏠 ${BLUE}Nom de la pièce${NC}"
     echo -n -e "   Où placer ce capteur ? (ex: Salon, Cuisine, Bureau, Chambre): "
     read ROOM_NAME
@@ -159,9 +159,6 @@ if [ "$INTERACTIVE" = true ]; then
         echo -n -e "   ${YELLOW}⚠️ Ce champ est requis:${NC} "
         read ROOM_NAME
     done
-    
-    # Générer room_id à partir du nom (minuscules, sans espaces)
-    ROOM_ID=$(echo "$ROOM_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
     
     # Device Label
     echo -e "🏷️ ${BLUE}Nom descriptif du capteur${NC}"
@@ -185,7 +182,6 @@ else
     # Mode non-interactif : valeurs par défaut
     HOME_ID="home-001"
     ROOM_NAME="Salon"
-    ROOM_ID="salon"
     DEVICE_LABEL="Capteur $ROOM_NAME"
 fi
 
@@ -195,7 +191,7 @@ echo -e "${BLUE}===================================${NC}"
 echo -e "Pi IP:          ${YELLOW}$PI_IP${NC}"
 echo -e "Device UID:     ${YELLOW}$DEVICE_UID${NC} ${GREEN}(basé sur MAC)${NC}"
 echo -e "Home ID:        ${YELLOW}$HOME_ID${NC}"
-echo -e "Room:           ${YELLOW}$ROOM_NAME${NC} ${GREEN}(ID: $ROOM_ID)${NC}"
+echo -e "Room:           ${YELLOW}$ROOM_NAME${NC} ${GREEN}(auto-generated ID)${NC}"
 echo -e "Device Label:   ${YELLOW}$DEVICE_LABEL${NC}"
 echo -e "Broker:         ${YELLOW}$BROKER_HOST:$BROKER_PORT${NC}"
 echo -e "Read Interval:  ${YELLOW}${READ_INTERVAL}s${NC}"
@@ -247,7 +243,6 @@ cat > /tmp/device.conf << EOF
 [device]
 device_uid = $DEVICE_UID
 home_id = $HOME_ID
-room_id = $ROOM_ID
 label = $DEVICE_LABEL
 
 [sensor]
@@ -323,36 +318,30 @@ else
     echo "$TEST_OUTPUT" | tail -10
 fi
 
-# 9. Configuration du device dans l'API backend
-echo -e "${BLUE}🌐 Configuration du device dans l'API...${NC}"
-API_URL="http://localhost:3000/api/v1/devices/$DEVICE_UID"
+# 9. Configuration du device dans l'API backend via notre script de provisioning
+echo -e "${BLUE}🌐 Provisioning du device dans le backend...${NC}"
 
-# Payload JSON pour l'API
-DEVICE_PAYLOAD=$(cat << EOF
-{
-  "home_id": "$HOME_ID",
-  "room_id": "$ROOM_ID",
-  "label": "$DEVICE_LABEL"
-}
-EOF
-)
+# Copier le script de provisioning sur le serveur backend et l'exécuter
+PROVISION_CMD="node scripts/provision-device.js --uid '$DEVICE_UID' --label '$DEVICE_LABEL' --room-name '$ROOM_NAME'"
 
-# Configurer le device via l'API
-if command -v curl > /dev/null 2>&1; then
-    API_RESPONSE=$(curl -s -X PUT "$API_URL" \
-        -H "Content-Type: application/json" \
-        -d "$DEVICE_PAYLOAD" 2>/dev/null || echo "API_ERROR")
+# Si nous avons accès au serveur backend (localhost), provisioner directement
+if curl -s http://localhost:3000/health > /dev/null 2>&1; then
+    echo -e "${GREEN}🔍 Backend détecté en local, provisioning direct...${NC}"
     
-    if [[ "$API_RESPONSE" != "API_ERROR" ]] && echo "$API_RESPONSE" | grep -q "device_id"; then
-        echo -e "${GREEN}✅ Device configuré dans l'API${NC}"
+    # Exécuter le provisioning localement
+    if $PROVISION_CMD; then
+        echo -e "${GREEN}✅ Device provisionné avec succès${NC}"
+        echo -e "${GREEN}   Room ID généré: $(echo '$ROOM_NAME' | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')${NC}"
     else
-        echo -e "${YELLOW}⚠️ Configuration API échouée - configurer manuellement:${NC}"
-        echo -e "${YELLOW}   curl -X PUT '$API_URL' \\${NC}"
-        echo -e "${YELLOW}        -H 'Content-Type: application/json' \\${NC}"
-        echo -e "${YELLOW}        -d '$DEVICE_PAYLOAD'${NC}"
+        echo -e "${YELLOW}⚠️ Provisioning local échoué${NC}"
+        echo -e "${YELLOW}💡 Commande pour provisioning manuel:${NC}"
+        echo -e "${YELLOW}   $PROVISION_CMD${NC}"
     fi
 else
-    echo -e "${YELLOW}⚠️ curl non disponible - configurer manuellement via l'API${NC}"
+    echo -e "${YELLOW}⚠️ Backend non accessible - provisioning manuel requis${NC}"
+    echo -e "${YELLOW}💡 Sur le serveur backend, exécuter:${NC}"
+    echo -e "${YELLOW}   $PROVISION_CMD${NC}"
+    echo -e "${YELLOW}💡 Ou via l'interface web d'administration${NC}"
 fi
 
 # 10. Installation du service systemd
@@ -391,7 +380,7 @@ echo ""
 echo -e "${BLUE}📋 Informations du device:${NC}"
 echo -e "   Device UID:  ${YELLOW}$DEVICE_UID${NC}"
 echo -e "   Home ID:     ${YELLOW}$HOME_ID${NC}"
-echo -e "   Room ID:     ${YELLOW}$ROOM_ID${NC}"
+echo -e "   Room:        ${YELLOW}$ROOM_NAME${NC} ${GREEN}(auto-generated ID)${NC}"
 echo -e "   Label:       ${YELLOW}$DEVICE_LABEL${NC}"
 echo ""
 echo -e "${BLUE}🔧 Commandes utiles:${NC}"

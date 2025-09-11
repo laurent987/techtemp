@@ -84,14 +84,14 @@ export function createRepository(db) {
     },
     rooms: {
       create: async (room) => {
-        if (!room.room_id || !room.name) {
-          throw new Error('Room ID and name are required');
+        if (!room.uid || !room.name) {
+          throw new Error('Room UID and name are required');
         }
 
-        // Check for duplicate
-        const existing = await dataAccess.findRoomById(room.room_id);
+        // Check for duplicate UID
+        const existing = await dataAccess.findRoomByUid(room.uid);
         if (existing) {
-          throw new Error(`Room with ID ${room.room_id} already exists`);
+          throw new Error(`Room with UID ${room.uid} already exists`);
         }
 
         await dataAccess.insertRoom(room);
@@ -103,6 +103,13 @@ export function createRepository(db) {
         }
 
         return await dataAccess.findRoomById(roomId);
+      },
+      findByUid: async (roomUid) => {
+        if (!roomUid) {
+          throw new Error('Room UID is required');
+        }
+
+        return await dataAccess.findRoomByUid(roomUid);
       }
     },
     readings: {

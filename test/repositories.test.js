@@ -133,7 +133,7 @@ describe('Repository Pattern - Business Logic Layer', () => {
     it('should create a new room with validation', async () => {
       // Arrange
       const room = {
-        room_id: 'room001',
+        uid: 'room001',
         name: 'Living Room',
         floor: 'Ground Floor',
         side: 'North'
@@ -144,7 +144,7 @@ describe('Repository Pattern - Business Logic Layer', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.room_id).toBe('room001');
+      expect(result.uid).toBe('room001');
       expect(result.name).toBe('Living Room');
     });
 
@@ -152,41 +152,44 @@ describe('Repository Pattern - Business Logic Layer', () => {
       // Arrange
       const invalidRoom = {
         floor: 'Ground Floor'
-        // Missing room_id and name
+        // Missing uid and name
       };
 
       // Act & Assert
       await expect(repository.rooms.create(invalidRoom))
-        .rejects.toThrow('Room ID and name are required');
+        .rejects.toThrow('Room UID and name are required');
     });
 
     it('should reject duplicate room creation', async () => {
       // Arrange
       const room = {
-        room_id: 'room001',
+        uid: 'room001',
         name: 'Living Room'
       };
       await repository.rooms.create(room);
 
       // Act & Assert
       await expect(repository.rooms.create(room))
-        .rejects.toThrow('Room with ID room001 already exists');
+        .rejects.toThrow('Room with UID room001 already exists');
     });
 
     it('should find room by ID with validation', async () => {
       // Arrange
       const room = {
-        room_id: 'room001',
+        uid: 'room001',
         name: 'Living Room'
       };
-      await repository.rooms.create(room);
+      const createdRoom = await repository.rooms.create(room);
+
+      // Need to get the auto-generated ID from database
+      const roomRecord = await repository.rooms.findByUid('room001');
 
       // Act
-      const found = await repository.rooms.findById('room001');
+      const found = await repository.rooms.findById(roomRecord.id);
 
       // Assert
       expect(found).toBeDefined();
-      expect(found.room_id).toBe('room001');
+      expect(found.uid).toBe('room001');
       expect(found.name).toBe('Living Room');
     });
 

@@ -18,8 +18,8 @@ describe('Readings API', () => {
     repo = createRepository(db);
 
     // Create sample data
-    await repo.rooms.create({ room_id: 'living-room', name: 'Living Room' });
-    await repo.rooms.create({ room_id: 'bedroom', name: 'Bedroom' });
+    await repo.rooms.create({ uid: 'living-room', name: 'Living Room' });
+    await repo.rooms.create({ uid: 'bedroom', name: 'Bedroom' });
 
     await repo.devices.create({
       uid: 'temp-001',

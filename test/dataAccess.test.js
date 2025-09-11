@@ -80,7 +80,7 @@ describe('Data Access Layer', () => {
     it('should insert a new room', () => {
       // Arrange
       const roomData = {
-        room_id: 'room001',
+        uid: 'room001',
         name: 'Living Room',
         floor: 'Ground Floor',
         side: 'North'
@@ -96,17 +96,17 @@ describe('Data Access Layer', () => {
     it('should find room by ID', () => {
       // Arrange
       const roomData = {
-        room_id: 'room001',
+        uid: 'room001',
         name: 'Living Room'
       };
-      dataAccess.insertRoom(roomData);
+      const insertResult = dataAccess.insertRoom(roomData);
 
       // Act
-      const found = dataAccess.findRoomById('room001');
+      const found = dataAccess.findRoomById(insertResult.lastInsertRowid);
 
       // Assert
       expect(found).toBeDefined();
-      expect(found.room_id).toBe('room001');
+      expect(found.uid).toBe('room001');
       expect(found.name).toBe('Living Room');
     });
   });
