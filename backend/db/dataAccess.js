@@ -1,6 +1,14 @@
 /**
  * @file Data Access Layer - Phase 3
- * SQL operations layer between Repository and Database
+ * SQL operations layer betwfunction createFindDeviceById(db) {
+  const stmt = db.prepare(`
+    SELECT * FROM devices WHERE uid = ?
+  `);
+
+  return function findDeviceById(uid) {
+    return stmt.get(uid);
+  };
+}itory and Database
  * No business logic, only SQL operations
  */
 
@@ -15,6 +23,7 @@ export function createDataAccess(db) {
     insertDevice: createInsertDevice(db),
     findDeviceById: createFindDeviceById(db),
     findDeviceByUid: createFindDeviceByUid(db),
+    resolveDeviceId: createResolveDeviceId(db),
     updateDeviceLastSeen: createUpdateDeviceLastSeen(db),
 
     // Room operations  
@@ -28,6 +37,7 @@ export function createDataAccess(db) {
     findReadingsByRoomAndTimeRange: createFindReadingsByRoomAndTimeRange(db),
 
     // Device placement operations
+    insertDevicePlacement: createInsertDevicePlacement(db),
     findCurrentDevicePlacement: createFindCurrentDevicePlacement(db)
   };
 }
@@ -50,14 +60,13 @@ export function createDataAccess(db) {
 
 function createInsertDevice(db) {
   const stmt = db.prepare(`
-    INSERT INTO devices (device_id, device_uid, label, model, created_at, last_seen_at, offset_temperature, offset_humidity)
-    VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, ?, ?)
+    INSERT INTO devices (uid, label, model, created_at, last_seen_at, offset_temperature, offset_humidity)
+    VALUES (?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, ?, ?)
   `);
 
   return function insertDevice(deviceData) {
     return stmt.run(
-      deviceData.device_id,
-      deviceData.device_uid,
+      deviceData.uid,
       deviceData.label || null,
       deviceData.model || null,
       deviceData.created_at || null,
@@ -70,31 +79,42 @@ function createInsertDevice(db) {
 
 function createFindDeviceById(db) {
   const stmt = db.prepare(`
-    SELECT * FROM devices WHERE device_id = ?
+    SELECT * FROM devices WHERE uid = ?
   `);
 
-  return function findDeviceById(deviceId) {
-    return stmt.get(deviceId) || null;
+  return function findDeviceById(uid) {
+    return stmt.get(uid) || null;
   };
 }
 
 function createFindDeviceByUid(db) {
   const stmt = db.prepare(`
-    SELECT * FROM devices WHERE device_uid = ?
+    SELECT * FROM devices WHERE uid = ?
   `);
 
-  return function findDeviceByUid(deviceUid) {
-    return stmt.get(deviceUid) || null;
+  return function findDeviceByUid(uid) {
+    return stmt.get(uid) || null;
+  };
+}
+
+function createResolveDeviceId(db) {
+  const stmt = db.prepare(`
+    SELECT id FROM devices WHERE uid = ?
+  `);
+
+  return function resolveDeviceId(uid) {
+    const result = stmt.get(uid);
+    return result ? result.id : null;
   };
 }
 
 function createUpdateDeviceLastSeen(db) {
   const stmt = db.prepare(`
-    UPDATE devices SET last_seen_at = ? WHERE device_id = ?
+    UPDATE devices SET last_seen_at = ? WHERE uid = ?
   `);
 
-  return function updateDeviceLastSeen(deviceId, timestamp) {
-    return stmt.run(timestamp, deviceId);
+  return function updateDeviceLastSeen(uid, timestamp) {
+    return stmt.run(timestamp, uid);
   };
 }
 
@@ -149,25 +169,28 @@ function createInsertReading(db) {
 
 function createFindLatestReadingByDevice(db) {
   const stmt = db.prepare(`
-    SELECT * FROM readings_raw 
-    WHERE device_id = ? 
-    ORDER BY ts DESC 
+    SELECT r.*, d.uid FROM readings_raw r
+    JOIN devices d ON r.device_id = d.id
+    WHERE d.uid = ? 
+    ORDER BY r.ts DESC 
     LIMIT 1
   `);
 
-  return function findLatestReadingByDevice(deviceId) {
-    return stmt.get(deviceId) || null;
+  return function findLatestReadingByDevice(uid) {
+    return stmt.get(uid) || null;
   };
 }
 
 function createFindLatestReadingPerDevice(db) {
   const stmt = db.prepare(`
-    SELECT r1.* FROM readings_raw r1
+    SELECT r1.*, d.uid
+    FROM readings_raw r1
     INNER JOIN (
       SELECT device_id, MAX(ts) as max_ts
       FROM readings_raw
       GROUP BY device_id
     ) r2 ON r1.device_id = r2.device_id AND r1.ts = r2.max_ts
+    INNER JOIN devices d ON r1.device_id = d.id
     ORDER BY r1.device_id
   `);
 
@@ -190,15 +213,32 @@ function createFindReadingsByRoomAndTimeRange(db) {
 
 // ====== DEVICE PLACEMENT OPERATIONS ======
 
+function createInsertDevicePlacement(db) {
+  const stmt = db.prepare(`
+    INSERT INTO device_room_placements (device_id, room_id, from_ts, to_ts)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  return function insertDevicePlacement(placementData) {
+    return stmt.run(
+      placementData.device_id, // Internal ID, already resolved
+      placementData.room_id,
+      placementData.from_ts,
+      placementData.to_ts || null
+    );
+  };
+}
+
 function createFindCurrentDevicePlacement(db) {
   const stmt = db.prepare(`
-    SELECT * FROM device_room_placements 
-    WHERE device_id = ? AND to_ts IS NULL
-    ORDER BY from_ts DESC 
+    SELECT p.* FROM device_room_placements p
+    JOIN devices d ON p.device_id = d.id 
+    WHERE d.uid = ? AND p.to_ts IS NULL
+    ORDER BY p.from_ts DESC 
     LIMIT 1
   `);
 
-  return function findCurrentDevicePlacement(deviceId) {
-    return stmt.get(deviceId) || null;
+  return function findCurrentDevicePlacement(uid) {
+    return stmt.get(uid) || null;
   };
 }

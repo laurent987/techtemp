@@ -27,8 +27,7 @@ describe('Data Access Layer', () => {
     it('should insert a new device', () => {
       // Arrange
       const deviceData = {
-        device_id: 'dev001',
-        device_uid: 'uid-12345',
+        uid: 'uid-12345',
         label: 'Temperature Sensor',
         model: 'TempSens v1.0'
       };
@@ -44,37 +43,35 @@ describe('Data Access Layer', () => {
     it('should find device by ID', () => {
       // Arrange - insérer d'abord un device
       const deviceData = {
-        device_id: 'dev001',
-        device_uid: 'uid-12345',
+        uid: 'uid-12345',
         label: 'Temperature Sensor'
       };
       dataAccess.insertDevice(deviceData);
 
       // Act
-      const found = dataAccess.findDeviceById('dev001');
+      const found = dataAccess.findDeviceById('uid-12345');
 
       // Assert
       expect(found).toBeDefined();
-      expect(found.device_id).toBe('dev001');
+      expect(found.uid).toBe('uid-12345');
       expect(found.label).toBe('Temperature Sensor');
     });
 
     it('should update device last seen timestamp', () => {
       // Arrange
       const deviceData = {
-        device_id: 'dev001',
-        device_uid: 'uid-12345'
+        uid: 'uid-12345'
       };
       dataAccess.insertDevice(deviceData);
       const timestamp = new Date().toISOString();
 
       // Act
-      const result = dataAccess.updateDeviceLastSeen('dev001', timestamp);
+      const result = dataAccess.updateDeviceLastSeen('uid-12345', timestamp);
 
       // Assert
       expect(result.changes).toBe(1);
 
-      const updated = dataAccess.findDeviceById('dev001');
+      const updated = dataAccess.findDeviceById('uid-12345');
       expect(updated.last_seen_at).toBe(timestamp);
     });
   });
@@ -117,13 +114,13 @@ describe('Data Access Layer', () => {
   describe('Reading Data Access', () => {
     it('should insert a new reading', () => {
       // Arrange - créer d'abord un device
-      dataAccess.insertDevice({
-        device_id: 'dev001',
-        device_uid: 'uid-12345'
+      const deviceResult = dataAccess.insertDevice({
+        uid: 'uid-12345'
       });
+      const deviceId = deviceResult.lastInsertRowid;
 
       const readingData = {
-        device_id: 'dev001',
+        device_id: deviceId, // Use the internal ID
         room_id: 'room001',
         ts: new Date().toISOString(),
         temperature: 23.5,
@@ -140,30 +137,30 @@ describe('Data Access Layer', () => {
 
     it('should find latest reading by device', () => {
       // Arrange - setup device et readings
-      dataAccess.insertDevice({
-        device_id: 'dev001',
-        device_uid: 'uid-12345'
+      const deviceResult = dataAccess.insertDevice({
+        uid: 'uid-12345'
       });
+      const deviceId = deviceResult.lastInsertRowid;
 
       const now = new Date();
       const earlier = new Date(now.getTime() - 3600000); // 1h earlier
 
       dataAccess.insertReading({
-        device_id: 'dev001',
+        device_id: deviceId,
         ts: earlier.toISOString(),
         temperature: 20.0,
         humidity: 50.0
       });
 
       dataAccess.insertReading({
-        device_id: 'dev001',
+        device_id: deviceId,
         ts: now.toISOString(),
         temperature: 25.0,
         humidity: 60.0
       });
 
-      // Act
-      const latest = dataAccess.findLatestReadingByDevice('dev001');
+      // Act - use UID to find latest reading
+      const latest = dataAccess.findLatestReadingByDevice('uid-12345');
 
       // Assert
       expect(latest).toBeDefined();
@@ -173,16 +170,16 @@ describe('Data Access Layer', () => {
 
     it('should find readings by room and time range', () => {
       // Arrange
-      dataAccess.insertDevice({
-        device_id: 'dev001',
-        device_uid: 'uid-12345'
+      const deviceResult = dataAccess.insertDevice({
+        uid: 'uid-12345'
       });
+      const deviceId = deviceResult.lastInsertRowid;
 
       const baseTime = new Date('2025-09-06T10:00:00Z');
       const readings = [
-        { device_id: 'dev001', room_id: 'room001', ts: new Date(baseTime.getTime()).toISOString(), temperature: 20.0 },
-        { device_id: 'dev001', room_id: 'room001', ts: new Date(baseTime.getTime() + 1800000).toISOString(), temperature: 22.0 },
-        { device_id: 'dev001', room_id: 'room002', ts: new Date(baseTime.getTime() + 3600000).toISOString(), temperature: 24.0 }
+        { device_id: deviceId, room_id: 'room001', ts: new Date(baseTime.getTime()).toISOString(), temperature: 20.0 },
+        { device_id: deviceId, room_id: 'room001', ts: new Date(baseTime.getTime() + 1800000).toISOString(), temperature: 22.0 },
+        { device_id: deviceId, room_id: 'room002', ts: new Date(baseTime.getTime() + 3600000).toISOString(), temperature: 24.0 }
       ];
 
       readings.forEach(r => dataAccess.insertReading(r));

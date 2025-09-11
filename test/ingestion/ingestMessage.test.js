@@ -76,7 +76,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       // Verify repository calls
       expect(mockRepository.devices.findByUid).toHaveBeenCalledWith('temp001');
       expect(mockRepository.readings.create).toHaveBeenCalledWith({
-        device_id: 'temp001',
+        uid: 'temp001',
         room_id: 'living-room',
         temperature: 23.5,
         humidity: 65.2,
@@ -87,7 +87,7 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       expect(mockRepository.devices.updateLastSeen).toHaveBeenCalledWith('temp001', expect.any(String));
     });
 
-    it('should create device automatically if not exists', async () => {
+    it('should reject message when device not provisioned', async () => {
       // Arrange
       const topic = 'home/home-001/sensors/temp002/reading';
       const payload = {
@@ -99,37 +99,14 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       // Mock device not found
       mockRepository.devices.findByUid.mockResolvedValue(null);
 
-      // Mock device creation
-      mockRepository.devices.create.mockResolvedValue({
-        device_id: 'temp002',
-        device_uid: 'AUTO_temp002',
-        room_id: null,
-        last_seen: '2025-09-07T11:15:00Z'
-      });
+      // Act & Assert
+      await expect(ingestMessage(topic, payload, {}, mockRepository))
+        .rejects.toThrow('Device with UID temp002 not found. Device must be provisioned first.');
 
-      // Mock reading creation
-      mockRepository.readings.create.mockResolvedValue({
-        success: true,
-        changes: 1,
-        lastInsertRowid: 43
-      });
-
-      // Act
-      const result = await ingestMessage(topic, payload, {}, mockRepository);
-
-      // Assert
-      expect(result.success).toBe(true);
-      expect(result.deviceCreated).toBe(true);
-      expect(result.deviceId).toBe('temp002');
-
-      // Verify device was created with auto-generated data
-      expect(mockRepository.devices.create).toHaveBeenCalledWith({
-        device_id: 'temp002',
-        device_uid: 'temp002',
-        last_seen: expect.any(String), // Now an ISO string
-        label: 'Auto-discovered sensor',
-        model: 'unknown'
-      });
+      // Verify device was looked up but not created
+      expect(mockRepository.devices.findByUid).toHaveBeenCalledWith('temp002');
+      expect(mockRepository.devices.create).not.toHaveBeenCalled();
+      expect(mockRepository.readings.create).not.toHaveBeenCalled();
     });
   });
 
@@ -162,16 +139,13 @@ describe('Ingest Message - MQTT Pipeline Integration', () => {
       expect(mockRepository.readings.create).not.toHaveBeenCalled();
     });
 
-    it('should handle device creation failure', async () => {
+    it('should handle database lookup failure', async () => {
       // Arrange
       const topic = 'home/home-001/sensors/temp003/reading';
       const payload = { temperature_c: 25.0, humidity_pct: 60.0, ts: 1757442988279 };
 
-      // Mock device not found
-      mockRepository.devices.findByUid.mockResolvedValue(null);
-
-      // Mock device creation failure
-      mockRepository.devices.create.mockRejectedValue(new Error('Database connection failed'));
+      // Mock database connection failure during device lookup
+      mockRepository.devices.findByUid.mockRejectedValue(new Error('Database connection failed'));
 
       // Act & Assert
       await expect(ingestMessage(topic, payload, {}, mockRepository))
