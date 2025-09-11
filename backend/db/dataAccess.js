@@ -23,7 +23,13 @@ export function createDataAccess(db) {
     insertDevice: createInsertDevice(db),
     findDeviceById: createFindDeviceById(db),
     findDeviceByUid: createFindDeviceByUid(db),
+    findAllDevices: createFindAllDevices(db),
+    updateDevice: createUpdateDevice(db),
+    updateDeviceByUid: createUpdateDeviceByUid(db),
+    deleteDevice: createDeleteDevice(db),
+    deleteDeviceByUid: createDeleteDeviceByUid(db),
     resolveDeviceId: createResolveDeviceId(db),
+    resolveRoomId: createResolveRoomId(db),
     updateDeviceLastSeen: createUpdateDeviceLastSeen(db),
 
     // Room operations  
@@ -35,11 +41,14 @@ export function createDataAccess(db) {
     insertReading: createInsertReading(db),
     findLatestReadingByDevice: createFindLatestReadingByDevice(db),
     findLatestReadingPerDevice: createFindLatestReadingPerDevice(db),
+    findReadingsByDevice: createFindReadingsByDevice(db),
     findReadingsByRoomAndTimeRange: createFindReadingsByRoomAndTimeRange(db),
 
     // Device placement operations
     insertDevicePlacement: createInsertDevicePlacement(db),
-    findCurrentDevicePlacement: createFindCurrentDevicePlacement(db)
+    findCurrentDevicePlacement: createFindCurrentDevicePlacement(db),
+    updateDevicePlacement: createUpdateDevicePlacement(db),
+    deleteDevicePlacements: createDeleteDevicePlacements(db)
   };
 }
 
@@ -54,6 +63,7 @@ export function createDataAccess(db) {
  * @property {Function} insertReading
  * @property {Function} findLatestReadingByDevice
  * @property {Function} findLatestReadingPerDevice
+ * @property {Function} findReadingsByDevice
  * @property {Function} findReadingsByRoomAndTimeRange
  * @property {Function} findCurrentDevicePlacement
  */
@@ -105,6 +115,17 @@ function createResolveDeviceId(db) {
   `);
 
   return function resolveDeviceId(uid) {
+    const result = stmt.get(uid);
+    return result ? result.id : null;
+  };
+}
+
+function createResolveRoomId(db) {
+  const stmt = db.prepare(`
+    SELECT id FROM rooms WHERE uid = ?
+  `);
+
+  return function resolveRoomId(uid) {
     const result = stmt.get(uid);
     return result ? result.id : null;
   };
@@ -211,6 +232,20 @@ function createFindLatestReadingPerDevice(db) {
   };
 }
 
+function createFindReadingsByDevice(db) {
+  const stmt = db.prepare(`
+    SELECT r.*, d.uid FROM readings_raw r
+    JOIN devices d ON r.device_id = d.id
+    WHERE d.uid = ? 
+    ORDER BY r.ts DESC 
+    LIMIT ?
+  `);
+
+  return function findReadingsByDevice(uid, limit = 10) {
+    return stmt.all(uid, limit);
+  };
+}
+
 function createFindReadingsByRoomAndTimeRange(db) {
   const stmt = db.prepare(`
     SELECT * FROM readings_raw 
@@ -252,5 +287,93 @@ function createFindCurrentDevicePlacement(db) {
 
   return function findCurrentDevicePlacement(uid) {
     return stmt.get(uid) || null;
+  };
+}
+
+// ====== ADDITIONAL DEVICE OPERATIONS ======
+
+function createFindAllDevices(db) {
+  const stmt = db.prepare(`
+    SELECT * FROM devices ORDER BY created_at DESC
+  `);
+
+  return function findAllDevices() {
+    return stmt.all();
+  };
+}
+
+function createUpdateDevice(db) {
+  const stmt = db.prepare(`
+    UPDATE devices SET 
+      label = COALESCE(?, label),
+      model = COALESCE(?, model),
+      last_seen_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `);
+
+  return function updateDevice(id, updateData) {
+    return stmt.run(
+      updateData.label,
+      updateData.model,
+      id
+    );
+  };
+}
+
+function createDeleteDevice(db) {
+  const stmt = db.prepare(`
+    DELETE FROM devices WHERE id = ?
+  `);
+
+  return function deleteDevice(id) {
+    return stmt.run(id);
+  };
+}
+
+function createUpdateDevicePlacement(db) {
+  const stmt = db.prepare(`
+    UPDATE device_room_placements SET to_ts = ? WHERE device_id = ? AND from_ts = ?
+  `);
+
+  return function updateDevicePlacement(deviceId, fromTs, updateData) {
+    return stmt.run(updateData.to_ts, deviceId, fromTs);
+  };
+}
+
+function createUpdateDeviceByUid(db) {
+  const stmt = db.prepare(`
+    UPDATE devices SET 
+      label = COALESCE(?, label),
+      model = COALESCE(?, model),
+      last_seen_at = CURRENT_TIMESTAMP
+    WHERE uid = ?
+  `);
+
+  return function updateDeviceByUid(uid, updateData) {
+    return stmt.run(
+      updateData.label,
+      updateData.model,
+      uid
+    );
+  };
+}
+
+function createDeleteDeviceByUid(db) {
+  const stmt = db.prepare(`
+    DELETE FROM devices WHERE uid = ?
+  `);
+
+  return function deleteDeviceByUid(uid) {
+    return stmt.run(uid);
+  };
+}
+
+function createDeleteDevicePlacements(db) {
+  const stmt = db.prepare(`
+    DELETE FROM device_room_placements WHERE device_id = ?
+  `);
+
+  return function deleteDevicePlacements(deviceId) {
+    return stmt.run(deviceId);
   };
 }

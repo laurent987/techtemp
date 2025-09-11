@@ -1,8 +1,8 @@
 /**
  * @file Repository Pattern - Complete Implementation
  * Business logic layer that provides repository interfaces for devices, rooms, and readings.
- * Uses the Data Access Layer to interact with the database and applies business rules.
- */
+*/
+
 import { createDataAccess } from '../db/dataAccess.js';
 
 /**
@@ -35,7 +35,21 @@ export function createRepository(db) {
         };
 
         const result = await dataAccess.insertDevice(device);
-        return { ...device, id: result.lastInsertRowid };
+        const createdDevice = { ...device, id: result.lastInsertRowid };
+
+        // If room_id is provided, create placement
+        if (deviceData.room_id) {
+          await dataAccess.insertDevicePlacement({
+            device_id: createdDevice.id,
+            room_id: deviceData.room_id,
+            from_ts: new Date().toISOString()
+          });
+
+          // Add room_id to returned device for consistency
+          createdDevice.room_id = deviceData.room_id;
+        }
+
+        return createdDevice;
       },
       findById: async (uid) => {
         if (!uid) {
@@ -49,7 +63,18 @@ export function createRepository(db) {
           throw new Error('Device UID is required');
         }
 
-        return await dataAccess.findDeviceByUid(uid);
+        const device = await dataAccess.findDeviceByUid(uid);
+        if (!device) {
+          return null;
+        }
+
+        // Get current placement to include room_id
+        const placement = await dataAccess.findCurrentDevicePlacement(uid);
+
+        return {
+          ...device,
+          room_id: placement ? placement.room_id : null
+        };
       },
       updateLastSeen: async (uid, timestamp) => {
         if (!uid) {
@@ -80,6 +105,91 @@ export function createRepository(db) {
 
         // Use data access layer for consistency
         return await dataAccess.findCurrentDevicePlacement(uid);
+      },
+      findAll: async () => {
+        const devices = await dataAccess.findAllDevices();
+
+        // For each device, get current room assignment
+        const devicesWithRooms = await Promise.all(
+          devices.map(async (device) => {
+            const placement = await dataAccess.findCurrentDevicePlacement(device.uid);
+            return {
+              ...device,
+              room_id: placement ? placement.room_id : null
+            };
+          })
+        );
+
+        return devicesWithRooms;
+      },
+      update: async (uid, updateData) => {
+        if (!uid) {
+          throw new Error('Device UID is required');
+        }
+
+        // Check if device exists
+        const device = await dataAccess.findDeviceByUid(uid);
+        if (!device) {
+          throw new Error(`Device with UID ${uid} not found`);
+        }
+
+        // Update basic device properties (excluding room_id)
+        const deviceUpdateData = {
+          label: updateData.label,
+          model: updateData.model
+        };
+
+        await dataAccess.updateDeviceByUid(uid, deviceUpdateData);
+
+        // Handle room_id changes via placements
+        if (updateData.room_id !== undefined) {
+          // First, close current placement if exists
+          const currentPlacement = await dataAccess.findCurrentDevicePlacement(uid);
+          if (currentPlacement) {
+            await dataAccess.updateDevicePlacement(currentPlacement.device_id, currentPlacement.from_ts, {
+              to_ts: new Date().toISOString()
+            });
+          }
+
+          // Create new placement if room_id is provided (not null)
+          if (updateData.room_id) {
+            // Resolve device ID internally in dataAccess
+            const deviceId = await dataAccess.resolveDeviceId(uid);
+            await dataAccess.insertDevicePlacement({
+              device_id: deviceId,
+              room_id: updateData.room_id,
+              from_ts: new Date().toISOString()
+            });
+          }
+        }
+
+        // Return updated device with room_id
+        const updatedDevice = await dataAccess.findDeviceByUid(uid);
+        const placement = await dataAccess.findCurrentDevicePlacement(uid);
+
+        return {
+          ...updatedDevice,
+          room_id: placement ? placement.room_id : null
+        };
+      },
+      delete: async (uid) => {
+        if (!uid) {
+          throw new Error('Device UID is required');
+        }
+
+        // Check if device exists
+        const device = await dataAccess.findDeviceByUid(uid);
+        if (!device) {
+          throw new Error(`Device with UID ${uid} not found`);
+        }
+
+        // First, delete all placements for this device
+        await dataAccess.deleteDevicePlacements(device.id);
+
+        // Then delete the device itself
+        await dataAccess.deleteDeviceByUid(uid);
+
+        return { success: true };
       }
     },
     rooms: {
@@ -94,8 +204,8 @@ export function createRepository(db) {
           throw new Error(`Room with UID ${room.uid} already exists`);
         }
 
-        await dataAccess.insertRoom(room);
-        return room;
+        const result = await dataAccess.insertRoom(room);
+        return { ...room, id: result.lastInsertRowid };
       },
       findById: async (roomId) => {
         if (!roomId) {
@@ -167,6 +277,17 @@ export function createRepository(db) {
       findLatestPerDevice: async () => {
         // Get the latest reading for each device
         const readings = await dataAccess.findLatestReadingPerDevice();
+        return readings;
+      },
+      findByDevice: async (uid, limit = 10) => {
+        if (!uid) {
+          throw new Error('Device UID is required');
+        }
+        if (limit < 1 || limit > 1000) {
+          throw new Error('Limit must be between 1 and 1000');
+        }
+
+        const readings = await dataAccess.findReadingsByDevice(uid, limit);
         return readings;
       },
       findByRoomAndTimeRange: async (roomId, fromTs, toTs) => {
