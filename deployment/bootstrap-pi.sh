@@ -25,6 +25,7 @@ I2C_BUS="1"
 I2C_ADDRESS="0x38"
 READ_INTERVAL="30"
 LOG_LEVEL="info"
+GIT_BRANCH="develop"
 
 # Fonction d'aide
 usage() {
@@ -40,6 +41,7 @@ usage() {
     echo "  --password PASS       Password MQTT (optionnel)"
     echo "  --read-interval SEC   Intervalle de lecture en secondes (défaut: $READ_INTERVAL)"
     echo "  --log-level LEVEL     Niveau de log: debug,info,warn,error (défaut: $LOG_LEVEL)"
+    echo "  --git-branch BRANCH   Branche git à utiliser (défaut: $GIT_BRANCH)"
     echo "  --non-interactive     Mode non-interactif (utilise les valeurs par défaut)"
     echo ""
     echo "Exemple:"
@@ -85,6 +87,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --log-level)
             LOG_LEVEL="$2"
+            shift 2
+            ;;
+        --git-branch)
+            GIT_BRANCH="$2"
             shift 2
             ;;
         --non-interactive)
@@ -220,14 +226,32 @@ echo -e "${BLUE}⚙️ Configuration I2C...${NC}"
 ssh pi@$PI_IP "sudo raspi-config nonint do_i2c 0"  # 0 = enable
 echo -e "${GREEN}✅ I2C activé${NC}"
 
-# 4. Clonage/mise à jour du projet
+# 4. Installation/réinstallation propre du projet
 echo -e "${BLUE}📥 Installation du projet TechTemp...${NC}"
 ssh pi@$PI_IP "
     if [ -d 'techtemp' ]; then
-        cd techtemp && git pull
-    else
-        git clone https://github.com/laurent987/techtemp.git
+        echo 'Suppression de l installation existante...'
+        
+        # Backup de la config existante si elle existe
+        if [ -f 'techtemp/device/config/device.conf' ]; then
+            cp techtemp/device/config/device.conf device.conf.backup.\$(date +%Y%m%d_%H%M%S)
+            echo 'Config existante sauvegardée'
+        fi
+        
+        # Suppression complète pour repartir proprement
+        rm -rf techtemp
+        echo 'Installation existante supprimée'
     fi
+    
+    # Clone propre de la bonne branche
+    echo 'Clonage du projet (branche: $GIT_BRANCH)...'
+    git clone -b $GIT_BRANCH https://github.com/laurent987/techtemp.git 2>/dev/null || {
+        # Si la branche n'existe pas, clone master/main puis switch
+        git clone https://github.com/laurent987/techtemp.git
+        cd techtemp && git checkout $GIT_BRANCH 2>/dev/null || echo 'Branche $GIT_BRANCH non trouvée, utilisation de la branche par défaut'
+    }
+    
+    echo 'Projet installé proprement'
 "
 echo -e "${GREEN}✅ Projet installé${NC}"
 
