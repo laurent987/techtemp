@@ -133,5 +133,3 @@ function migrateSchema(db) {
     GROUP BY r.room_id
   `);
 }
-
-export { initDb };
