@@ -27,7 +27,6 @@ describe('Readings API', () => {
     });
     await repo.devices.create({
       uid: 'temp-002',
-      uid: 'temp-002',
       label: 'Bedroom Sensor'
     });
 
