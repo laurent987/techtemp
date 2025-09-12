@@ -24,7 +24,7 @@ This repository contains **everything you need**:
 ### 💻 Code & Applications
 - **🖥️ Backend Server** (`/backend/`) - Node.js service that collects MQTT data and provides REST API
 - **📡 Device Firmware** (`/device/`) - C code for Raspberry Pi sensors with AHT20 integration
-- **🌐 Web Dashboard** (`/web/`) - React dashboard for monitoring your sensors *(coming soon)*
+- **🌐 Web Dashboard** (`/web/`) - React + Chakra UI dashboard (MVP)
 
 ### 📚 Documentation  
 - **📡 [Device Setup](docs/devices/README.md)** (`/docs/devices/`) - Complete guides to setup and configure your Raspberry Pi sensors 
@@ -121,6 +121,11 @@ curl http://localhost:3000/api/v1/devices
 
 # Get latest readings from a specific device
 curl http://localhost:3000/api/v1/devices/aht20-f49c53/readings?limit=10
+```
+
+**Open the web dashboard:**
+```bash
+open http://localhost:3000/
 ```
 
 **Documentation:**

@@ -41,20 +41,20 @@ export function createLogger(nodeEnv = 'development') {
     })
   );
 
-  // File transport (production only)
-  if (!isDev) {
-    transports.push(
-      new winston.transports.File({
-        filename: 'logs/error.log',
-        level: 'error',
-        format: winston.format.combine(...formats)
-      }),
-      new winston.transports.File({
-        filename: 'logs/app.log',
-        format: winston.format.combine(...formats)
-      })
-    );
-  }
+  // File transport (production only) - Désactivé temporairement pour économiser l'espace disque
+  // if (!isDev) {
+  //   transports.push(
+  //     new winston.transports.File({
+  //       filename: 'logs/error.log',
+  //       level: 'error',
+  //       format: winston.format.combine(...formats)
+  //     }),
+  //     new winston.transports.File({
+  //       filename: 'logs/app.log',
+  //       format: winston.format.combine(...formats)
+  //     })
+  //   );
+  // }
 
   return winston.createLogger({
     level: isDev ? 'debug' : 'info',

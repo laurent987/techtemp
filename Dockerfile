@@ -31,6 +31,7 @@ COPY --from=dependencies /app/node_modules ./node_modules
 
 # Copy source code
 COPY backend/ ./backend/
+COPY web/ ./web/
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data && \
