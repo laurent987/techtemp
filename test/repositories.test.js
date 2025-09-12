@@ -181,10 +181,11 @@ describe('Repository Pattern - Business Logic Layer', () => {
       };
       const createdRoom = await repository.rooms.create(room);
 
-      // Need to get the auto-generated ID from database
+      // Get the auto-generated internal ID to test findById method
+      // (this tests internal ID lookup vs UID lookup which is tested separately)
       const roomRecord = await repository.rooms.findByUid('room001');
 
-      // Act
+      // Act - Test findById with internal database ID
       const found = await repository.rooms.findById(roomRecord.id);
 
       // Assert

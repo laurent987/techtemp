@@ -220,10 +220,11 @@ deploy_techtemp() {
         error "Echec transfert fichiers"
     fi
     
-    # Suppression de la ligne version obsolète du docker-compose.yml
+    # Suppression de la ligne version obsolète du docker-compose.yml (si présente)
     ssh_exec "
         cd '$PROJECT_DIR'
-        sed -i '/^version:/d' docker-compose.yml
+        # Supprimer la ligne version avec gestion des espaces
+        sed -i '/^[[:space:]]*version:[[:space:]]*/d' docker-compose.yml
     " "Nettoyage docker-compose.yml"
     
     # Construction et démarrage
