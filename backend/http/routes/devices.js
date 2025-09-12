@@ -59,14 +59,29 @@ export function devicesRouter(deps = {}) {
 
       const devices = await deps.repo.devices.findAll();
 
+      // Get room information for each device
+      const devicesWithRooms = await Promise.all(
+        devices.map(async (device) => {
+          let room = null;
+          if (device.room_id) {
+            room = await deps.repo.rooms.findById(device.room_id);
+          }
+
+          return {
+            uid: device.uid,
+            room: room ? {
+              uid: room.uid,
+              name: room.name
+            } : null,
+            label: device.label,
+            created_at: device.created_at,
+            last_seen_at: device.last_seen_at
+          };
+        })
+      );
+
       res.status(200).json({
-        data: devices.map(device => ({
-          uid: device.uid,
-          room_id: device.room_id,
-          label: device.label,
-          created_at: device.created_at,
-          last_seen_at: device.last_seen_at
-        }))
+        data: devicesWithRooms
       });
 
     } catch (error) {
@@ -104,14 +119,13 @@ export function devicesRouter(deps = {}) {
       res.status(200).json({
         data: {
           uid: device.uid,
-          room_id: device.room_id,
           room: room ? {
             uid: room.uid,
             name: room.name
           } : null,
           label: device.label,
           created_at: device.created_at,
-          updated_at: device.updated_at
+          last_seen_at: device.last_seen_at
         }
       });
 
@@ -316,6 +330,55 @@ export function devicesRouter(deps = {}) {
 
     } catch (error) {
       console.error('Device update error:', error.message);
+      res.status(500).json({
+        error: 'Internal server error'
+      });
+    }
+  });
+
+  // GET /api/v1/devices/:deviceUid/readings - Get readings for specific device
+  router.get('/:deviceUid/readings', async (req, res) => {
+    try {
+      if (!deps.repo) {
+        return res.status(500).json({
+          error: 'Repository not configured'
+        });
+      }
+
+      const { deviceUid } = req.params;
+      const { limit = 10 } = req.query;
+
+      // Validate device exists
+      const device = await deps.repo.devices.findByUid(deviceUid);
+      if (!device) {
+        return res.status(404).json({
+          error: 'Device not found'
+        });
+      }
+
+      // Validate limit parameter
+      const limitInt = parseInt(limit, 10);
+      if (isNaN(limitInt) || limitInt < 1 || limitInt > 1000) {
+        return res.status(400).json({
+          error: 'Limit must be between 1 and 1000'
+        });
+      }
+
+      // Get readings for this device
+      const readings = await deps.repo.readings.findByDeviceUid(deviceUid, limitInt);
+
+      // Transform to API format (without device info since it's in the URL)
+      const data = readings.map(reading => ({
+        ts: reading.ts,
+        temperature: reading.temperature,
+        humidity: reading.humidity,
+        source: reading.source || 'mqtt'
+      }));
+
+      res.status(200).json({ data });
+
+    } catch (error) {
+      console.error('Device readings error:', error.message);
       res.status(500).json({
         error: 'Internal server error'
       });

@@ -279,6 +279,20 @@ export function createRepository(db) {
         const readings = await dataAccess.findLatestReadingPerDevice();
         return readings;
       },
+      findByDeviceUid: async (uid, limit = 10) => {
+        if (!uid) {
+          throw new Error('Device UID is required');
+        }
+
+        // Validate limit
+        const limitInt = parseInt(limit, 10);
+        if (isNaN(limitInt) || limitInt < 1) {
+          throw new Error('Limit must be a positive integer');
+        }
+
+        const readings = await dataAccess.findReadingsByDeviceUid(uid, limitInt);
+        return readings;
+      },
       findByRoomAndTimeRange: async (roomId, fromTs, toTs) => {
         if (!roomId || !fromTs || !toTs) {
           throw new Error('Room ID, from timestamp, and to timestamp are required');

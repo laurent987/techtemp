@@ -41,6 +41,7 @@ export function createDataAccess(db) {
     insertReading: createInsertReading(db),
     findLatestReadingByDevice: createFindLatestReadingByDevice(db),
     findLatestReadingPerDevice: createFindLatestReadingPerDevice(db),
+    findReadingsByDeviceUid: createFindReadingsByDeviceUid(db),
     findReadingsByRoomAndTimeRange: createFindReadingsByRoomAndTimeRange(db),
 
     // Device placement operations
@@ -239,6 +240,21 @@ function createFindReadingsByRoomAndTimeRange(db) {
 
   return function findReadingsByRoomAndTimeRange(roomId, fromTs, toTs) {
     return stmt.all(roomId, fromTs, toTs);
+  };
+}
+
+function createFindReadingsByDeviceUid(db) {
+  const stmt = db.prepare(`
+    SELECT r.*, d.uid 
+    FROM readings_raw r
+    JOIN devices d ON r.device_id = d.id 
+    WHERE d.uid = ?
+    ORDER BY r.ts DESC
+    LIMIT ?
+  `);
+
+  return function findReadingsByDeviceUid(deviceUid, limit = 10) {
+    return stmt.all(deviceUid, limit);
   };
 }
 
