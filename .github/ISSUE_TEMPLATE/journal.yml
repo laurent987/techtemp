@@ -1,72 +1,128 @@
-name: "Entrée de journal"
-description: "Documenter une étape de travail (contrat, code, test)"
-title: "Journal: YYYY-MM-DD — Sujet"
+name: "Journal Entry"
+description: "Document a work step (contract, code, test)"
+title: "Journal (auto-renamed by workflow)"
 labels: ["journal"]
 
 body:
   - type: input
-    id: date
+    id: subject
     attributes:
-      label: Date
-      placeholder: "YYYY-MM-DD"
-    validations:
-      required: true
-
-  - type: input
-    id: id
-    attributes:
-      label: Numéro d'entrée
-      placeholder: "001"
+      label: Subject (short)
+      description: "Short title to identify this entry (max 50 characters)"
+      placeholder: "Ex: MQTT client implementation"
     validations:
       required: true
 
   - type: textarea
     id: objectif
     attributes:
-      label: Objectif
-      description: "Quel résultat on vise pour cette entrée."
-      placeholder: "Poser les contrats MQTT/DB/API pour le MVP"
+      label: Objective
+      description: "What result we aim for with this entry."
+      placeholder: "Ex: Implement mqtt/client.js and its tests (Vitest + aedes broker)"
     validations:
       required: true
+
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Context
+      description: "Why this step? Link with previous journals, risks/planning."
+      placeholder: "Ex: Journal #001 defined contracts; here we de-risk MQTT I/O"
+    validations:
+      required: false
 
   - type: textarea
     id: decisions
     attributes:
-      label: Décisions
-      description: "Décisions clés prises."
-      placeholder: "- SQLite WAL activé\n- Topic MQTT unique ..."
+      label: Decisions
+      description: "Key decisions made for this entry."
+      placeholder: "- Use mqtt.js v4\n- Promises for subscribe/publish\n- Optional LWT"
     validations:
       required: true
 
   - type: textarea
+    id: portee
+    attributes:
+      label: Scope (Done)
+      description: "What is covered by this entry."
+      placeholder: "- Wrapper mqtt/client.js (connect/subscribe/publish/close)\n- Integration tests with aedes\n- Default QoS = 1"
+    validations:
+      required: false
+
+  - type: textarea
+    id: hors_portee
+    attributes:
+      label: Out of Scope
+      description: "What is NOT covered here and will be handled later."
+      placeholder: "- Exponential backoff\n- DB ingestion integration\n- Topic pattern filtering"
+    validations:
+      required: false
+
+  - type: textarea
     id: artefacts
     attributes:
-      label: Artifacts produits
-      description: "Docs, schémas, interfaces, fichiers ajoutés."
-      placeholder: "- docs/journal/...\n- src/.../interfaces ..."
+      label: Produced Artifacts
+      description: "Docs, schemas, interfaces, added files."
+      placeholder: "- service-app/src/mqtt/client.js\n- service-app/test/mqtt.client.test.js\n- docs/journal/YYYY-MM-DD-entry-XXX.md"
+    validations:
+      required: false
+
+  - type: textarea
+    id: liens
+    attributes:
+      label: Useful Links
+      description: "Links to journals, contracts, PRs, Notion."
+      placeholder: "- Journal #001 …\n- Contract service-app …\n- PR: …"
+    validations:
+      required: false
+
+  - type: textarea
+    id: plan
+    attributes:
+      label: Implementation Plan
+      description: "Planned steps to deliver this journal."
+      placeholder: "1) Install deps\n2) Implement client.js\n3) Write tests\n4) Run CI"
     validations:
       required: false
 
   - type: textarea
     id: commands
     attributes:
-      label: Commandes exécutées (optionnel)
-      placeholder: "npm run init-db, curl /health, mosquitto_pub ..."
+      label: Executed Commands (optional)
+      placeholder: "npm i mqtt\nnpm i -D vitest aedes\nnpm run test"
     validations:
       required: false
 
   - type: textarea
     id: acceptance
     attributes:
-      label: Critères d’acceptation
-      placeholder: "- Contrats définis\n- Route /health répond 200 ..."
+      label: Acceptance Criteria
+      description: "Verifiable success conditions."
+      placeholder: "- All tests pass (Vitest)\n- Wrapper API conforms to contract\n- Clean shutdown without socket leaks"
     validations:
       required: true
 
   - type: textarea
+    id: risques
+    attributes:
+      label: Risks & Mitigations
+      placeholder: "- Busy ports → dynamic port\n- Socket leaks → always await close()"
+    validations:
+      required: false
+
+  - type: textarea
     id: todo
     attributes:
-      label: Suivi / TODO
-      placeholder: "- Implémenter getConfig()\n- Écrire tests parseTopic() ..."
+      label: Follow-up / TODO
+      placeholder: "- Add helper onTopic(pattern)\n- Add test retain/LWT"
+    validations:
+      required: false
+
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definition of Done (DoD)
+      description: "Definition of done: when do we consider this finished?"
+      placeholder: "- Code merged into develop via PR\n- Green CI\n- Journal committed & linked to issue"
     validations:
       required: false

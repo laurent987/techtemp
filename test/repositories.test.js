@@ -28,8 +28,7 @@ describe('Repository Pattern - Business Logic Layer', () => {
     it('should create a new device with business validation', async () => {
       // Arrange
       const device = {
-        device_id: 'dev001',
-        device_uid: 'uid-12345',
+        uid: 'uid-12345',
         label: 'Temperature Sensor',
         model: 'TempSens v1.0'
       };
@@ -39,7 +38,7 @@ describe('Repository Pattern - Business Logic Layer', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.device_id).toBe('dev001');
+      expect(result.uid).toBe('uid-12345');
       expect(result.label).toBe('Temperature Sensor');
     });
 
@@ -47,62 +46,59 @@ describe('Repository Pattern - Business Logic Layer', () => {
       // Arrange
       const invalidDevice = {
         label: 'Temperature Sensor'
-        // Missing device_id and device_uid
+        // Missing uid
       };
 
       // Act & Assert
       await expect(repository.devices.create(invalidDevice))
-        .rejects.toThrow('Device ID and UID are required');
+        .rejects.toThrow('Device UID is required');
     });
 
     it('should reject duplicate device creation', async () => {
       // Arrange
       const device = {
-        device_id: 'dev001',
-        device_uid: 'uid-12345'
+        uid: 'uid-12345'
       };
       await repository.devices.create(device);
 
       // Act & Assert
       await expect(repository.devices.create(device))
-        .rejects.toThrow('Device with ID dev001 already exists');
+        .rejects.toThrow('Device with UID uid-12345 already exists');
     });
 
     it('should find device by ID with validation', async () => {
       // Arrange
       const device = {
-        device_id: 'dev001',
-        device_uid: 'uid-12345',
+        uid: 'uid-12345',
         label: 'Temperature Sensor'
       };
       await repository.devices.create(device);
 
       // Act
-      const found = await repository.devices.findById('dev001');
+      const found = await repository.devices.findById('uid-12345');
 
       // Assert
       expect(found).toBeDefined();
-      expect(found.device_id).toBe('dev001');
+      expect(found.uid).toBe('uid-12345');
       expect(found.label).toBe('Temperature Sensor');
     });
 
     it('should reject findById without device ID', async () => {
       // Act & Assert
       await expect(repository.devices.findById(null))
-        .rejects.toThrow('Device ID is required');
+        .rejects.toThrow('Device UID is required');
     });
 
     it('should update device last seen with business logic', async () => {
       // Arrange
       const device = {
-        device_id: 'dev001',
-        device_uid: 'uid-12345'
+        uid: 'uid-12345'
       };
       await repository.devices.create(device);
       const customTs = '2025-09-06T12:00:00Z';
 
       // Act
-      const result = await repository.devices.updateLastSeen('dev001', customTs);
+      const result = await repository.devices.updateLastSeen('uid-12345', customTs);
 
       // Assert
       expect(result.last_seen_at).toBe(customTs);
@@ -111,14 +107,13 @@ describe('Repository Pattern - Business Logic Layer', () => {
     it('should default to current timestamp when updating last seen', async () => {
       // Arrange
       const device = {
-        device_id: 'dev001',
-        device_uid: 'uid-12345'
+        uid: 'uid-12345'
       };
       await repository.devices.create(device);
       const before = new Date().toISOString();
 
       // Act
-      const result = await repository.devices.updateLastSeen('dev001');
+      const result = await repository.devices.updateLastSeen('uid-12345');
       const after = new Date().toISOString();
 
       // Assert
@@ -130,7 +125,7 @@ describe('Repository Pattern - Business Logic Layer', () => {
     it('should reject update last seen for non-existent device', async () => {
       // Act & Assert
       await expect(repository.devices.updateLastSeen('non-existent'))
-        .rejects.toThrow('Device with ID non-existent not found');
+        .rejects.toThrow('Device with UID non-existent not found');
     });
   });
 
@@ -138,7 +133,7 @@ describe('Repository Pattern - Business Logic Layer', () => {
     it('should create a new room with validation', async () => {
       // Arrange
       const room = {
-        room_id: 'room001',
+        uid: 'room001',
         name: 'Living Room',
         floor: 'Ground Floor',
         side: 'North'
@@ -149,7 +144,7 @@ describe('Repository Pattern - Business Logic Layer', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.room_id).toBe('room001');
+      expect(result.uid).toBe('room001');
       expect(result.name).toBe('Living Room');
     });
 
@@ -157,41 +152,45 @@ describe('Repository Pattern - Business Logic Layer', () => {
       // Arrange
       const invalidRoom = {
         floor: 'Ground Floor'
-        // Missing room_id and name
+        // Missing uid and name
       };
 
       // Act & Assert
       await expect(repository.rooms.create(invalidRoom))
-        .rejects.toThrow('Room ID and name are required');
+        .rejects.toThrow('Room UID and name are required');
     });
 
     it('should reject duplicate room creation', async () => {
       // Arrange
       const room = {
-        room_id: 'room001',
+        uid: 'room001',
         name: 'Living Room'
       };
       await repository.rooms.create(room);
 
       // Act & Assert
       await expect(repository.rooms.create(room))
-        .rejects.toThrow('Room with ID room001 already exists');
+        .rejects.toThrow('Room with UID room001 already exists');
     });
 
     it('should find room by ID with validation', async () => {
       // Arrange
       const room = {
-        room_id: 'room001',
+        uid: 'room001',
         name: 'Living Room'
       };
-      await repository.rooms.create(room);
+      const createdRoom = await repository.rooms.create(room);
 
-      // Act
-      const found = await repository.rooms.findById('room001');
+      // Get the auto-generated internal ID to test findById method
+      // (this tests internal ID lookup vs UID lookup which is tested separately)
+      const roomRecord = await repository.rooms.findByUid('room001');
+
+      // Act - Test findById with internal database ID
+      const found = await repository.rooms.findById(roomRecord.id);
 
       // Assert
       expect(found).toBeDefined();
-      expect(found.room_id).toBe('room001');
+      expect(found.uid).toBe('room001');
       expect(found.name).toBe('Living Room');
     });
 
@@ -206,15 +205,14 @@ describe('Repository Pattern - Business Logic Layer', () => {
     beforeEach(async () => {
       // Setup device for readings tests
       await repository.devices.create({
-        device_id: 'dev001',
-        device_uid: 'uid-12345'
+        uid: 'uid-12345'
       });
     });
 
     it('should create a new reading with business validation', async () => {
       // Arrange
       const reading = {
-        device_id: 'dev001',
+        uid: 'uid-12345',
         room_id: 'room001',
         ts: new Date().toISOString(),
         temperature: 23.5,
@@ -239,26 +237,26 @@ describe('Repository Pattern - Business Logic Layer', () => {
 
       // Act & Assert
       await expect(repository.readings.create(invalidReading))
-        .rejects.toThrow('Device ID and timestamp are required');
+        .rejects.toThrow('Device UID and timestamp are required');
     });
 
     it('should reject reading for non-existent device', async () => {
       // Arrange
       const reading = {
-        device_id: 'non-existent',
+        uid: 'non-existent',
         ts: new Date().toISOString(),
         temperature: 23.5
       };
 
       // Act & Assert
       await expect(repository.readings.create(reading))
-        .rejects.toThrow('Device with ID non-existent not found');
+        .rejects.toThrow('Device with UID non-existent not found');
     });
 
     it('should validate temperature range', async () => {
       // Arrange
       const invalidReading = {
-        device_id: 'dev001',
+        uid: 'uid-12345',
         ts: new Date().toISOString(),
         temperature: 150  // Invalid temperature
       };
@@ -271,7 +269,7 @@ describe('Repository Pattern - Business Logic Layer', () => {
     it('should validate humidity range', async () => {
       // Arrange
       const invalidReading = {
-        device_id: 'dev001',
+        uid: 'uid-12345',
         ts: new Date().toISOString(),
         humidity: 150  // Invalid humidity
       };
@@ -287,19 +285,19 @@ describe('Repository Pattern - Business Logic Layer', () => {
       const earlier = new Date(now.getTime() - 3600000);
 
       await repository.readings.create({
-        device_id: 'dev001',
+        uid: 'uid-12345',
         ts: earlier.toISOString(),
         temperature: 20.0
       });
 
       await repository.readings.create({
-        device_id: 'dev001',
+        uid: 'uid-12345',
         ts: now.toISOString(),
         temperature: 25.0
       });
 
       // Act
-      const latest = await repository.readings.getLatestByDevice('dev001');
+      const latest = await repository.readings.getLatestByDevice('uid-12345');
 
       // Assert
       expect(latest).toBeDefined();
@@ -311,14 +309,14 @@ describe('Repository Pattern - Business Logic Layer', () => {
       const baseTime = new Date('2025-09-06T10:00:00Z');
 
       await repository.readings.create({
-        device_id: 'dev001',
+        uid: 'uid-12345',
         room_id: 'room001',
         ts: baseTime.toISOString(),
         temperature: 20.0
       });
 
       await repository.readings.create({
-        device_id: 'dev001',
+        uid: 'uid-12345',
         room_id: 'room001',
         ts: new Date(baseTime.getTime() + 1800000).toISOString(),
         temperature: 22.0

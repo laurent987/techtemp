@@ -55,27 +55,29 @@ export function closeDb() {
 }
 
 /**
- * Apply database schema migrations according to contract 001.
+ * Apply database schema according to contract 001.
+ * Clean schema creation without migration logic.
  * @param {Database.Database} db
  */
 function migrateSchema(db) {
-  // Migration idempotente - créer seulement si n'existe pas
+  // Create tables if they don't exist
 
-  // Table rooms
+  // Table rooms - id + uid architecture
   db.exec(`
     CREATE TABLE IF NOT EXISTS rooms (
-      room_id   TEXT PRIMARY KEY,
-      name      TEXT NOT NULL,
-      floor     TEXT,
-      side      TEXT
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid          TEXT UNIQUE NOT NULL,
+      name         TEXT NOT NULL,
+      floor        TEXT,
+      side         TEXT
     )
   `);
 
-  // Table devices
+  // Table devices - id + uid architecture
   db.exec(`
     CREATE TABLE IF NOT EXISTS devices (
-      device_id    TEXT PRIMARY KEY,
-      device_uid   TEXT UNIQUE NOT NULL,
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid          TEXT UNIQUE NOT NULL,
       label        TEXT,
       model        TEXT,
       created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -85,22 +87,22 @@ function migrateSchema(db) {
     )
   `);
 
-  // Table device_room_placements
+  // Table device_room_placements - numeric foreign keys
   db.exec(`
     CREATE TABLE IF NOT EXISTS device_room_placements (
-      device_id   TEXT NOT NULL REFERENCES devices(device_id),
-      room_id     TEXT NOT NULL REFERENCES rooms(room_id),
+      device_id   INTEGER NOT NULL REFERENCES devices(id),
+      room_id     INTEGER NOT NULL REFERENCES rooms(id),
       from_ts     DATETIME NOT NULL,
       to_ts       DATETIME,
       PRIMARY KEY (device_id, from_ts)
     )
   `);
 
-  // Table readings_raw
+  // Table readings_raw - numeric foreign keys
   db.exec(`
     CREATE TABLE IF NOT EXISTS readings_raw (
-      device_id   TEXT NOT NULL REFERENCES devices(device_id),
-      room_id     TEXT,
+      device_id   INTEGER NOT NULL REFERENCES devices(id),
+      room_id     INTEGER,
       ts          DATETIME NOT NULL,
       temperature REAL,
       humidity    REAL,
@@ -110,13 +112,13 @@ function migrateSchema(db) {
     )
   `);
 
-  // Index selon contrat 001
+  // Indexes for performance
   db.exec(`CREATE INDEX IF NOT EXISTS idx_places_room ON device_room_placements(room_id, from_ts)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_places_device ON device_room_placements(device_id, from_ts)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_raw_room_ts ON readings_raw(room_id, ts)`);
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_raw_msg ON readings_raw(msg_id) WHERE msg_id IS NOT NULL`);
 
-  // Vue utilitaire v_room_last
+  // Utility view for latest readings by room
   db.exec(`
     CREATE VIEW IF NOT EXISTS v_room_last AS
     SELECT r.room_id,

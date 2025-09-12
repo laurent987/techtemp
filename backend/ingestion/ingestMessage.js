@@ -15,7 +15,7 @@ const parseTopic = buildTopicParser('home/{homeId}/sensors/{deviceId}/reading');
  * @property {string} deviceId - ID of the device that sent the message
  * @property {Object} reading - Normalized reading data
  * @property {number} insertId - Database row ID of inserted reading
- * @property {boolean} [deviceCreated] - Whether device was auto-created
+ * @property {boolean} deviceCreated - Always false (devices must be pre-provisioned)
  * @property {boolean} [retained] - Whether message was retained
  */
 
@@ -43,20 +43,13 @@ export async function ingestMessage(topic, payload, options = {}, repository) {
   // Step 2: Validate and transform payload
   const validatedReading = validateReading(payload);
 
-  // Step 3: Check if device exists or create it
-  let device = await repository.devices.findByUid(parsedTopic.deviceId);
-  let deviceCreated = false;
+  // Step 3: Check if device exists (devices must be provisioned first)
+  const device = await repository.devices.findByUid(parsedTopic.deviceId);
 
   if (!device) {
-    // Auto-create device if it doesn't exist
-    device = await repository.devices.create({
-      device_id: parsedTopic.deviceId,
-      device_uid: parsedTopic.deviceId,
-      last_seen: validatedReading.ts,
-      label: 'Auto-discovered sensor',
-      model: 'unknown'
-    });
-    deviceCreated = true;
+    // Device doesn't exist - log warning and reject
+    console.warn(`⚠️  Unknown device: ${parsedTopic.deviceId} - Message rejected. Device must be provisioned first.`);
+    throw new Error(`Device with UID ${parsedTopic.deviceId} not found. Device must be provisioned first.`);
   }
 
   // Step 4: Generate message ID for deduplication
@@ -69,7 +62,7 @@ export async function ingestMessage(topic, payload, options = {}, repository) {
   const roomId = currentPlacement ? currentPlacement.room_id : null;
 
   const readingData = {
-    device_id: parsedTopic.deviceId,
+    uid: parsedTopic.deviceId,
     room_id: roomId,  // ← Utilise le placement actuel
     temperature: validatedReading.temperature,
     humidity: validatedReading.humidity,
@@ -93,14 +86,9 @@ export async function ingestMessage(topic, payload, options = {}, repository) {
       humidity: validatedReading.humidity,
       ts: validatedReading.ts
     },
-    insertId: insertResult.lastInsertRowid
+    insertId: insertResult.lastInsertRowid,
+    deviceCreated: false  // Devices are never auto-created, must be provisioned
   };
-
-  if (deviceCreated) {
-    result.deviceCreated = true;
-  } else {
-    result.deviceCreated = false;
-  }
 
   if (options.retain) {
     result.retained = true;

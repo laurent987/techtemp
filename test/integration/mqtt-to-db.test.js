@@ -97,7 +97,13 @@ describe('MQTT to Database Integration', () => {
 
   describe('Complete Pipeline Integration', () => {
     it('should process MQTT message through complete pipeline to database', async () => {
-      // Arrange
+      // Arrange - First provision the device
+      await repository.devices.create({
+        uid: 'temp001',
+        label: 'Test Temperature Sensor',
+        model: 'DHT22'
+      });
+
       const topic = 'home/home-001/sensors/temp001/reading';
       const payload = {
         temperature_c: 23.5,
@@ -111,15 +117,14 @@ describe('MQTT to Database Integration', () => {
       // Assert - Check ingestion result
       expect(result.success).toBe(true);
       expect(result.deviceId).toBe('temp001');
-      expect(result.deviceCreated).toBe(true);
+      expect(result.deviceCreated).toBe(false); // Device was already provisioned
       expect(result.insertId).toBeTypeOf('number');
 
-      // Verify device was created in database
-      const device = await repository.devices.findById('temp001');
+      // Verify device exists in database
+      const device = await repository.devices.findByUid('temp001');
       expect(device).toBeTruthy();
-      expect(device.device_id).toBe('temp001');
-      expect(device.device_uid).toBe('temp001');
-      expect(device.label).toBe('Auto-discovered sensor');
+      expect(device.uid).toBe('temp001');
+      expect(device.label).toBe('Test Temperature Sensor');
 
       // Verify reading was stored in database
       const latestReading = await repository.readings.getLatestByDevice('temp001');
@@ -132,7 +137,13 @@ describe('MQTT to Database Integration', () => {
     });
 
     it('should handle real MQTT publish-subscribe flow', async () => {
-      // Arrange
+      // Arrange - First provision the device
+      await repository.devices.create({
+        uid: 'temp002',
+        label: 'Test Temperature Sensor 2',
+        model: 'DHT22'
+      });
+
       const topic = 'home/home-001/sensors/temp002/reading';
       const payload = {
         temperature_c: 18.7,
@@ -179,9 +190,9 @@ describe('MQTT to Database Integration', () => {
       expect(receivedMessage).toEqual(payload);
 
       // Verify data in database
-      const device = await repository.devices.findById('temp002');
+      const device = await repository.devices.findByUid('temp002');
       expect(device).toBeTruthy();
-      expect(device.device_id).toBe('temp002');
+      expect(device.uid).toBe('temp002');
 
       const reading = await repository.readings.getLatestByDevice('temp002');
       expect(reading).toBeTruthy();
@@ -233,9 +244,18 @@ describe('MQTT to Database Integration', () => {
 
   describe('Load Testing and Concurrency', () => {
     it('should handle multiple concurrent messages', async () => {
-      // Arrange
+      // Arrange - First provision all devices
       const messageCount = 50;
       const baseTime = new Date('2025-09-07T10:00:00Z').getTime();
+
+      // Provision all devices first
+      for (let i = 0; i < messageCount; i++) {
+        await repository.devices.create({
+          uid: `temp${String(i).padStart(3, '0')}`,
+          label: `Load Test Sensor ${i}`,
+          model: 'DHT22'
+        });
+      }
 
       const messages = Array.from({ length: messageCount }, (_, i) => ({
         topic: `home/home-001/sensors/temp${String(i).padStart(3, '0')}/reading`,
@@ -260,7 +280,7 @@ describe('MQTT to Database Integration', () => {
       results.forEach((result, i) => {
         expect(result.success).toBe(true);
         expect(result.deviceId).toBe(`temp${String(i).padStart(3, '0')}`);
-        expect(result.deviceCreated).toBe(true);
+        expect(result.deviceCreated).toBe(false); // Devices were already provisioned
       });
 
       // Verify performance (should complete within reasonable time)
@@ -278,7 +298,13 @@ describe('MQTT to Database Integration', () => {
     });
 
     it('should handle message deduplication correctly', async () => {
-      // Arrange
+      // Arrange - First provision the device
+      await repository.devices.create({
+        uid: 'temp004',
+        label: 'Deduplication Test Sensor',
+        model: 'DHT22'
+      });
+
       const topic = 'home/home-001/sensors/temp004/reading';
       const basePayload = {
         temperature_c: 25.0,
@@ -304,17 +330,17 @@ describe('MQTT to Database Integration', () => {
       // Assert - All should succeed with device reuse
       expect(result1.success).toBe(true);
       expect(result1.deviceId).toBe('temp004');
-      expect(result1.deviceCreated).toBe(true); // First time creates device
+      expect(result1.deviceCreated).toBe(false); // Device was already provisioned
 
       expect(result2.success).toBe(true);
       expect(result2.deviceId).toBe('temp004');
-      expect(result2.deviceCreated).toBe(false); // Second time reuses device
+      expect(result2.deviceCreated).toBe(false); // Device was already provisioned
 
       expect(result3.success).toBe(true);
       expect(result3.deviceId).toBe('temp004');
-      expect(result3.deviceCreated).toBe(false); // Third time reuses device
+      expect(result3.deviceCreated).toBe(false); // Device was already provisioned
 
-      // Verify only one device was created
+      // Verify only one device exists (already provisioned)
       const deviceCount = db.prepare('SELECT COUNT(*) as count FROM devices').get();
       expect(deviceCount.count).toBe(1);
 
@@ -333,7 +359,13 @@ describe('MQTT to Database Integration', () => {
 
   describe('Database Schema Validation', () => {
     it('should enforce database constraints correctly', async () => {
-      // Arrange
+      // Arrange - First provision the device
+      await repository.devices.create({
+        uid: 'temp005',
+        label: 'Schema Test Sensor',
+        model: 'DHT22'
+      });
+
       const topic = 'home/home-001/sensors/temp005/reading';
       const payload = {
         temperature_c: 22.0,
@@ -344,16 +376,16 @@ describe('MQTT to Database Integration', () => {
       // Act - Process message
       await ingestMessage(topic, payload, {}, repository);
 
-      // Assert - Verify database schema compliance
-      const device = db.prepare('SELECT * FROM devices WHERE device_id = ?').get('temp005');
+      // Assert - Verify database schema compliance (new simplified schema)
+      const device = db.prepare('SELECT * FROM devices WHERE uid = ?').get('temp005');
       expect(device).toBeTruthy();
-      expect(device.device_id).toBe('temp005');
-      expect(device.device_uid).toBe('temp005');
+      expect(device.uid).toBe('temp005');
       expect(device.last_seen_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/); // ISO format
 
-      const reading = db.prepare('SELECT * FROM readings_raw WHERE device_id = ?').get('temp005');
+      // readings_raw still uses device_id (internal integer ID), not uid
+      const reading = db.prepare('SELECT * FROM readings_raw WHERE device_id = ?').get(device.id);
       expect(reading).toBeTruthy();
-      expect(reading.device_id).toBe('temp005');
+      expect(reading.device_id).toBe(device.id);
       expect(reading.room_id).toBeNull();
       expect(reading.temperature).toBe(22.0);
       expect(reading.humidity).toBe(55.0);

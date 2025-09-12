@@ -12,7 +12,14 @@
     "docker:build": "docker build -t techtemp-service .",
     "docker:run": "docker-compose up"
   },
-  "keywords": ["iot", "mqtt", "sensors", "temperature", "humidity", "backend"],
+  "keywords": [
+    "iot",
+    "mqtt",
+    "sensors",
+    "temperature",
+    "humidity",
+    "backend"
+  ],
   "dependencies": {
     "better-sqlite3": "^12.2.0",
     "express": "^5.1.0",

@@ -18,17 +18,15 @@ describe('Readings API', () => {
     repo = createRepository(db);
 
     // Create sample data
-    await repo.rooms.create({ room_id: 'living-room', name: 'Living Room' });
-    await repo.rooms.create({ room_id: 'bedroom', name: 'Bedroom' });
+    await repo.rooms.create({ uid: 'living-room', name: 'Living Room' });
+    await repo.rooms.create({ uid: 'bedroom', name: 'Bedroom' });
 
     await repo.devices.create({
-      device_id: 'temp-001',
-      device_uid: 'ESP32-001',
+      uid: 'temp-001',
       label: 'Living Room Sensor'
     });
     await repo.devices.create({
-      device_id: 'temp-002',
-      device_uid: 'ESP32-002',
+      uid: 'temp-002',
       label: 'Bedroom Sensor'
     });
 
@@ -78,7 +76,7 @@ describe('Readings API', () => {
       // Create sample readings
       const now = new Date();
       await repo.readings.create({
-        device_id: 'temp-001',
+        uid: 'temp-001',
         room_id: 'living-room',
         ts: new Date(now.getTime() - 5 * 60 * 1000).toISOString(), // 5 min ago
         temperature: 22.5,
@@ -86,7 +84,7 @@ describe('Readings API', () => {
         source: 'mqtt'
       });
       await repo.readings.create({
-        device_id: 'temp-001',
+        uid: 'temp-001',
         room_id: 'living-room',
         ts: new Date(now.getTime() - 10 * 60 * 1000).toISOString(), // 10 min ago (older)
         temperature: 22.0,
@@ -94,7 +92,7 @@ describe('Readings API', () => {
         source: 'mqtt'
       });
       await repo.readings.create({
-        device_id: 'temp-002',
+        uid: 'temp-002',
         room_id: 'bedroom',
         ts: new Date(now.getTime() - 3 * 60 * 1000).toISOString(), // 3 min ago
         temperature: 20.1,
@@ -116,7 +114,7 @@ describe('Readings API', () => {
       // Check temp-001 (should be the latest, not the older one)
       expect(temp001Reading).toEqual({
         room_id: 'living-room',
-        device_id: 'temp-001',
+        device_id: 'temp-001', // API returns device_id (UID value) for backward compatibility
         ts: expect.any(String),
         temperature: 22.5,
         humidity: 45.0
@@ -125,7 +123,7 @@ describe('Readings API', () => {
       // Check temp-002
       expect(temp002Reading).toEqual({
         room_id: 'bedroom',
-        device_id: 'temp-002',
+        device_id: 'temp-002', // API returns device_id (UID value) for backward compatibility
         ts: expect.any(String),
         temperature: 20.1,
         humidity: 50.2
@@ -136,7 +134,7 @@ describe('Readings API', () => {
       // Create readings for both devices
       const now = new Date();
       await repo.readings.create({
-        device_id: 'temp-001',
+        uid: 'temp-001',
         room_id: 'living-room',
         ts: now.toISOString(),
         temperature: 22.5,
@@ -144,7 +142,7 @@ describe('Readings API', () => {
         source: 'mqtt'
       });
       await repo.readings.create({
-        device_id: 'temp-002',
+        uid: 'temp-002',
         room_id: 'bedroom',
         ts: now.toISOString(),
         temperature: 20.1,
@@ -182,7 +180,7 @@ describe('Readings API', () => {
     it('should work with createHttpServer', async () => {
       // Create sample reading
       await repo.readings.create({
-        device_id: 'temp-001',
+        uid: 'temp-001',
         room_id: 'living-room',
         ts: new Date().toISOString(),
         temperature: 23.0,

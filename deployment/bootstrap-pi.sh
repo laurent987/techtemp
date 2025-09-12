@@ -19,12 +19,15 @@ NC='\033[0m' # No Color
 # Configuration par défaut
 BROKER_HOST="192.168.0.180"
 BROKER_PORT="1883"
+BACKEND_HOST="192.168.0.42"
+BACKEND_PORT="3000"
 MQTT_USERNAME=""
 MQTT_PASSWORD=""
 I2C_BUS="1"
 I2C_ADDRESS="0x38"
 READ_INTERVAL="30"
 LOG_LEVEL="info"
+GIT_BRANCH="develop"
 
 # Fonction d'aide
 usage() {
@@ -36,10 +39,13 @@ usage() {
     echo "Options:"
     echo "  --broker-host HOST    Adresse du broker MQTT (défaut: $BROKER_HOST)"
     echo "  --broker-port PORT    Port du broker MQTT (défaut: $BROKER_PORT)"
+    echo "  --backend-host HOST   Adresse du serveur backend (défaut: $BACKEND_HOST)"
+    echo "  --backend-port PORT   Port du serveur backend (défaut: $BACKEND_PORT)"
     echo "  --username USER       Username MQTT (optionnel)"
     echo "  --password PASS       Password MQTT (optionnel)"
     echo "  --read-interval SEC   Intervalle de lecture en secondes (défaut: $READ_INTERVAL)"
     echo "  --log-level LEVEL     Niveau de log: debug,info,warn,error (défaut: $LOG_LEVEL)"
+    echo "  --git-branch BRANCH   Branche git à utiliser (défaut: $GIT_BRANCH)"
     echo "  --non-interactive     Mode non-interactif (utilise les valeurs par défaut)"
     echo ""
     echo "Exemple:"
@@ -71,6 +77,14 @@ while [[ $# -gt 0 ]]; do
             BROKER_PORT="$2"
             shift 2
             ;;
+        --backend-host)
+            BACKEND_HOST="$2"
+            shift 2
+            ;;
+        --backend-port)
+            BACKEND_PORT="$2"
+            shift 2
+            ;;
         --username)
             MQTT_USERNAME="$2"
             shift 2
@@ -85,6 +99,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --log-level)
             LOG_LEVEL="$2"
+            shift 2
+            ;;
+        --git-branch)
+            GIT_BRANCH="$2"
             shift 2
             ;;
         --non-interactive)
@@ -151,7 +169,7 @@ if [ "$INTERACTIVE" = true ]; then
         read HOME_ID
     done
     
-    # Room ID  
+    # Room Name
     echo -e "🏠 ${BLUE}Nom de la pièce${NC}"
     echo -n -e "   Où placer ce capteur ? (ex: Salon, Cuisine, Bureau, Chambre): "
     read ROOM_NAME
@@ -159,9 +177,6 @@ if [ "$INTERACTIVE" = true ]; then
         echo -n -e "   ${YELLOW}⚠️ Ce champ est requis:${NC} "
         read ROOM_NAME
     done
-    
-    # Générer room_id à partir du nom (minuscules, sans espaces)
-    ROOM_ID=$(echo "$ROOM_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
     
     # Device Label
     echo -e "🏷️ ${BLUE}Nom descriptif du capteur${NC}"
@@ -185,7 +200,6 @@ else
     # Mode non-interactif : valeurs par défaut
     HOME_ID="home-001"
     ROOM_NAME="Salon"
-    ROOM_ID="salon"
     DEVICE_LABEL="Capteur $ROOM_NAME"
 fi
 
@@ -195,7 +209,7 @@ echo -e "${BLUE}===================================${NC}"
 echo -e "Pi IP:          ${YELLOW}$PI_IP${NC}"
 echo -e "Device UID:     ${YELLOW}$DEVICE_UID${NC} ${GREEN}(basé sur MAC)${NC}"
 echo -e "Home ID:        ${YELLOW}$HOME_ID${NC}"
-echo -e "Room:           ${YELLOW}$ROOM_NAME${NC} ${GREEN}(ID: $ROOM_ID)${NC}"
+echo -e "Room:           ${YELLOW}$ROOM_NAME${NC} ${GREEN}(auto-generated ID)${NC}"
 echo -e "Device Label:   ${YELLOW}$DEVICE_LABEL${NC}"
 echo -e "Broker:         ${YELLOW}$BROKER_HOST:$BROKER_PORT${NC}"
 echo -e "Read Interval:  ${YELLOW}${READ_INTERVAL}s${NC}"
@@ -224,14 +238,32 @@ echo -e "${BLUE}⚙️ Configuration I2C...${NC}"
 ssh pi@$PI_IP "sudo raspi-config nonint do_i2c 0"  # 0 = enable
 echo -e "${GREEN}✅ I2C activé${NC}"
 
-# 4. Clonage/mise à jour du projet
+# 4. Installation/réinstallation propre du projet
 echo -e "${BLUE}📥 Installation du projet TechTemp...${NC}"
 ssh pi@$PI_IP "
     if [ -d 'techtemp' ]; then
-        cd techtemp && git pull
-    else
-        git clone https://github.com/laurent987/techtemp.git
+        echo 'Suppression de l installation existante...'
+        
+        # Backup de la config existante si elle existe
+        if [ -f 'techtemp/device/config/device.conf' ]; then
+            cp techtemp/device/config/device.conf device.conf.backup.\$(date +%Y%m%d_%H%M%S)
+            echo 'Config existante sauvegardée'
+        fi
+        
+        # Suppression complète pour repartir proprement
+        rm -rf techtemp
+        echo 'Installation existante supprimée'
     fi
+    
+    # Clone propre de la bonne branche
+    echo 'Clonage du projet (branche: $GIT_BRANCH)...'
+    git clone -b $GIT_BRANCH https://github.com/laurent987/techtemp.git 2>/dev/null || {
+        # Si la branche n'existe pas, clone master/main puis switch
+        git clone https://github.com/laurent987/techtemp.git
+        cd techtemp && git checkout $GIT_BRANCH 2>/dev/null || echo 'Branche $GIT_BRANCH non trouvée, utilisation de la branche par défaut'
+    }
+    
+    echo 'Projet installé proprement'
 "
 echo -e "${GREEN}✅ Projet installé${NC}"
 
@@ -247,7 +279,6 @@ cat > /tmp/device.conf << EOF
 [device]
 device_uid = $DEVICE_UID
 home_id = $HOME_ID
-room_id = $ROOM_ID
 label = $DEVICE_LABEL
 
 [sensor]
@@ -323,36 +354,90 @@ else
     echo "$TEST_OUTPUT" | tail -10
 fi
 
-# 9. Configuration du device dans l'API backend
-echo -e "${BLUE}🌐 Configuration du device dans l'API...${NC}"
-API_URL="http://localhost:3000/api/v1/devices/$DEVICE_UID"
+# 9. Configuration du device dans l'API backend via l'API REST
+echo -e "${BLUE}🌐 Provisioning du device dans le backend...${NC}"
 
-# Payload JSON pour l'API
-DEVICE_PAYLOAD=$(cat << EOF
-{
-  "home_id": "$HOME_ID",
-  "room_id": "$ROOM_ID",
-  "label": "$DEVICE_LABEL"
-}
-EOF
-)
+# Générer l'ID de la room basé sur le nom
+ROOM_ID=$(echo "$ROOM_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
 
-# Configurer le device via l'API
-if command -v curl > /dev/null 2>&1; then
-    API_RESPONSE=$(curl -s -X PUT "$API_URL" \
-        -H "Content-Type: application/json" \
-        -d "$DEVICE_PAYLOAD" 2>/dev/null || echo "API_ERROR")
+# Si nous avons accès au serveur backend (localhost), provisioner directement
+if curl -s http://$BACKEND_HOST:$BACKEND_PORT/health > /dev/null 2>&1; then
+    echo -e "${GREEN}🔍 Backend détecté en local, provisioning direct...${NC}"
     
-    if [[ "$API_RESPONSE" != "API_ERROR" ]] && echo "$API_RESPONSE" | grep -q "device_id"; then
-        echo -e "${GREEN}✅ Device configuré dans l'API${NC}"
+    # D'abord vérifier si le device existe déjà
+    echo -e "${BLUE}🔍 Vérification de l'existence du device '$DEVICE_UID'...${NC}"
+    EXISTING_DEVICE=$(curl -s http://$BACKEND_HOST:$BACKEND_PORT/api/v1/devices/$DEVICE_UID)
+    
+    if [[ "$EXISTING_DEVICE" == *"Device not found"* ]]; then
+        # Device n'existe pas, création normale
+        echo -e "${GREEN}📱 Création du nouveau device '$DEVICE_LABEL' dans la room '$ROOM_NAME'...${NC}"
+        DEVICE_RESPONSE=$(curl -s -X POST http://$BACKEND_HOST:$BACKEND_PORT/api/v1/devices \
+            -H "Content-Type: application/json" \
+            -d "{\"device_uid\":\"$DEVICE_UID\",\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}")
+        
+        if [[ $? -eq 0 ]] && [[ "$DEVICE_RESPONSE" == *"$DEVICE_UID"* ]]; then
+            echo -e "${GREEN}✅ Device créé avec succès${NC}"
+            echo -e "${GREEN}   Device UID: $DEVICE_UID${NC}"
+            echo -e "${GREEN}   Room Name: $ROOM_NAME${NC}"
+            echo -e "${GREEN}   Label: $DEVICE_LABEL${NC}"
+            echo -e "${GREEN}   🏠 Room créée automatiquement si nécessaire${NC}"
+        else
+            echo -e "${YELLOW}⚠️ Erreur lors de la création du device${NC}"
+            echo -e "${YELLOW}💡 Réponse de l'API: $DEVICE_RESPONSE${NC}"
+        fi
     else
-        echo -e "${YELLOW}⚠️ Configuration API échouée - configurer manuellement:${NC}"
-        echo -e "${YELLOW}   curl -X PUT '$API_URL' \\${NC}"
-        echo -e "${YELLOW}        -H 'Content-Type: application/json' \\${NC}"
-        echo -e "${YELLOW}        -d '$DEVICE_PAYLOAD'${NC}"
+        # Device existe déjà, vérifier s'il faut le mettre à jour
+        echo -e "${YELLOW}� Device '$DEVICE_UID' existe déjà${NC}"
+        
+        # Extraire les infos du device existant
+        CURRENT_ROOM=$(echo "$EXISTING_DEVICE" | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
+        CURRENT_LABEL=$(echo "$EXISTING_DEVICE" | grep -o '"label":"[^"]*"' | cut -d'"' -f4)
+        
+        echo -e "${BLUE}   Room actuelle: ${CURRENT_ROOM:-"<aucune>"}${NC}"
+        echo -e "${BLUE}   Label actuel: ${CURRENT_LABEL:-"<aucun>"}${NC}"
+        
+        # Déterminer s'il faut faire une mise à jour
+        NEEDS_UPDATE=false
+        UPDATE_MSG=""
+        
+        if [[ "$CURRENT_ROOM" != "$ROOM_NAME" ]]; then
+            NEEDS_UPDATE=true
+            UPDATE_MSG="${UPDATE_MSG}🏠 Changement de room: '$CURRENT_ROOM' → '$ROOM_NAME'\n"
+        fi
+        
+        if [[ "$CURRENT_LABEL" != "$DEVICE_LABEL" ]]; then
+            NEEDS_UPDATE=true
+            UPDATE_MSG="${UPDATE_MSG}🏷️ Changement de label: '$CURRENT_LABEL' → '$DEVICE_LABEL'\n"
+        fi
+        
+        if [[ "$NEEDS_UPDATE" == "true" ]]; then
+            echo -e "${YELLOW}🔄 Mise à jour nécessaire:${NC}"
+            echo -e "${YELLOW}$UPDATE_MSG${NC}"
+            
+            # Mettre à jour le device
+            UPDATE_RESPONSE=$(curl -s -X PUT http://$BACKEND_HOST:$BACKEND_PORT/api/v1/devices/$DEVICE_UID \
+                -H "Content-Type: application/json" \
+                -d "{\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}")
+            
+            if [[ $? -eq 0 ]] && [[ "$UPDATE_RESPONSE" == *"$DEVICE_UID"* ]]; then
+                echo -e "${GREEN}✅ Device mis à jour avec succès${NC}"
+                echo -e "${GREEN}   📍 Ancien placement fermé automatiquement${NC}"
+                echo -e "${GREEN}   📍 Nouveau placement créé dans '$ROOM_NAME'${NC}"
+                echo -e "${GREEN}   📊 Historique des placements conservé${NC}"
+            else
+                echo -e "${YELLOW}⚠️ Erreur lors de la mise à jour${NC}"
+                echo -e "${YELLOW}💡 Réponse de l'API: $UPDATE_RESPONSE${NC}"
+            fi
+        else
+            echo -e "${GREEN}✅ Device déjà configuré correctement${NC}"
+            echo -e "${GREEN}   Aucune modification nécessaire${NC}"
+        fi
     fi
 else
-    echo -e "${YELLOW}⚠️ curl non disponible - configurer manuellement via l'API${NC}"
+    echo -e "${YELLOW}⚠️ Backend non accessible - provisioning manuel requis${NC}"
+    echo -e "${YELLOW}💡 Créer le device via l'API (room créée automatiquement):${NC}"
+    echo -e "${YELLOW}   curl -X POST http://$BACKEND_HOST:$BACKEND_PORT/api/v1/devices -H 'Content-Type: application/json' -d '{\"device_uid\":\"$DEVICE_UID\",\"label\":\"$DEVICE_LABEL\",\"room_name\":\"$ROOM_NAME\"}'${NC}"
+    echo -e "${YELLOW}💡 Ou via l'interface web d'administration${NC}"
 fi
 
 # 10. Installation du service systemd
@@ -391,7 +476,7 @@ echo ""
 echo -e "${BLUE}📋 Informations du device:${NC}"
 echo -e "   Device UID:  ${YELLOW}$DEVICE_UID${NC}"
 echo -e "   Home ID:     ${YELLOW}$HOME_ID${NC}"
-echo -e "   Room ID:     ${YELLOW}$ROOM_ID${NC}"
+echo -e "   Room:        ${YELLOW}$ROOM_NAME${NC} ${GREEN}(auto-generated ID)${NC}"
 echo -e "   Label:       ${YELLOW}$DEVICE_LABEL${NC}"
 echo ""
 echo -e "${BLUE}🔧 Commandes utiles:${NC}"
@@ -402,6 +487,6 @@ echo -e "   Logs:        ${YELLOW}ssh pi@$PI_IP 'journalctl -u techtemp-device -
 echo -e "   Test manuel: ${YELLOW}ssh pi@$PI_IP 'cd techtemp/device && sudo ./build/techtemp-device config/device.conf'${NC}"
 echo ""
 echo -e "${BLUE}🌐 API pour vérifier les données:${NC}"
-echo -e "   ${YELLOW}curl 'http://localhost:3000/api/v1/readings/latest?deviceId=$DEVICE_UID'${NC}"
+echo -e "   ${YELLOW}curl 'http://$BACKEND_HOST:$BACKEND_PORT/api/v1/readings/latest?deviceId=$DEVICE_UID'${NC}"
 echo ""
 echo -e "${GREEN}✅ Le device est prêt à fonctionner !${NC}"

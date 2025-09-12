@@ -1,4 +1,4 @@
-# Contrat 001 — Backend Service (Lot 1 / Étape 1 — MVP)
+# Contrat 001 — Service-app (Lot 1 / Étape 1 — MVP)
 
 ## 1. MQTT — Contrat de topic & payload
 
@@ -56,16 +56,22 @@ CREATE TABLE IF NOT EXISTS rooms (
 
 ```sql
 CREATE TABLE IF NOT EXISTS devices (
-  device_id    TEXT PRIMARY KEY,   -- identifiant matériel (RPi)
-  device_uid   TEXT UNIQUE NOT NULL, -- identifiant externe stable (MQTT)
-  label        TEXT,               -- nom convivial
-  model        TEXT,               -- modèle: rpi-zero-2w
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  uid          TEXT UNIQUE NOT NULL,   -- identifiant externe stable (API/MQTT)
+  device_id    TEXT,                   -- identifiant matériel (RPi) - deprecated
+  label        TEXT,                   -- nom convivial
+  room_id      INTEGER,                -- référence interne à rooms.id
+  model        TEXT,                   -- modèle: rpi-zero-2w
   created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_seen_at DATETIME,
-  offset_temperature REAL DEFAULT 0, -- correction température °C
-  offset_humidity    REAL DEFAULT 0  -- correction humidité %
+  offset_temperature REAL DEFAULT 0,   -- correction température °C
+  offset_humidity    REAL DEFAULT 0,   -- correction humidité %
+  FOREIGN KEY (room_id) REFERENCES rooms(id)
 );
 ```
+
+📌 **Migration importante** : Le champ `uid` devient l'identifiant principal pour l'API publique. Les IDs internes ne sont plus exposés.
 
 ### Table `device_room_placements`
 

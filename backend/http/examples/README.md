@@ -54,8 +54,8 @@ src/http/examples/
 
 #### Terminal 1 - Start server
 ```bash
-cd service-app
-node src/http/examples/example-server.js
+cd backend
+node http/examples/example-server.js
 ```
 
 #### Terminal 2 - Test with curl
@@ -69,19 +69,19 @@ curl -v http://localhost:3001/health
 
 ### **Health endpoint testing**
 ```bash
-cd service-app
-node src/http/examples/example-health.js
+cd backend
+node http/examples/example-health.js
 ```
 
 ### **Readings API testing**
 ```bash
-cd service-app
-node src/http/examples/example-readings-api.js
+cd backend
+node http/examples/example-readings-api.js
 ```
 
 ### **Complete integration**
 ```bash
-cd service-app
+cd backend
 node src/http/examples/example-integration.js
 ```
 

@@ -43,6 +43,13 @@ describe('HTTP API End-to-End Integration', () => {
 
   describe('Complete Pipeline: MQTT → DB → HTTP', () => {
     it('should handle complete data flow from MQTT message to HTTP response', async () => {
+      // Step 0: Provision the device first
+      await repository.devices.create({
+        uid: 'sensor-001',
+        label: 'Test Integration Sensor',
+        model: 'DHT22'
+      });
+
       // Step 1: Simulate MQTT message ingestion
       const mqttMessage = {
         topic: 'home/home-001/sensors/sensor-001/reading',
@@ -76,6 +83,11 @@ describe('HTTP API End-to-End Integration', () => {
     });
 
     it('should handle multiple devices in complete pipeline', async () => {
+      // Step 0: Provision all devices first
+      await repository.devices.create({ uid: 'sensor-001', label: 'Sensor 1', model: 'DHT22' });
+      await repository.devices.create({ uid: 'sensor-002', label: 'Sensor 2', model: 'DHT22' });
+      await repository.devices.create({ uid: 'sensor-003', label: 'Sensor 3', model: 'DHT22' });
+
       // Step 1: Ingest multiple MQTT messages
       const messages = [
         {
@@ -127,6 +139,13 @@ describe('HTTP API End-to-End Integration', () => {
     });
 
     it('should return latest reading when multiple readings exist for same device', async () => {
+      // Step 0: Provision the device first
+      await repository.devices.create({
+        uid: 'sensor-001',
+        label: 'Multiple Readings Test Sensor',
+        model: 'DHT22'
+      });
+
       // Step 1: Ingest older reading
       await ingestMessage('home/home-001/sensors/sensor-001/reading', {
         device_id: 'sensor-001',
@@ -157,6 +176,10 @@ describe('HTTP API End-to-End Integration', () => {
     });
 
     it('should handle device filtering in complete pipeline', async () => {
+      // Step 0: Provision devices first
+      await repository.devices.create({ uid: 'sensor-001', label: 'Filter Test Sensor 1', model: 'DHT22' });
+      await repository.devices.create({ uid: 'sensor-002', label: 'Filter Test Sensor 2', model: 'DHT22' });
+
       // Step 1: Ingest multiple devices
       await ingestMessage('home/home-001/sensors/sensor-001/reading', {
         device_id: 'sensor-001',
@@ -195,6 +218,13 @@ describe('HTTP API End-to-End Integration', () => {
       // First verify health is ok
       let response = await fetch(`${serverUrl}/health`);
       expect(response.status).toBe(200);
+
+      // Provision device first
+      await repository.devices.create({
+        uid: 'test-sensor',
+        label: 'Health Test Sensor',
+        model: 'DHT22'
+      });
 
       // Insert some data and verify health still works
       await ingestMessage('home/test-home/sensors/test-sensor/reading', {
@@ -245,6 +275,15 @@ describe('HTTP API End-to-End Integration', () => {
 
   describe('Performance Integration', () => {
     it('should handle API requests efficiently with larger dataset', async () => {
+      // Step 0: Provision devices first (sensor-000 to sensor-009)
+      for (let i = 0; i < 10; i++) {
+        await repository.devices.create({
+          uid: `sensor-${String(i).padStart(3, '0')}`,
+          label: `Performance Test Sensor ${i}`,
+          model: 'DHT22'
+        });
+      }
+
       // Step 1: Ingest multiple readings for performance test
       const startTime = Date.now();
 

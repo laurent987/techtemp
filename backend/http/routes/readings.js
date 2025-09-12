@@ -6,7 +6,7 @@ import { Router } from 'express';
 
 /**
  * @typedef {Object} LatestReadingResponse
- * @property {string} device_id
+ * @property {string} device_id - Device UID (external identifier)
  * @property {string|null} room_id
  * @property {string} ts - ISO timestamp
  * @property {number} temperature
@@ -52,9 +52,9 @@ export function readingsRouter(deps = {}) {
         readings = await deps.repo.readings.findLatestPerDevice();
       }
 
-      // Transform data to contract 001 format
+      // Transform data to contract 001 format (with UID as device_id)
       const data = readings.map(reading => ({
-        device_id: reading.device_id,
+        device_id: reading.uid || reading.device_uid, // Use UID as external device identifier
         room_id: reading.room_id,
         ts: reading.ts, // Keep ISO string format as per contract
         temperature: reading.temperature,
