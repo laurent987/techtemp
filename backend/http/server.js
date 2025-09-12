@@ -3,6 +3,8 @@
  */
 
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { healthRouter } from './routes/health.js';
 import { readingsRouter } from './routes/readings.js';
 import { devicesRouter } from './routes/devices.js';
@@ -20,6 +22,18 @@ export function createHttpServer(config = {}) {
 
   // Middleware
   app.use(express.json());
+
+  // Static web UI (serve /web as root)
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const webDir = path.resolve(__dirname, '../../web');
+    app.use(express.static(webDir));
+  } catch (err) {
+    // Non-fatal: if web dir not present, API still works
+    // eslint-disable-next-line no-console
+    console.warn('Static web directory mounting skipped:', err?.message || err);
+  }
 
   // Routes setup
   app.use('/health', healthRouter(config.deps || {}));

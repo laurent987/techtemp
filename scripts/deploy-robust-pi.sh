@@ -255,7 +255,7 @@ deploy_techtemp() {
     fi
 }
 
-# Fonction de test de l'API
+# Fonction de test de l'API et de l'interface web
 test_api() {
     info "Test de l'API..."
     
@@ -263,15 +263,27 @@ test_api() {
     while [ $retries -gt 0 ]; do
         if curl -s "http://$PI_IP:3000/health" | grep -q "ok" 2>/dev/null; then
             success "API fonctionnelle"
-            return 0
+            break
         fi
         info "Attente API... ($retries tentatives restantes)"
         sleep 5
         ((retries--))
     done
     
-    warning "API pas encore accessible"
-    return 1
+    if [ $retries -eq 0 ]; then
+        warning "API pas encore accessible"
+        return 1
+    fi
+    
+    # Test de l'interface web
+    info "Test de l'interface web..."
+    if curl -s "http://$PI_IP:3000/" | grep -q "TechTemp" 2>/dev/null; then
+        success "Interface web accessible"
+    else
+        warning "Interface web pas encore accessible"
+    fi
+    
+    return 0
 }
 
 # === EXECUTION PRINCIPALE ===
@@ -306,9 +318,10 @@ test_api
 echo ""
 echo "🎉 Déploiement terminé !"
 echo "======================="
-echo "🌐 API: http://$PI_IP:3000"
+echo "🌐 Interface Web: http://$PI_IP:3000"
 echo "📊 Health: http://$PI_IP:3000/health"
-echo "📱 Devices: http://$PI_IP:3000/api/v1/devices"
+echo "📱 API Devices: http://$PI_IP:3000/api/v1/devices"
+echo "📈 API Readings: http://$PI_IP:3000/api/v1/readings/latest"
 echo "🦟 MQTT: $PI_IP:1883"
 echo ""
 echo "📋 Log complet: $LOG_FILE"
