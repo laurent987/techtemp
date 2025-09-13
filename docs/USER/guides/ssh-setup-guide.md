@@ -547,6 +547,6 @@ ssh pi@192.168.1.100 "ls -la"
 
 **🔐 Master SSH for seamless TechTemp automation**
 
-**[📱 Main Guide](../README.md)** • **[🔌 Device Setup](README.md)** • **[🛠️ Troubleshooting](troubleshooting/)**
+**[📱 Main Guide](../README.md)** • **[🔌 Device Setup](sensor-setup.md)** • **[🛠️ Troubleshooting](troubleshooting.md)**
 
 </div>

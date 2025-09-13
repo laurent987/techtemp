@@ -258,7 +258,7 @@ Your sensors are now collecting data. Next steps:
 
 1. **[Explore the Dashboard](dashboard-guide.md)** - Learn the web interface
 2. **[Management Tools](management-tools.md)** - Maintain your sensors  
-3. **[Data Export](data-export.md)** - Export historical data
+3. **[Data Export](management-tools.md)** - Export historical data
 
 ---
 
@@ -266,6 +266,6 @@ Your sensors are now collecting data. Next steps:
 
 **🌡️ Your rooms are now monitored!**
 
-**[📱 Setup Guide](../README.md)** • **[📊 Dashboard](dashboard-guide.md)** • **[🛠️ Troubleshooting](troubleshooting/)**
+**[📱 Setup Guide](../README.md)** • **[📊 Dashboard](dashboard-guide.md)** • **[🛠️ Troubleshooting](troubleshooting.md)**
 
 </div>

@@ -341,8 +341,8 @@ This method works but requires physical access to your Pi.
 ## 📚 **More Help**
 
 - **[TechTemp User Guide](../README.md)** - Main documentation
-- **[Device Setup Guide](README.md)** - Sensor installation
-- **[Troubleshooting](troubleshooting/)** - Common issues
+- **[Device Setup Guide](sensor-setup.md)** - Sensor installation
+- **[Troubleshooting](troubleshooting.md)** - Common issues
 - **[Raspberry Pi Documentation](https://www.raspberrypi.org/documentation/)** - Official Pi docs
 
 ---
@@ -351,6 +351,6 @@ This method works but requires physical access to your Pi.
 
 **🔧 Essential first step for TechTemp success**
 
-**[📱 Main Guide](../README.md)** • **[🔌 Device Setup](README.md)** • **[🛠️ Troubleshooting](troubleshooting/)**
+**[📱 Main Guide](../README.md)** • **[🔌 Device Setup](sensor-setup.md)** • **[🛠️ Troubleshooting](troubleshooting.md)**
 
 </div>

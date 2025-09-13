@@ -331,8 +331,8 @@ ssh pi@192.168.1.100 "cd techtemp && npm run db:latest-readings"
 You now have full access to your home's temperature and humidity data. Next steps:
 
 1. **[Management Tools](management-tools.md)** - Maintain your system
-2. **[Troubleshooting](troubleshooting/)** - Fix any issues
-3. **[Advanced Features](advanced-features.md)** - API access and automation
+2. **[Troubleshooting](troubleshooting.md)** - Fix any issues
+3. **[Advanced Features](management-tools.md)** - API access and automation
 
 ---
 

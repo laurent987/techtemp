@@ -155,6 +155,6 @@ cat ~/.ssh/id_rsa.pub | ssh pi@192.168.1.100 "mkdir -p ~/.ssh && cat >> ~/.ssh/a
 
 **🔧 Quick help for TechTemp SSH problems**
 
-**[📱 User Guide](../../README.md)** • **[🔌 Device Setup](../README.md)** • **[🛠️ Troubleshooting](./)**
+**[📱 User Guide](../../README.md)** • **[🔌 Device Setup](../sensor-setup.md)** • **[🛠️ Troubleshooting](./)**
 
 </div>

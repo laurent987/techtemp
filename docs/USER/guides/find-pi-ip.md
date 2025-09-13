@@ -133,7 +133,7 @@ nmap -p 22 192.168.1.0/24 | grep -B4 "22/tcp open"
 
 - **[Initial Pi Setup](initial-setup.md)** - Complete WiFi and SSH setup
 - **[SSH Help](troubleshooting/ssh-help.md)** - Connection troubleshooting
-- **[Device Setup](README.md)** - Hardware and software setup
+- **[Device Setup](sensor-setup.md)** - Hardware and software setup
 
 ---
 
@@ -141,6 +141,6 @@ nmap -p 22 192.168.1.0/24 | grep -B4 "22/tcp open"
 
 **🔍 Never lose your Pi again!**
 
-**[🏠 Main Guide](../README.md)** • **[🔌 Device Setup](README.md)** • **[🔐 SSH Help](troubleshooting/ssh-help.md)**
+**[🏠 Main Guide](../README.md)** • **[🔌 Device Setup](sensor-setup.md)** • **[🔐 SSH Help](troubleshooting/ssh-help.md)**
 
 </div>

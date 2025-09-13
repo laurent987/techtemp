@@ -381,7 +381,7 @@ You have all the tools to manage and maintain your home monitoring system. Remem
 - 🔄 **Keep updated** with `update-system.sh`
 - 📊 **Export data** for analysis with `export-data.sh`
 
-**Need more help?** Check [Troubleshooting](troubleshooting/) guides!
+**Need more help?** Check [Troubleshooting](troubleshooting.md) guides!
 
 ---
 
@@ -389,6 +389,6 @@ You have all the tools to manage and maintain your home monitoring system. Remem
 
 **🛠️ Manage your system like a pro!**
 
-**[📱 Setup Guide](../README.md)** • **[📊 Dashboard](dashboard-guide.md)** • **[🚨 Troubleshooting](troubleshooting/)**
+**[📱 Setup Guide](../README.md)** • **[📊 Dashboard](dashboard-guide.md)** • **[🚨 Troubleshooting](troubleshooting.md)**
 
 </div>

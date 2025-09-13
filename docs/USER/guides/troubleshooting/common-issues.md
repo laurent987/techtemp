@@ -47,7 +47,7 @@ lsmod | grep i2c_bcm2835
 
 **Solutions :**
 1. **I2C non activé** : `sudo raspi-config nonint do_i2c 0`
-2. **Mauvais câblage** : Voir [hardware/aht20.md](../hardware/aht20.md)
+2. **Mauvais câblage** : Voir [guide sensor setup](../sensor-setup.md)
 3. **Redémarrer** : `sudo reboot`
 
 ### ❌ Pas de données MQTT

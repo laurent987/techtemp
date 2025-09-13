@@ -205,6 +205,6 @@ Your TechTemp server is now ready. Next steps:
 
 **🐳 Your central hub is ready for sensors!**
 
-**[📱 Setup Guide](../README.md)** • **[🌡️ Add Sensor](sensor-setup.md)** • **[🛠️ Troubleshooting](troubleshooting/)**
+**[📱 Setup Guide](../README.md)** • **[🌡️ Add Sensor](sensor-setup.md)** • **[🛠️ Troubleshooting](troubleshooting.md)**
 
 </div>
