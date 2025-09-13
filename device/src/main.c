@@ -145,10 +145,32 @@ int main(int argc, char* argv[]) {
             last_reading = now;
         }
         
-        // Check MQTT connection status
+        // Check MQTT connection status with fail-fast logic
+        static int mqtt_failure_count = 0;
+        const int MAX_MQTT_FAILURES = 5;
+        
         if (!mqtt_is_connected()) {
-            LOG_WARN_F("MQTT disconnected, attempting reconnection...");
-            mqtt_connect();
+            LOG_WARN_F("MQTT disconnected, attempting reconnection... (attempt %d/%d)", 
+                      mqtt_failure_count + 1, MAX_MQTT_FAILURES);
+            
+            if (mqtt_connect() != TECHTEMP_OK) {
+                mqtt_failure_count++;
+                if (mqtt_failure_count >= MAX_MQTT_FAILURES) {
+                    LOG_ERROR_F("💥 MQTT failed %d times, exiting for systemd restart", mqtt_failure_count);
+                    g_running = false;
+                    break;
+                }
+                LOG_WARN_F("MQTT reconnection failed (%d/%d), will retry...", mqtt_failure_count, MAX_MQTT_FAILURES);
+            } else {
+                // Reset counter on successful connection
+                if (mqtt_failure_count > 0) {
+                    LOG_INFO_F("✅ MQTT reconnected successfully after %d failures", mqtt_failure_count);
+                }
+                mqtt_failure_count = 0;
+            }
+        } else {
+            // Reset failure counter when connected
+            mqtt_failure_count = 0;
         }
         
         // Small delay to prevent CPU spinning
