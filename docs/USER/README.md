@@ -1,335 +1,491 @@
-# 👤 TechTemp for End Users
+# 🏠 TechTemp - Complete Setup Guide
 
-> **Monitor your home's temperature and humidity** with professional-grade sensors and a beautiful web dashboard.
+> **Simple home monitoring** - Place sensors in your rooms, access data from any device. **Complete setup in 30 minutes.**
 
-![TechTemp Dashboard](../assets/dashboard-screenshot.png)
+## 🎯 **What You're Building**
+
+TechTemp turns your Raspberry Pis into a **smart home temperature monitoring system**. You'll create a network where:
+
+- **Pis become room sensors** - each monitors one room's temperature/humidity
+- **One Pi acts as the central server** - stores data and runs a web dashboard  
+- **Access from anywhere** - view real-time and historical data from phone, tablet, or computer
+
+**Result:** Complete visibility into your home's climate, with data you own and control.
+
+```mermaid
+%%{
+  init: {
+    "theme": "base",
+    "themeVariables": {
+      "fontFamily": "Inter, Segoe UI, Roboto, Arial, sans-serif",
+      "primaryColor": "#BFDBFE",
+      "primaryBorderColor": "#1F2937",
+      "primaryTextColor": "#0F172A",
+      "lineColor": "#64748B",
+      "tertiaryColor": "#F1F5F9"
+    }
+  }
+}%%
+flowchart LR
+  linkStyle default stroke:#64748B,stroke-width:2px,opacity:0.95
+
+  classDef sensor fill:#FDE68A,stroke:#B45309,stroke-width:1.5px,color:#0F172A
+  classDef hub    fill:#BBF7D0,stroke:#15803D,stroke-width:1.5px,color:#0F172A
+  classDef viewer fill:#BFDBFE,stroke:#1D4ED8,stroke-width:1.5px,color:#0F172A
+
+  A["Salon<br/>🍓 Pi + 🌡️ AHT20<br/>📊 22.5°C · 45%"]:::sensor
+  B["Cuisine<br/>🍓 Pi + 🌡️ AHT20<br/>📊 24.1°C · 52%"]:::sensor
+  C["Chambre<br/>🍓 Pi + 🌡️ AHT20<br/>📊 20.8°C · 38%"]:::sensor
+
+  D["🖥️ Pi central (serveur)<br/>📡 Collecte des données<br/>💾 SQLite<br/>API"]:::hub
+
+  E["💻 Data analyse"]:::viewer
+  F["📱 Dashboard"]:::viewer
+  G["📟 Monitoring"]:::viewer
+
+  A --> D
+  B --> D
+  C --> D
+
+  D --> E
+  D --> F
+  D --> G
+
+```
 
 ---
 
-## 🎯 **What You'll Get**
 
-After following this guide (30 minutes), you'll have:
+## 🏗️ **System Architecture**
 
-✅ **Real-time monitoring** of temperature & humidity in multiple rooms  
-✅ **Web dashboard** accessible from any device on your network  
-✅ **Historical data** tracking trends over time  
-✅ **Room organization** with automatic device management  
-✅ **Mobile-friendly** interface for checking from anywhere  
+> **One central server + one sensor per room** you want to monitor
 
-## 📋 **What You Need**
+### **🖥️ Central Server (1 Raspberry Pi)** 
+- **Location:** Main area (living room, office)  
+- **Role:** Collects all data, runs dashboard, stores everything
+- **Access:** Web browser at `http://192.168.1.100:3000`
 
-### **Central Server** (One-time setup)
-- **Computer/Server:** Any machine that can run Docker (Raspberry Pi 4, old laptop, NAS, etc.)
-- **Network:** Connected to your home WiFi/Ethernet
-- **Storage:** 2GB free space minimum
+### **🌡️ Room Sensors (1 Raspberry Pi per room )**
+- **Location:** Each room you want to monitor
+- **Role:** Measures temperature/humidity, sends to central server  
+- **Hardware:** Pi + AHT20 sensor (€5 each)
 
-### **For Each Room You Want to Monitor**
-- **Raspberry Pi** (Pi Zero W, Pi 3, Pi 4 - any will work)
-- **AHT20 Temperature/Humidity Sensor** (~$5 on AliExpress/Amazon)
-- **MicroSD Card** (8GB minimum)
-- **Power Supply** for the Pi
-- **Basic wiring** (4 jumper wires)
+**Example:** Kitchen + Living Room + Bedroom = **4 Raspberry Pi's total** (1 server + 3 sensors)
 
-**💰 Total Cost:** ~$40 for server + ~$35 per room sensor
+### **📱 Your Setup Journey**
+
+| Step | What You'll Do | Result |
+|------|----------------|---------|
+| **[1. Setup Raspberry Pi's](#step1-raspberry-setup)** | Prepare all your Pis (server + sensors) | ✅ All Pis ready with WiFi & SSH |
+| **[2. Install TechTemp Server](#step-2-server)** | Install dashboard on main Pi | ✅ Central server running |
+| **[3. Connect First Sensor](#️step-3-sensor)** | Wire sensor + install device software | ✅ One room monitored |
+| **[4. Access Dashboard](#step-4-dashboard)** | Open web interface, see your data | ✅ Full monitoring system |
 
 ---
 
-## 🚀 **Quick Start Guide**
+##  **Setup Steps: Follow in Order**
 
-### **Step 1: Start the TechTemp Server** (10 minutes)
+> **Follow these steps in order** for a smooth TechTemp installation. Each step has a detailed guide.
 
-Choose your server setup method:
+<a id="step1-raspberry-setup"></a>
+### **🍓 Step 1: Setup Your Raspberry Pis** *(15 minutes each)*
+
+**What you'll do:** Prepare ALL your Pis - both server and sensor Pis
+
+**Why needed:** Every Pi needs basic setup (WiFi, SSH) before installing software
+
+**Outcome:** All Pis ready to connect to your network
+
+**📖 [→ Raspberry Pi Setup Guide](guides/initial-setup.md)**
 
 <details>
-<summary><strong>🐳 Option A: Docker (Recommended)</strong></summary>
+<summary><strong>🤔 What's involved in this step?</strong></summary>
 
-**Requirements:** Docker installed on your server machine
+- **Flash Raspberry Pi OS** to SD card using Raspberry Pi Imager
+- **Configure WiFi** so Pi connects to your network automatically  
+- **Set up SSH access** so you can control Pi from your computer
+- **Test connection** to make sure everything works
+- **Repeat for each Pi** you plan to use (server + sensors)
+
+**Required:** Raspberry Pis, microSD cards, computer with SD reader, WiFi credentials
+
+**Time:** 15 minutes per Pi (mostly waiting for OS to flash)
+</details>
+
+---
+
+<a id="step2-server"></a>
+### **🖥️ Step 2: Install TechTemp Server** *(10 minutes)*
+
+**What you'll do:** Install the main TechTemp software on your central server Pi
+
+**Why needed:** This creates the database, API, and web dashboard that collects all sensor data
+
+**Outcome:** Working TechTemp server ready to receive sensor data
+
+**📖 [→ Server Installation Guide](#-easy-setup-with-docker)**
+
+<details>
+<summary><strong>🤔 What's involved in this step?</strong></summary>
+
+- **Connect to your Pi** via SSH from your computer
+- **Run our setup script** which installs everything automatically
+- **Test the web dashboard** to make sure it's working
+- **Verify the database** is ready to store sensor readings
+
+**Required:** Pi from Step 1, internet connection
+
+**Time:** 10 minutes (mostly automated installation)
+</details>
+
+---
+
+<a id="step3-sensor"></a>
+### **🌡️ Step 3: Connect Your First Sensor** *(10 minutes)*
+
+**What you'll do:** Wire a sensor to a Pi and install the device software
+
+**Why needed:** This creates your first temperature monitoring point
+
+**Outcome:** Real temperature readings from one room appearing in dashboard
+
+**📖 [→ Sensor Setup Guide](#️-add-your-first-room-sensor)**
+
+<details>
+<summary><strong>🤔 What's involved in this step?</strong></summary>
+
+**3.1 Hardware:** 
+- **Wire the AHT20 sensor** to your sensor Pi (simple 4-wire connection)
+
+**3.2 Software:**
+- **Install TechTemp device software** on the sensor Pi
+- **Configure the room** using our setup script  
+- **Test sensor readings** to make sure data flows to server
+
+**Required:** AHT20 sensor, jumper wires, sensor Pi from Step 1
+
+**Time:** 10 minutes total (5 min wiring + 5 min software)
+</details>
+
+---
+
+<a id="step4-dashboard"></a>
+### **📱 Step 4: Access Your Dashboard** *(2 minutes)*
+
+**What you'll do:** Open the web interface and explore your temperature data
+
+**Why needed:** This is how you'll monitor your home from any device
+
+**Outcome:** Full access to real-time and historical temperature data
+
+**📖 [→ Dashboard Guide](#-access-your-data)**
+
+<details>
+<summary><strong>🤔 What's involved in this step?</strong></summary>
+
+- **Find your Pi's web address** on your network
+- **Bookmark the dashboard** on phone, tablet, computer
+- **Explore the interface** - current readings, graphs, history
+- **Learn the features** - room management, data export, etc.
+
+**Required:** Any device with web browser on your network
+
+**Time:** 2 minutes to set up, lifetime of use!
+</details>
+
+---
+
+### **🔧 Step 5: Manage Your System** *(ongoing)*
+
+**What you'll do:** Add more sensors, manage rooms, maintain the system
+
+**Why needed:** Expand monitoring and keep everything running smoothly
+
+**Outcome:** Complete home monitoring system tailored to your needs
+
+**📖 [→ Management Tools](#️-user-friendly-tools)**
+
+<details>
+<summary><strong>🤔 What's involved in this step?</strong></summary>
+
+- **Add more sensors** for additional rooms
+- **Manage room configurations** - rename, relocate sensors
+- **System maintenance** - updates, backups, troubleshooting
+- **Advanced features** - data export, API access, etc.
+
+**Required:** System from previous steps
+
+**Time:** Ongoing as needed
+</details>
+
+---
+
+##  **What You Need to Buy**
+
+### **One Central Server** (choose one option)
+- **🍓 Raspberry Pi 4** ($50) + SD card ($10) - *Recommended*
+- **💻 Any computer** you have (Windows/Mac/Linux with Docker)
+- **📦 NAS device** (Synology, QNAP, etc.)
+
+### **For Each Room** (~$35 per room)
+- **🍓 Raspberry Pi Zero W** ($15) or Pi 4 ($35)
+- **🌡️ AHT20 sensor** ($5 on Amazon/AliExpress)  
+- **💾 MicroSD card** 8GB+ ($8)
+- **⚡ USB power supply** ($7)
+- **🔌 4 jumper wires** ($2)
+
+**💡 Start small:** Server + 1 room = ~$85 total
+
+---
+
+## 🐳 **Easy Setup with Docker**
+
+This is your central hub that collects data from all room sensors.
+
+**On your work computer (laptop/desktop):**
+
+> **⚠️ Prerequisites:** Make sure you can SSH to your server without password (SSH key setup). Test with: `ssh pi@192.168.1.100` (replace with your server IP)
+> 
+> **🆕 New Raspberry Pi?** Follow our [Initial Pi Setup Guide](guides/initial-setup.md) first (WiFi + SSH configuration).
 
 ```bash
-# 1. Download TechTemp
+# 1. Download TechTemp (2 minutes)
 git clone https://github.com/laurent987/techtemp.git
 cd techtemp
 
-# 2. Start the server
-docker compose up -d
+# 2. Find your Pi's IP address (1 minute)
+nmap -sn 192.168.1.0/24
+# Look for "Raspberry Pi Foundation" in the results
+# Or check your router's admin page for connected devices
 
-# 3. Verify it's running
-curl http://localhost:3000/health
-# Should return: {"status":"ok"}
+# 3. Run the automatic setup (3-5 minutes) 
+# Replace 192.168.1.100 with your Pi's actual IP
+./scripts/user/setup-server.sh pi@192.168.1.100
+
+# The script will:
+# ✅ Install Docker on your Pi
+# ✅ Set up the TechTemp database  
+# ✅ Start the web server
+# ✅ Create the monitoring dashboard
+# ✅ Test everything works
 ```
 
-**✅ Server running at:** `http://YOUR_SERVER_IP:3000`
+**✅ Success!** Your server is ready. Test it: `http://192.168.1.100:3000`
+
+### **🔧 Alternative Setup Methods**
+
+<details>
+<summary><strong>🐳 Docker on Your Computer/NAS</strong></summary>
+
+**If you want to run TechTemp on your existing computer:**
+
+```bash
+# Clone the project
+git clone https://github.com/laurent987/techtemp.git
+cd techtemp
+
+# Start with Docker Compose
+docker-compose up -d
+
+# Access dashboard
+open http://localhost:3000
+```
+
+**Pros:** Use existing hardware, no new Pi needed  
+**Cons:** Computer must stay on 24/7 for continuous monitoring
 
 </details>
 
 <details>
-<summary><strong>💻 Option B: Direct Installation</strong></summary>
+<summary><strong>⚙️ Manual Installation</strong></summary>
 
-**Requirements:** Node.js 18+ installed
+**For advanced users who want control:**
 
 ```bash
-# 1. Download and setup
+# SSH to your Pi
+ssh pi@192.168.1.100
+
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Node.js
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Install TechTemp
 git clone https://github.com/laurent987/techtemp.git
-cd techtemp/backend
+cd techtemp
 npm install
-
-# 2. Start MQTT broker (separate terminal)
-# You'll need Mosquitto MQTT broker installed
-mosquitto -p 1883
-
-# 3. Start TechTemp (separate terminal)
-cd backend
 npm start
 ```
 
+**Dashboard:** `http://192.168.1.100:3000`
+
 </details>
 
-### **Step 2: Access Your Dashboard** (2 minutes)
+---
 
-1. **Open your browser** and go to: `http://YOUR_SERVER_IP:3000`
-2. **You should see** the TechTemp dashboard (empty for now)
-3. **Bookmark this URL** for easy access
+## 🌡️ **Add Your First Room Sensor**
 
-![Empty Dashboard](../assets/empty-dashboard.png)
+### **Hardware Connection**
 
-### **Step 3: Setup Your First Sensor** (15 minutes)
-
-**🔌 Hardware Wiring:**
-
-Connect your AHT20 sensor to Raspberry Pi:
+**🔌 Wire your AHT20 sensor to the Pi:**
 
 ```
-AHT20 Sensor    →    Raspberry Pi
-─────────────────────────────────
-VCC (+)         →    3.3V (Pin 1)
-GND (-)         →    Ground (Pin 6)  
-SDA (Data)      →    GPIO 2 (Pin 3)
-SCL (Clock)     →    GPIO 3 (Pin 5)
+AHT20 → Raspberry Pi
+VCC   → 3.3V (Pin 1)
+GND   → Ground (Pin 6)  
+SDA   → GPIO 2 (Pin 3)
+SCL   → GPIO 3 (Pin 5)
 ```
 
-**💿 Software Setup:**
+### **Software Setup**
 
-1. **Flash Raspberry Pi OS** to your SD card
-2. **Enable SSH and WiFi** during setup
-3. **Copy our device code** to your Pi:
+**From your work computer:**
 
 ```bash
-# On your Pi (via SSH)
-git clone https://github.com/laurent987/techtemp.git
-cd techtemp/device
+# 1. Set up the sensor for a specific room
+./scripts/user/setup-room-sensor.sh pi@192.168.1.100 "Living Room"
 
-# Compile the sensor code
-make
+# The script will:
+# ✅ Install sensor drivers
+# ✅ Configure the room in TechTemp
+# ✅ Start collecting data
+# ✅ Test the sensor connection
 
-# Configure for your network
-cp config/device.conf.simple config/device.conf
-# Edit config/device.conf with your MQTT server IP
+# 2. Verify it's working
+./scripts/user/check-system.sh pi@192.168.1.100
 ```
 
-4. **Register your device** with the server:
+**✅ Success!** Your sensor data appears in the dashboard within 30 seconds.
+
+### **🏠 Adding More Rooms**
+
+**Option A: Same Pi, Multiple Sensors**
+```bash
+# Connect additional AHT20s to different GPIO pins
+./scripts/user/setup-room-sensor.sh pi@192.168.1.100 "Bedroom" --gpio-sda 4 --gpio-scl 5
+```
+
+**Option B: Separate Pi Per Room**
+```bash
+# Set up another Pi as a sensor node
+./scripts/user/setup-room-sensor.sh pi@192.168.1.101 "Kitchen"
+```
+
+---
+
+## 📱 **Access Your Data**
+
+### **📊 Web Dashboard**
+
+**From any device on your network:**
+- **🖥️ Computer:** `http://192.168.1.100:3000`
+- **📱 Phone/Tablet:** Same URL, mobile-optimized interface
+- **🔖 Bookmark it!** Add to home screen for quick access
+
+### **📈 What You'll See**
+
+- **🌡️ Current readings** for all rooms
+- **📊 Real-time graphs** showing trends
+- **🕒 Historical data** going back weeks/months
+- **🏠 Room management** - add, rename, configure sensors
+- **⚙️ System status** - all sensors, server health
+
+### **📤 Data Export**
 
 ```bash
-# From any computer, register your new sensor
-curl -X POST http://YOUR_SERVER_IP:3000/api/v1/devices \
-  -H "Content-Type: application/json" \
-  -d '{
-    "device_uid": "sensor-living-room",
-    "room_name": "Living Room", 
-    "label": "Living Room Temperature Sensor"
-  }'
+# Export your data for analysis
+./scripts/user/export-data.sh pi@192.168.1.100 --days 30 --format csv
 ```
 
-5. **Start sending data:**
+---
+
+## 🛠️ **User-Friendly Tools**
+
+All management happens from your computer - no need to touch the Pi!
+
+### **🎯 Quick Commands**
 
 ```bash
-# On your Pi, start the sensor
-cd techtemp/device
-./build/techtemp-device
+# Check system status
+./scripts/user/check-system.sh pi@192.168.1.100
+
+# View all rooms and sensors  
+./scripts/user/view-rooms.sh pi@192.168.1.100
+
+# Add a new room
+./scripts/user/setup-room-sensor.sh pi@192.168.1.100 "Office"
+
+# System maintenance
+./scripts/user/update-system.sh pi@192.168.1.100
 ```
 
-### **Step 4: Verify Everything Works** (3 minutes)
+### **📋 Available Tools**
 
-1. **Refresh your dashboard** - you should see your new device
-2. **Check the data** - temperature/humidity readings should appear
-3. **Wait a few minutes** - data updates every 30 seconds
+- **`setup-server.sh`** - Initial server installation
+- **`setup-room-sensor.sh`** - Add sensors and rooms
+- **`check-system.sh`** - Health checks and diagnostics  
+- **`view-rooms.sh`** - List all configured rooms
+- **`export-data.sh`** - Export historical data
+- **`update-system.sh`** - Update TechTemp software
+- **`backup-data.sh`** - Backup your readings
 
-![Working Dashboard](../assets/working-dashboard.png)
-
----
-
-## 📱 **Using Your Dashboard**
-
-### **Main Dashboard Features**
-
-- **🏠 Rooms Overview:** See all your rooms at a glance
-- **📊 Current Readings:** Latest temperature/humidity from each sensor  
-- **🕒 Last Updated:** When each sensor last sent data
-- **📈 Status Indicators:** Green = healthy, Yellow = warning, Red = offline
-
-### **Navigation**
-
-- **Auto-refresh:** Dashboard updates every 30 seconds automatically
-- **Mobile-friendly:** Works perfectly on phones and tablets
-- **Room filtering:** Click on rooms to focus on specific areas
-- **Device details:** Click on any sensor for detailed information
-
-### **Reading the Data**
-
-- **Temperature:** Displayed in Celsius (°C)
-- **Humidity:** Displayed as percentage (%)
-- **Timestamp:** Shows when the reading was taken
-- **Trends:** Color coding shows if values are rising/falling
+**💡 All tools include built-in help:** `./scripts/user/tool-name.sh --help`
 
 ---
 
-## 🏠 **Adding More Rooms**
+## 🎉 **Congratulations! Your TechTemp System is Running**
 
-Once your first sensor is working, adding more is easy:
+Your home monitoring system is now collecting temperature data. Here's how to expand and maintain it:
 
-### **For Each New Room:**
-
-1. **Setup hardware:** Wire another Pi + AHT20 sensor
-2. **Copy the device code** to the new Pi  
-3. **Register the device** with a new `device_uid`:
-
+### **🏠 Monitor More Rooms**
 ```bash
-curl -X POST http://YOUR_SERVER_IP:3000/api/v1/devices \
-  -H "Content-Type: application/json" \
-  -d '{
-    "device_uid": "sensor-bedroom",
-    "room_name": "Bedroom",
-    "label": "Bedroom Temperature Sensor"
-  }'
+# Add bedroom sensor (same Pi, different GPIO)
+./scripts/user/setup-room-sensor.sh pi@192.168.1.100 "Bedroom" --gpio-sda 4 --gpio-scl 5
+
+# Or add kitchen sensor (separate Pi)  
+./scripts/user/setup-room-sensor.sh pi@192.168.1.101 "Kitchen"
 ```
+**Guide:** [Complete Sensor Setup](guides/sensor-setup.md)
 
-4. **Start the sensor** on the new Pi
-5. **Check your dashboard** - new room appears automatically!
-
-### **Room Organization Tips**
-
-- **Use descriptive names:** "Master Bedroom", "Kids Room", "Basement"
-- **Consistent naming:** Keep device UIDs simple: `sensor-kitchen`, `sensor-garage`
-- **Label clearly:** "Kitchen Temperature Sensor" is better than "Sensor 1"
-
----
-
-## 🛠️ **Troubleshooting**
-
-### **Dashboard Not Loading**
-
-**Problem:** Can't access `http://YOUR_SERVER_IP:3000`
-
-**Solutions:**
-1. **Check server is running:** `docker compose ps` or `curl localhost:3000/health`
-2. **Check firewall:** Make sure port 3000 is open
-3. **Check IP address:** Use `ip addr` to find your server's real IP
-4. **Try localhost:** If on same machine, try `http://localhost:3000`
-
-### **No Data from Sensors**
-
-**Problem:** Sensor appears in dashboard but no readings
-
-**Solutions:**
-1. **Check sensor wiring:** Verify AHT20 connections
-2. **Check device logs:** Look for error messages on the Pi
-3. **Check MQTT connection:** Verify Pi can reach your server
-4. **Check device registration:** Make sure device is provisioned in API
-
-### **Sensor Goes Offline**
-
-**Problem:** Sensor was working but stopped sending data
-
-**Solutions:**
-1. **Check Pi power:** Make sure Pi is still running
-2. **Check WiFi:** Pi might have lost network connection  
-3. **Restart sensor:** Reboot the Pi or restart the sensor program
-4. **Check server logs:** Look for MQTT connection issues
-
-### **Getting Help**
-
-- **📖 Device Setup:** [Detailed hardware guide](../devices/README.md)
-- **🔧 API Reference:** [Developer documentation](../DEVELOPER/README.md)
-- **💬 Community:** [GitHub Discussions](https://github.com/laurent987/techtemp/discussions)
-- **🐛 Bug Reports:** [GitHub Issues](https://github.com/laurent987/techtemp/issues)
-
----
-
-## 🔄 **Maintenance**
-
-### **Daily Tasks**
-- **None!** TechTemp runs automatically
-
-### **Weekly Check**
-- **Glance at dashboard** to make sure all sensors are online
-- **Check for any alerts** or offline devices
-
-### **Monthly Tasks**
-- **Update software:** `docker compose pull && docker compose up -d`
-- **Check disk space:** Make sure server has enough storage
-- **Review sensor performance:** Look for any patterns or issues
-
-### **Backup**
-Your data is stored in `./backend/db/techtemp.db`. To backup:
-
+### **📊 Export Your Data** 
 ```bash
-# Create backup
-cp backend/db/techtemp.db backup-$(date +%Y%m%d).db
-
-# Restore from backup
-cp backup-20250312.db backend/db/techtemp.db
+# Get last month's data for Excel
+./scripts/user/export-data.sh pi@192.168.1.100 --days 30 --format csv
 ```
+**Guide:** [Dashboard & Data Export](guides/dashboard-guide.md)
+
+### **🔧 Keep System Healthy**
+```bash
+# Weekly health check
+./scripts/user/check-system.sh pi@192.168.1.100
+
+# Backup your data
+./scripts/user/backup-data.sh pi@192.168.1.100
+```
+**Guide:** [Management Tools](guides/management-tools.md)
 
 ---
 
-## 📈 **Next Steps**
+## 🛟 **Need Help?**
 
-Once you're comfortable with TechTemp:
+### **📚 Detailed Guides**
+- **[Server Installation](guides/server-installation.md)** - Complete server setup with troubleshooting
+- **[Sensor Setup](guides/sensor-setup.md)** - Hardware wiring and configuration
+- **[Dashboard Guide](guides/dashboard-guide.md)** - Web interface and data export
+- **[Management Tools](guides/management-tools.md)** - System maintenance commands
+- **[SSH Setup Guide](guides/ssh-setup-guide.md)** - SSH configuration and troubleshooting
+- **[Troubleshooting](guides/troubleshooting.md)** - Common issues and solutions
 
-### **🏠 Home Assistant Integration**
-Connect TechTemp to Home Assistant for advanced automation:
-- **Temperature-based climate control**
-- **Humidity alerts and notifications**  
-- **Historical charts and trends**
+### **🚨 Quick Help**
+- **Can't find your Pi on the network?** → [Find Pi IP Guide](guides/find-pi-ip.md)
+- **SSH connection problems?** → [SSH Setup Guide](guides/ssh-setup-guide.md)
+- **Sensor not working?** → [Sensor Troubleshooting](guides/troubleshooting.md#sensor-issues)
+- **Dashboard problems?** → [Server Troubleshooting](guides/troubleshooting.md#server-issues)
+- **System maintenance?** → [Management Tools](guides/management-tools.md)
 
-See: [Home Assistant Integration Guide](home-assistant.md)
+### **💬 Community Support**
+- **[GitHub Discussions](https://github.com/laurent987/techtemp/discussions)** - Ask questions, share tips
+- **[Report Issues](https://github.com/laurent987/techtemp/issues)** - Bug reports and feature requests
 
-### **📱 Mobile Notifications**
-Set up alerts for:
-- **Temperature extremes** (too hot/cold)
-- **Humidity issues** (too dry/humid)
-- **Sensor offline** notifications
-
-See: [Notification Setup Guide](notifications.md)
-
-### **📊 Advanced Monitoring**
-- **Historical data analysis**
-- **Export data to spreadsheets**
-- **Custom dashboards and reports**
-
-See: [Advanced Features Guide](advanced.md)
-
----
-
-## 💡 **Tips & Best Practices**
-
-### **Sensor Placement**
-- **Avoid direct sunlight** - affects temperature readings
-- **Away from heat sources** - radiators, electronics, etc.
-- **Good airflow** - don't enclose in tight spaces
-- **Stable mounting** - secure to prevent movement
-
-### **Network Setup**
-- **Use 2.4GHz WiFi** - better range for IoT devices
-- **Static IP for server** - prevents dashboard URL changes
-- **Good WiFi coverage** - ensure all sensor locations have signal
-
-### **Performance**
-- **One sensor per room** is usually sufficient
-- **30-second updates** are ideal for most use cases
-- **Check battery life** if using portable sensors
-
----
-
-**🎉 Congratulations!** You now have a professional home monitoring system running. Your TechTemp setup will reliably track your home's environment and help you maintain optimal comfort and air quality.
-
-**Questions?** Check our [FAQ](faq.md) or visit [GitHub Discussions](https://github.com/laurent987/techtemp/discussions).

@@ -1,3 +1,5 @@
+**[⬅️ Back to Setup Guide](../../README.md)**
+
 # Problèmes Courants - TechTemp Device
 
 ## 🚨 Diagnostics Rapides
@@ -11,9 +13,13 @@
 **Diagnostic :**
 ```bash
 # Vérifier le status du service
-sudo systemctl status techtemp-device
+sudo systemctl status techtemp-devi## 🔐 Problèmes SSH/Connexione
 
-# Tenter un démarrage manuel
+# Tenter un démarrag```
+
+## 📞 Support
+
+### Collecte d'informationsuel
 cd /home/pi/techtemp/device
 sudo ./build/techtemp-device config/device.conf
 ```
@@ -253,7 +259,61 @@ fi
 */5 * * * * /home/pi/monitor-techtemp.sh >> /var/log/techtemp-monitor.log 2>&1
 ```
 
-## 📞 Support
+## � Problèmes SSH/Connexion
+
+### ❌ Impossible de se connecter en SSH
+
+**Symptômes :**
+```
+ssh: connect to host 192.168.1.100 port 22: Connection refused
+```
+
+**Diagnostic :**
+```bash
+# Ping le Raspberry Pi
+ping 192.168.1.100
+
+# Vérifier le port SSH
+nmap -p 22 192.168.1.100
+
+# Scanner le réseau
+nmap -sn 192.168.1.0/24
+```
+
+**Solutions :**
+1. **SSH non activé** : Utiliser clavier/écran, puis `sudo systemctl enable ssh`
+2. **Mauvaise IP** : Vérifier sur votre box/routeur
+3. **Réseau différent** : Essayer 192.168.0.x ou 10.0.0.x
+
+### ❌ Demande le mot de passe à chaque fois
+
+**Solution (clés SSH) :**
+```bash
+# Sur votre ordinateur de travail
+ssh-keygen -t rsa -b 4096
+ssh-copy-id pi@192.168.1.100
+
+# Test
+ssh pi@192.168.1.100  # Devrait marcher sans mot de passe
+```
+
+### ❌ Permission denied
+
+**Causes courantes :**
+- Mauvais nom d'utilisateur (utiliser `pi`)
+- Mauvais mot de passe
+- Clé SSH corrompue
+
+**Solutions :**
+```bash
+# Test avec mot de passe
+ssh -o PreferredAuthentications=password pi@192.168.1.100
+
+# Supprimer anciennes clés
+ssh-keygen -R 192.168.1.100
+```
+
+## �📞 Support
 
 ### Collecte d'informations
 

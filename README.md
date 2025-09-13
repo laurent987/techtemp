@@ -45,9 +45,9 @@ TechTemp serves different audiences with tailored documentation:
 
 **[📱 Start Here →](docs/USER/README.md)**
 - Quick setup guide
-- Web dashboard tutorial  
 - Device installation
 - Troubleshooting
+
 
 </td>
 <td valign="top">
@@ -83,30 +83,6 @@ TechTemp serves different audiences with tailored documentation:
 
 ---
 
-## ⚡ **Quick Demo** 
-
-Want to see TechTemp in action? Here's a 2-minute demo:
-
-```bash
-# 1. Clone and start (30 seconds)
-git clone https://github.com/laurent987/techtemp.git
-cd techtemp
-docker compose up -d
-
-# 2. Check the web dashboard (10 seconds)
-open http://localhost:3000
-
-# 3. Test the API (30 seconds)
-curl http://localhost:3000/api/v1/devices
-curl http://localhost:3000/api/v1/readings/latest
-
-# 4. Provision a demo device (30 seconds)
-curl -X POST http://localhost:3000/api/v1/devices \
-  -H "Content-Type: application/json" \
-  -d '{"device_uid": "demo-sensor", "room_name": "Demo Room", "label": "Demo Sensor"}'
-```
-
----
 
 ## 🏠 **Architecture Overview**
 
@@ -139,23 +115,57 @@ curl -X POST http://localhost:3000/api/v1/devices \
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
-## 🎯 **Current Status** 
+## ⚡ **Quick Demo** 
 
-| Component | Status | Description |
-|-----------|--------|-------------|
-| 🖥️ **Backend API** | ✅ **Production** | Complete REST API with device & readings management |
-| 🌐 **Web Dashboard** | ✅ **Production** | React-based responsive dashboard |
-| 📡 **MQTT Ingestion** | ✅ **Production** | Real-time sensor data collection |
-| 🏠 **Room Management** | ✅ **Production** | Automatic room organization |
-| 📊 **Database** | ✅ **Production** | SQLite with comprehensive schema |
-| 🔌 **Device Firmware** | ✅ **Production** | C code for Raspberry Pi + AHT20 |
-| 📚 **Documentation** | ✅ **Complete** | Audience-based comprehensive guides |
+**⚠️ Prerequisites Required:**
+- Docker & Docker Compose installed
+- MQTT broker (Mosquitto) running
 
-**Live Demo:** Real sensor `aht20-f49c53` sending data every 30 seconds
 ```bash
-# Check live data right now
-curl http://192.168.0.42:3000/api/v1/devices/aht20-f49c53/readings?limit=1
+# 1. Clone the repository
+git clone https://github.com/laurent987/techtemp.git
+cd techtemp
+
+# 2. Set up environment (see docs/DEVELOPER/ for details)
+cp .env.example .env
+# Edit .env with your MQTT broker settings
+
+# 3. Start the system
+docker compose up -d
+
+# 4. Check the API is running
+curl http://localhost:3000/api/v1/health
+
+# 5. Create demo devices
+curl -X POST http://localhost:3000/api/v1/devices \
+  -H "Content-Type: application/json" \
+  -d '{"device_uid": "living-room-01", "room_name": "Living Room", "label": "Main Sensor"}'
+
+curl -X POST http://localhost:3000/api/v1/devices \
+  -H "Content-Type: application/json" \
+  -d '{"device_uid": "kitchen-01", "room_name": "Kitchen", "label": "Kitchen Sensor"}'
+
+# 6. Add some test data
+curl -X POST http://localhost:3000/api/v1/readings \
+  -H "Content-Type: application/json" \
+  -d '{"device_uid": "living-room-01", "temperature": 22.5, "humidity": 45.2}'
+
+curl -X POST http://localhost:3000/api/v1/readings \
+  -H "Content-Type: application/json" \
+  -d '{"device_uid": "kitchen-01", "temperature": 24.1, "humidity": 52.8}'
+
+# 7. Check your data
+curl http://localhost:3000/api/v1/devices
+curl http://localhost:3000/api/v1/readings/latest
+
+# 8. View dashboard with real data
+open http://localhost:3000
 ```
+
+**📖 For complete setup:** See [User Guide](docs/USER/README.md) or [Developer Guide](docs/DEVELOPER/README.md)
+
+---
+
 
 ## 🏗️ **Repository Structure**
 
