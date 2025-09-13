@@ -74,10 +74,10 @@ flowchart LR
 
 | Step | What You'll Do | Result |
 |------|----------------|---------|
-| **[1. Setup Raspberry Pi's](#-step-1-setup-your-raspberry-pis-15-minutes-each)** | Prepare all your Pis (server + sensors) | ✅ All Pis ready with WiFi & SSH |
-| **[2. Install TechTemp Server](#️-step-2-install-techtemp-server-10-minutes)** | Install dashboard on main Pi | ✅ Central server running |
-| **[3. Connect First Sensor](#️-step-3-connect-your-first-sensor-10-minutes)** | Wire sensor + install device software | ✅ One room monitored |
-| **[4. Access Dashboard](#-step-4-access-your-dashboard-2-minutes)** | Open web interface, see your data | ✅ Full monitoring system |
+| **[1. Setup Raspberry Pi's](guides/initial-setup.md)** | Prepare all your Pis (server + sensors) | ✅ All Pis ready with WiFi & SSH |
+| **[2. Install TechTemp Server](guides/server-installation.md)** | Install dashboard on main Pi | ✅ Central server running |
+| **[3. Connect First Sensor](guides/sensor-setup.md)** | Wire sensor + install device software | ✅ One room monitored |
+| **[4. Access Dashboard](guides/dashboard-guide.md)** | Open web interface, see your data | ✅ Full monitoring system |
 
 
 ##  **Setup Steps **
@@ -119,7 +119,7 @@ flowchart LR
 
 **Outcome:** Working TechTemp server ready to receive sensor data
 
-**📖 [→ Server Installation Guide](#️-step-2-install-techtemp-server-10-minutes)**
+**📖 [→ Server Installation Guide](guides/server-installation.md)**
 
 <details>
 <summary><strong>🤔 What's involved in this step?</strong></summary>
@@ -145,7 +145,7 @@ flowchart LR
 
 **Outcome:** Real temperature readings from one room appearing in dashboard
 
-**📖 [→ Sensor Setup Guide](#️-step-3-connect-your-first-sensor-10-minutes)**
+**📖 [→ Sensor Setup Guide](guides/sensor-setup.md)**
 
 <details>
 <summary><strong>🤔 What's involved in this step?</strong></summary>
@@ -174,7 +174,7 @@ flowchart LR
 
 **Outcome:** Full access to real-time and historical temperature data
 
-**📖 [→ Dashboard Guide](#-step-4-access-your-dashboard-2-minutes)**
+**📖 [→ Dashboard Guide](guides/dashboard-guide.md)**
 
 <details>
 <summary><strong>🤔 What's involved in this step?</strong></summary>
@@ -199,7 +199,7 @@ flowchart LR
 
 **Outcome:** Complete home monitoring system tailored to your needs
 
-**📖 [→ Management Tools](#-step-5-manage-your-system-ongoing)**
+**📖 [→ Management Tools](guides/management-tools.md)**
 
 <details>
 <summary><strong>🤔 What's involved in this step?</strong></summary>
