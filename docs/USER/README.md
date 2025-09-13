@@ -2,30 +2,44 @@
 
 > **Simple home monitoring** - Place sensors in your rooms, access data from any device. **Complete setup in 30 minutes.**
 
-##  **What You Need to Have**
+##  **What You're Building**
 
-### **One Central Server:** 
-- **<img  src="../icons/rpi.svg" alt="Raspberry Pi" style="display: inline-block; vertical-align: middle; width: 20px;"/> Raspberry Pi Zero 2W** 
-- **<span style="display: inline-block; width: 20px; text-align: center;">💾</span> MicroSD card** 32GB 
+TechTemp transforms simple Raspberry Pis into a **professional home monitoring system** using affordable AHT20 sensors. In just 30 minutes, you'll have:
 
-### **Sensor temperature for each room:** 
-- **<img src="../icons/rpi.svg" alt="Raspberry Pi" style="display: inline-block; vertical-align: middle; width: 20px;"/> Raspberry Pi Zero 2W** 
-- **<span style="display: inline-block; width: 20px; text-align: center;">🌡️</span> AHT20 sensor**   
-- **<span style="display: inline-block; width: 20px; text-align: center;">💾</span> MicroSD card** 8GB 
-- **<span style="display: inline-block; width: 20px; text-align: center;">🔌</span> 4 jumper wires** ($2)
+**🏠 Room-by-room monitoring:**
+- **Each Pi becomes a smart sensor** - precise temperature & humidity tracking
+- **Automatic data collection** - readings every few minutes, 24/7
+- **No monthly fees** - your data stays on your network
 
+**📊 Central intelligence:**
+- **One server Pi** - collects, stores, and serves all your data  
+- **Web dashboard** - beautiful graphs and real-time readings
+- **Historical data** - track patterns, spot trends, export data
 
-**💡 Start small:** Server + 1 room
+**📱 Access anywhere:**
+- **Any device** - phone, tablet, laptop works instantly
+- **No apps to install** - just open your web browser
+- **Your network** - fast, private, always available
 
-## 🎯 **What You're Building**
+**Result:** Professional-grade climate monitoring that costs ~$50 per room and takes 30 minutes to set up.
 
-TechTemp turns your Raspberry Pis into a **smart home temperature monitoring system**. You'll create a network where:
+## 🛒 **Shopping List** *(~$80 to start)*
 
-- **Pis become room sensors** - each monitors one room's temperature/humidity
-- **One Pi acts as the central server** - stores data and runs a web dashboard  
-- **Access from anywhere** - view real-time and historical data from phone, tablet, or computer
+### **🖥️ Central Server** *(one-time setup)*
+- **<img src="../icons/rpi.svg" alt="Raspberry Pi" style="display: inline-block; vertical-align: middle; width: 20px;"/> Raspberry Pi Zero 2W** ~$15
+- **💾 MicroSD card 32GB** ~$8 *(stores all sensor data)*
 
-**Result:** Complete visibility into your home's climate, with data you own and control.
+### **🌡️ Per Room Sensor** *(~$50 each)*
+- **<img src="../icons/rpi.svg" alt="Raspberry Pi" style="display: inline-block; vertical-align: middle; width: 20px;"/> Raspberry Pi Zero 2W** ~$15
+- **🌡️ AHT20 sensor** ~$25 *(accurate ±0.3°C)*
+- **💾 MicroSD card 8GB** ~$5 *(device software only)*
+- **🔌 4 jumper wires** ~$2 *(GPIO connection)*
+
+**💡 Smart start:** Begin with server + 1 room (~$80), then add rooms as needed
+
+## 🏗️ **System Overview**
+
+Here's how your TechTemp network will look once set up:
 
 ```mermaid
 %%{
@@ -70,151 +84,57 @@ flowchart LR
 
 
 
-### **📱 Your Setup Journey**
+## ⚡ **4-Step Setup** *(30 minutes total)*
 
 | Step | What You'll Do | Result |
 |------|----------------|---------|
-| **[1. Setup Raspberry Pi's](guides/initial-setup.md)** | Prepare all your Pis (server + sensors) | ✅ All Pis ready with WiFi & SSH |
-| **[2. Install TechTemp Server](guides/server-installation.md)** | Install dashboard on main Pi | ✅ Central server running |
-| **[3. Connect First Sensor](guides/sensor-setup.md)** | Wire sensor + install device software | ✅ One room monitored |
-| **[4. Access Dashboard](guides/dashboard-guide.md)** | Open web interface, see your data | ✅ Full monitoring system |
+| **[1. Setup Raspberry Pi's](#step1-raspberry-setup)** | Prepare all your Pis (server + sensors) | ✅ All Pis ready with WiFi & SSH |
+| **[2. Install TechTemp Server](#step2-server)** | Install complete server stack (database, API, dashboard) | ✅ Central server running |
+| **[3. Connect First Sensor](#step3-sensor)** | Wire AHT20 sensor + install device software | ✅ One room monitored |
+| **[4. Access Dashboard](#step4-dashboard)** | Open web interface, explore your data | ✅ Full monitoring system |
 
-
-##  **Setup Steps **
 
 
 <a id="step1-raspberry-setup"></a>
-### **🍓 Step 1: Setup Your Raspberry Pis** *(15 minutes each)*
+>### 🔧 **Step 1: Setup Your Raspberry Pi's** *(15 minutes each)*
+>
+>Set up all your Raspberry Pi's with WiFi and SSH access so they're ready for TechTemp installation.
+>
+>**Ready to start?** **[Follow the Raspberry Pi Setup Guide](guides/initial-setup.md)**
 
-**What you'll do:** Prepare ALL your Pis - both server and sensor Pis
-
-**Why needed:** Every Pi needs basic setup (WiFi, SSH) before installing software
-
-**Outcome:** All Pis ready to connect to your network
-
-**📖 [→ Raspberry Pi Setup Guide](guides/initial-setup.md)**
-
-<details>
-<summary><strong>🤔 What's involved in this step?</strong></summary>
-
-- **Flash Raspberry Pi OS** to SD card using Raspberry Pi Imager
-- **Configure WiFi** so Pi connects to your network automatically  
-- **Set up SSH access** so you can control Pi from your computer
-- **Test connection** to make sure everything works
-- **Repeat for each Pi** you plan to use (server + sensors)
-
-**Required:** Raspberry Pis, microSD cards, computer with SD reader, WiFi credentials
-
-**Time:** 15 minutes per Pi (mostly waiting for OS to flash)
-</details>
-
----
 
 <a id="step2-server"></a>
-### **🖥️ Step 2: Install TechTemp Server** *(10 minutes)*
+>### 🖥️ **Step 2: Install TechTemp Server** *(10 minutes)*
+>
+>Install the complete TechTemp server stack (database, API, web dashboard) on your central Pi to collect all sensor data.
+>
+>**Let's install the server:** **[Follow the Server Installation Guide](guides/server-installation.md)**
 
-**What you'll do:** Install the main TechTemp software on your central server Pi
 
-**Why needed:** This creates the database, API, and web dashboard that collects all sensor data
+<a id="step3-sensors"></a>
+>### 🌡️ **Step 3: Setup Sensors** *(5 minutes each)*
+>
+>Wire an AHT20 sensor to a Pi and install the device software to start monitoring your first room's temperature.
+>
+>**Time to add your first sensor:** **[Follow the Sensor Setup Guide](guides/sensor-setup.md)**
 
-**Outcome:** Working TechTemp server ready to receive sensor data
 
-**📖 [→ Server Installation Guide](guides/server-installation.md)**
+<a id="step4-monitor"></a>
+>### 📊 **Step 4: Monitor Your System** *(2 minutes)*
+>
+>Open the web interface from any device to explore your temperature data, view graphs, and monitor your home.
+>
+>**See your data in action:** **[Access Your Dashboard Now](guides/dashboard-guide.md)**
 
-<details>
-<summary><strong>🤔 What's involved in this step?</strong></summary>
 
-- **Connect to your Pi** via SSH from your computer
-- **Run our setup script** which installs everything automatically
-- **Test the web dashboard** to make sure it's working
-- **Verify the database** is ready to store sensor readings
 
-**Required:** Pi from Step 1, internet connection
+## 🔧 **System Management**
 
-**Time:** 10 minutes (mostly automated installation)
-</details>
+### **Step 5: Manage Your System** *(ongoing)*
 
----
+Add more sensors, manage rooms, and maintain your system to create a complete home monitoring solution.
 
-<a id="step3-sensor"></a>
-### **🌡️ Step 3: Connect Your First Sensor** *(10 minutes)*
-
-**What you'll do:** Wire a sensor to a Pi and install the device software
-
-**Why needed:** This creates your first temperature monitoring point
-
-**Outcome:** Real temperature readings from one room appearing in dashboard
-
-**📖 [→ Sensor Setup Guide](guides/sensor-setup.md)**
-
-<details>
-<summary><strong>🤔 What's involved in this step?</strong></summary>
-
-**3.1 Hardware:** 
-- **Wire the AHT20 sensor** to your sensor Pi (simple 4-wire connection)
-
-**3.2 Software:**
-- **Install TechTemp device software** on the sensor Pi
-- **Configure the room** using our setup script  
-- **Test sensor readings** to make sure data flows to server
-
-**Required:** AHT20 sensor, jumper wires, sensor Pi from Step 1
-
-**Time:** 10 minutes total (5 min wiring + 5 min software)
-</details>
-
----
-
-<a id="step4-dashboard"></a>
-### **📱 Step 4: Access Your Dashboard** *(2 minutes)*
-
-**What you'll do:** Open the web interface and explore your temperature data
-
-**Why needed:** This is how you'll monitor your home from any device
-
-**Outcome:** Full access to real-time and historical temperature data
-
-**📖 [→ Dashboard Guide](guides/dashboard-guide.md)**
-
-<details>
-<summary><strong>🤔 What's involved in this step?</strong></summary>
-
-- **Find your Pi's web address** on your network
-- **Bookmark the dashboard** on phone, tablet, computer
-- **Explore the interface** - current readings, graphs, history
-- **Learn the features** - room management, data export, etc.
-
-**Required:** Any device with web browser on your network
-
-**Time:** 2 minutes to set up, lifetime of use!
-</details>
-
----
-
-### **🔧 Step 5: Manage Your System** *(ongoing)*
-
-**What you'll do:** Add more sensors, manage rooms, maintain the system
-
-**Why needed:** Expand monitoring and keep everything running smoothly
-
-**Outcome:** Complete home monitoring system tailored to your needs
-
-**📖 [→ Management Tools](guides/management-tools.md)**
-
-<details>
-<summary><strong>🤔 What's involved in this step?</strong></summary>
-
-- **Add more sensors** for additional rooms
-- **Manage room configurations** - rename, relocate sensors
-- **System maintenance** - updates, backups, troubleshooting
-- **Advanced features** - data export, API access, etc.
-
-**Required:** System from previous steps
-
-**Time:** Ongoing as needed
-</details>
-
----
+**Expand your system:** **[Explore Management Tools](guides/management-tools.md)**
 
 
 
