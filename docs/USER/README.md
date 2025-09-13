@@ -93,44 +93,49 @@ flowchart LR
 | **[3. Connect First Sensor](#step3-sensor)** | Wire AHT20 sensor + install device software | ✅ One room monitored |
 | **[4. Access Dashboard](#step4-dashboard)** | Open web interface, explore your data | ✅ Full monitoring system |
 
-
+<br>
 
 <a id="step1-raspberry-setup"></a>
->### 🔧 **Step 1: Setup Your Raspberry Pi's** *(15 minutes each)*
->
->Set up all your Raspberry Pi's with WiFi and SSH access so they're ready for TechTemp installation.
->
->**Ready to start?** **[Follow the Raspberry Pi Setup Guide](guides/initial-setup.md)**
+### **Step 1 - Setup Your Raspberry Pi's** *(15 minutes each)*
 
+Set up all your Raspberry Pi's with WiFi and SSH access so they're ready for TechTemp installation.
+
+**Ready to start?** **[Follow the Raspberry Pi Setup Guide](guides/initial-setup.md)**
+
+---
+<br>
 
 <a id="step2-server"></a>
->### 🖥️ **Step 2: Install TechTemp Server** *(10 minutes)*
->
->Install the complete TechTemp server stack (database, API, web dashboard) on your central Pi to collect all sensor data.
->
->**Let's install the server:** **[Follow the Server Installation Guide](guides/server-installation.md)**
+### **Step 2 - Install TechTemp Server** *(10 minutes)*
 
+Install the complete TechTemp server stack (database, API, web dashboard) on your central Pi to collect all sensor data.
+
+**Let's install the server:** **[Follow the Server Installation Guide](guides/server-installation.md)**
+
+---
+<br>
 
 <a id="step3-sensors"></a>
->### 🌡️ **Step 3: Setup Sensors** *(5 minutes each)*
->
->Wire an AHT20 sensor to a Pi and install the device software to start monitoring your first room's temperature.
->
->**Time to add your first sensor:** **[Follow the Sensor Setup Guide](guides/sensor-setup.md)**
+### **Step 3 - Setup Sensors** *(5 minutes each)*
 
+Wire an AHT20 sensor to a Pi and install the device software to start monitoring your first room's temperature.
+
+**Time to add your first sensor:** **[Follow the Sensor Setup Guide](guides/sensor-setup.md)**
+
+---
+<br>
 
 <a id="step4-monitor"></a>
->### 📊 **Step 4: Monitor Your System** *(2 minutes)*
->
->Open the web interface from any device to explore your temperature data, view graphs, and monitor your home.
->
->**See your data in action:** **[Access Your Dashboard Now](guides/dashboard-guide.md)**
+### **Step 4 - Monitor Your System** *(2 minutes)*
 
+Open the web interface from any device to explore your temperature data, view graphs, and monitor your home.
+
+**See your data in action:** **[Access Your Dashboard Now](guides/dashboard-guide.md)**
+
+<br>
 
 
 ## 🔧 **System Management**
-
-### **Step 5: Manage Your System** *(ongoing)*
 
 Add more sensors, manage rooms, and maintain your system to create a complete home monitoring solution.
 
