@@ -11,6 +11,7 @@
 #include "aht20.h"
 #include <stdarg.h>
 #include <unistd.h>
+#include <string.h>
 #ifdef SIMULATION_MODE
     // Simulation stubs
     #define wiringPiSetup() 0
@@ -21,8 +22,15 @@
     #define write(fd, buf, count) count
     #define read(fd, buf, count) count
 #else
-    #include <wiringPi.h>
-    #include <wiringPiI2C.h>
+    #include <sys/ioctl.h>
+    #include <fcntl.h>
+    #include <errno.h>
+    #ifdef __linux__
+        #include <linux/i2c-dev.h>
+    #else
+        // Headers pour environnement de dev non-Linux
+        #define I2C_SLAVE 0x0703
+    #endif
 #endif
 
 // AHT20 Constants (basé sur la référence Adafruit)
@@ -88,11 +96,15 @@ static bool read_i2c_block(uint8_t* buffer, int length) {
  * Get sensor status
  */
 static uint8_t aht20_get_status(void) {
-    int result = wiringPiI2CRead(i2c_handle);
-    if (result == -1) {
+#ifdef SIMULATION_MODE
+    return 0x18;  // Simulated status
+#else
+    uint8_t status;
+    if (read(i2c_handle, &status, 1) != 1) {
         return 0xFF;
     }
-    return (uint8_t)result;
+    return status;
+#endif
 }
 
 /**
@@ -132,17 +144,27 @@ static float calculate_humidity(uint32_t raw_humidity) {
 int aht20_init(int i2c_bus, uint8_t address) {
     LOG_DEBUG_F("Initializing AHT20 on I2C bus %d, address 0x%02X", i2c_bus, address);
     
-    if (wiringPiSetup() == -1) {
-        set_error("Failed to initialize WiringPi");
+#ifdef SIMULATION_MODE
+    i2c_handle = 42;  // Simulated handle
+#else
+    // Ouvrir le périphérique I2C
+    char i2c_device[20];
+    snprintf(i2c_device, sizeof(i2c_device), "/dev/i2c-%d", i2c_bus);
+    
+    i2c_handle = open(i2c_device, O_RDWR);
+    if (i2c_handle < 0) {
+        set_error("Failed to open I2C device %s: %s", i2c_device, strerror(errno));
         return TECHTEMP_ERROR;
     }
     
-    // Initialize I2C
-    i2c_handle = wiringPiI2CSetup(address);
-    if (i2c_handle == -1) {
-        set_error("Failed to initialize I2C");
+    // Configurer l'adresse du périphérique I2C
+    if (ioctl(i2c_handle, I2C_SLAVE, address) < 0) {
+        set_error("Failed to configure I2C slave address: %s", strerror(errno));
+        close(i2c_handle);
+        i2c_handle = -1;
         return TECHTEMP_ERROR;
     }
+#endif
     
     LOG_DEBUG_F("I2C handle: %d", i2c_handle);
     
@@ -150,11 +172,15 @@ int aht20_init(int i2c_bus, uint8_t address) {
     aht20_delay_ms(AHT20_POWERUP_DELAY_MS);
     
     // Perform soft reset
-    int result = wiringPiI2CWrite(i2c_handle, AHT20_CMD_SOFTRESET);
-    if (result == -1) {
-        set_error("Failed to send reset command");
+#ifdef SIMULATION_MODE
+    // Simulation - always succeed
+#else
+    uint8_t reset_cmd = AHT20_CMD_SOFTRESET;
+    if (write(i2c_handle, &reset_cmd, 1) != 1) {
+        set_error("Failed to send reset command: %s", strerror(errno));
         return TECHTEMP_ERROR;
     }
+#endif
     
     // Wait for reset to complete
     aht20_delay_ms(AHT20_RESET_DELAY_MS);
@@ -263,7 +289,9 @@ void aht20_cleanup(void) {
     LOG_DEBUG_F("Cleaning up AHT20 resources");
     
     if (i2c_handle != -1) {
-        // Note: wiringPi doesn't provide a close function for I2C
+#ifndef SIMULATION_MODE
+        close(i2c_handle);
+#endif
         i2c_handle = -1;
     }
     

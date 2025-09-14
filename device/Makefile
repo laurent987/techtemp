@@ -5,7 +5,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -O2
 INCLUDES = -Iinclude
-LIBS = -lwiringPi -lmosquitto -lm
+LIBS = -lmosquitto -lm
 
 # Simulation mode (for testing without hardware dependencies)
 ifeq ($(SIM),1)
@@ -67,7 +67,7 @@ dev: $(TARGET)
 check-deps:
 	@echo "🔍 Checking dependencies..."
 	@which $(CC) > /dev/null || (echo "❌ Compiler $(CC) not found" && exit 1)
-	@ldconfig -p | grep -q wiringPi || (echo "⚠️  wiringPi not found - install with: sudo apt-get install wiringpi" && exit 1)
+	@ldconfig -p | grep -q mosquitto || (echo "⚠️  libmosquitto not found - install with: sudo apt-get install libmosquitto-dev" && exit 1)
 	@ldconfig -p | grep -q mosquitto || (echo "⚠️  libmosquitto not found - install with: sudo apt-get install libmosquitto-dev" && exit 1)
 	@echo "✅ All dependencies found"
 

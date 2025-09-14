@@ -17,7 +17,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration par défaut
-BROKER_HOST="192.168.0.180"
+BROKER_HOST="192.168.0.42"
 BROKER_PORT="1883"
 BACKEND_HOST="192.168.0.42"
 BACKEND_PORT="3000"
@@ -25,9 +25,12 @@ MQTT_USERNAME=""
 MQTT_PASSWORD=""
 I2C_BUS="1"
 I2C_ADDRESS="0x38"
-READ_INTERVAL="30"
+READ_INTERVAL="300"  # 5 minutes au lieu de 30 secondes
 LOG_LEVEL="info"
 GIT_BRANCH="develop"
+HOME_ID=""           # Valeur par défaut vide - sera demandée ou spécifiée via --home
+ROOM_NAME=""         # Valeur par défaut vide - sera demandée ou spécifiée via --room
+SKIP_APT=false       # Par défaut, exécuter les étapes apt
 
 # Fonction d'aide
 usage() {
@@ -41,22 +44,92 @@ usage() {
     echo "  --broker-port PORT    Port du broker MQTT (défaut: $BROKER_PORT)"
     echo "  --backend-host HOST   Adresse du serveur backend (défaut: $BACKEND_HOST)"
     echo "  --backend-port PORT   Port du serveur backend (défaut: $BACKEND_PORT)"
+    echo "  --home ID             Identifiant de la maison (ex: Heverlee, home-001)"
+    echo "  --room NAME           Nom de la pièce (ex: salon, bureau, cuisine)"
     echo "  --username USER       Username MQTT (optionnel)"
     echo "  --password PASS       Password MQTT (optionnel)"
     echo "  --read-interval SEC   Intervalle de lecture en secondes (défaut: $READ_INTERVAL)"
     echo "  --log-level LEVEL     Niveau de log: debug,info,warn,error (défaut: $LOG_LEVEL)"
     echo "  --git-branch BRANCH   Branche git à utiliser (défaut: $GIT_BRANCH)"
     echo "  --non-interactive     Mode non-interactif (utilise les valeurs par défaut)"
+    echo "  --skip-apt            Ignorer les étapes apt (update/upgrade/install)"
     echo ""
     echo "Exemple:"
     echo "  $0 192.168.1.100"
     echo "  $0 192.168.1.101 --broker-host 192.168.1.10 --non-interactive"
+    echo "  $0 192.168.1.102 --home Heverlee --room bureau --non-interactive"
+    echo "  $0 192.168.1.103 --skip-apt --non-interactive  # Redéploiement rapide"
     exit 1
+}
+
+# Fonction pour attendre la fin des processus apt
+wait_for_apt_unlock() {
+    local pi_ip=$1
+    local start_time=$(date +%s)
+    local iteration=0
+    echo -e "${YELLOW}🔍 Vérification des processus apt en cours...${NC}"
+    
+    while true; do
+        iteration=$((iteration + 1))
+        current_time=$(date +%s)
+        elapsed_time=$((current_time - start_time))
+        
+        # Vérifier si des processus apt/dpkg sont en cours
+        apt_processes=$(ssh pi@$pi_ip "sudo ps aux | grep -E 'apt-get|dpkg|unattended-upgrade' | grep -v grep | wc -l" 2>/dev/null || echo "0")
+        
+        if [ "$apt_processes" -eq 0 ]; then
+            echo -e "${GREEN}✅ Aucun processus apt en cours (durée: ${elapsed_time}s)${NC}"
+            break
+        else
+            # Récupérer la progression depuis dpkg.log
+            progress_info=$(ssh pi@$pi_ip "
+                # Compter les packages configurés aujourd'hui
+                configured=\$(sudo grep 'status installed' /var/log/dpkg.log | grep \$(date '+%Y-%m-%d') | wc -l 2>/dev/null || echo '0')
+                # Estimer le package en cours depuis les processus
+                current_package=\$(sudo ps aux | grep -E 'dpkg.*configure|postinst' | grep -v grep | head -1 | awk '{for(i=11;i<=NF;i++) printf \"%s \", \$i; print \"\"}' | sed 's/.*configure //; s/ .*//' | head -c 20)
+                echo \"\$configured|\$current_package\"
+            " 2>/dev/null || echo "0|unknown")
+            
+            configured_count=$(echo "$progress_info" | cut -d'|' -f1)
+            current_package=$(echo "$progress_info" | cut -d'|' -f2)
+            
+            # Estimation grossière du pourcentage (basé sur expérience typique de 50-200 packages)
+            estimated_total=100
+            if [ "$configured_count" -gt 0 ]; then
+                percentage=$((configured_count * 100 / estimated_total))
+                if [ "$percentage" -gt 95 ]; then percentage=95; fi  # Cap à 95% jusqu'à la fin
+            else
+                percentage=$((elapsed_time / 10))  # Progression basée sur le temps si pas d'info
+                if [ "$percentage" -gt 50 ]; then percentage=50; fi
+            fi
+            
+            # Afficher les processus en cours avec progression
+            echo -e "${YELLOW}⏳ Processus apt actifs ($apt_processes) - Progression: ~${percentage}% (${elapsed_time}s)${NC}"
+            if [ -n "$current_package" ] && [ "$current_package" != "unknown" ]; then
+                echo -e "${BLUE}   🔧 Configuration: $current_package${NC}"
+            fi
+            echo -e "${BLUE}   📈 Packages configurés: $configured_count${NC}"
+            
+            # Afficher les processus détaillés (limité pour éviter le spam)
+            if [ $((iteration % 3)) -eq 1 ]; then  # Afficher les détails seulement 1 fois sur 3
+                ssh pi@$pi_ip "sudo ps aux | grep -E 'apt-get|dpkg|unattended-upgrade' | grep -v grep | awk '{print \"   📦 \" \$11 \" \" \$12 \" \" \$13}' | head -3" 2>/dev/null || true
+            fi
+            
+            # Attendre 10 secondes avant de revérifier
+            echo -e "${BLUE}💤 Attente de 10 secondes...${NC}"
+            sleep 10
+        fi
+    done
 }
 
 # Validation des arguments
 if [ $# -lt 1 ]; then
     echo -e "${RED}❌ Erreur: Adresse IP du Pi requise${NC}"
+    usage
+fi
+
+# Vérification d'aide avant tout
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     usage
 fi
 
@@ -85,6 +158,14 @@ while [[ $# -gt 0 ]]; do
             BACKEND_PORT="$2"
             shift 2
             ;;
+        --home)
+            HOME_ID="$2"
+            shift 2
+            ;;
+        --room)
+            ROOM_NAME="$2"
+            shift 2
+            ;;
         --username)
             MQTT_USERNAME="$2"
             shift 2
@@ -108,6 +189,13 @@ while [[ $# -gt 0 ]]; do
         --non-interactive)
             INTERACTIVE=false
             shift 1
+            ;;
+        --skip-apt)
+            SKIP_APT=true
+            shift 1
+            ;;
+        --help|-h)
+            usage
             ;;
         *)
             echo -e "${RED}❌ Option inconnue: $1${NC}"
@@ -160,23 +248,31 @@ if [ "$INTERACTIVE" = true ]; then
     echo -e "${BLUE}📝 Configuration du device${NC}"
     echo -e "${BLUE}========================${NC}"
     
-    # Home ID
-    echo -e "🏠 ${BLUE}Identifiant de votre maison${NC}"
-    echo -n -e "   Entrez un nom unique (ex: home-001, maison-dupont): "
-    read HOME_ID
-    while [ -z "$HOME_ID" ]; do
-        echo -n -e "   ${YELLOW}⚠️ Ce champ est requis:${NC} "
+    # Home ID (seulement si pas déjà défini)
+    if [ -z "$HOME_ID" ]; then
+        echo -e "🏠 ${BLUE}Identifiant de votre maison${NC}"
+        echo -n -e "   Entrez un nom unique (ex: home-001, maison-dupont): "
         read HOME_ID
-    done
+        while [ -z "$HOME_ID" ]; do
+            echo -n -e "   ${YELLOW}⚠️ Ce champ est requis:${NC} "
+            read HOME_ID
+        done
+    else
+        echo -e "🏠 ${BLUE}Identifiant de votre maison:${NC} $HOME_ID ${GREEN}(spécifié via --home)${NC}"
+    fi
     
-    # Room Name
-    echo -e "🏠 ${BLUE}Nom de la pièce${NC}"
-    echo -n -e "   Où placer ce capteur ? (ex: Salon, Cuisine, Bureau, Chambre): "
-    read ROOM_NAME
-    while [ -z "$ROOM_NAME" ]; do
-        echo -n -e "   ${YELLOW}⚠️ Ce champ est requis:${NC} "
+    # Room Name (seulement si pas déjà défini)
+    if [ -z "$ROOM_NAME" ]; then
+        echo -e "🏠 ${BLUE}Nom de la pièce${NC}"
+        echo -n -e "   Où placer ce capteur ? (ex: Salon, Cuisine, Bureau, Chambre): "
         read ROOM_NAME
-    done
+        while [ -z "$ROOM_NAME" ]; do
+            echo -n -e "   ${YELLOW}⚠️ Ce champ est requis:${NC} "
+            read ROOM_NAME
+        done
+    else
+        echo -e "🏠 ${BLUE}Nom de la pièce:${NC} $ROOM_NAME ${GREEN}(spécifié via --room)${NC}"
+    fi
     
     # Device Label
     echo -e "🏷️ ${BLUE}Nom descriptif du capteur${NC}"
@@ -196,11 +292,28 @@ if [ "$INTERACTIVE" = true ]; then
     if [ ! -z "$BROKER_INPUT" ]; then
         BROKER_HOST="$BROKER_INPUT"
     fi
+    
+    # Backend host (optionnel)
+    echo -n -e "🔗 Adresse du serveur backend API [${BACKEND_HOST}]: "
+    read BACKEND_INPUT
+    if [ ! -z "$BACKEND_INPUT" ]; then
+        BACKEND_HOST="$BACKEND_INPUT"
+    fi
 else
-    # Mode non-interactif : valeurs par défaut
-    HOME_ID="home-001"
-    ROOM_NAME="Salon"
+    # Mode non-interactif : valeurs par défaut si pas spécifiées
+    if [ -z "$HOME_ID" ]; then
+        HOME_ID="home-001"
+    fi
+    if [ -z "$ROOM_NAME" ]; then
+        ROOM_NAME="Salon"
+    fi
     DEVICE_LABEL="Capteur $ROOM_NAME"
+    
+    echo -e "${BLUE}📝 Configuration non-interactive${NC}"
+    echo -e "${BLUE}==============================${NC}"
+    echo -e "🏠 Home ID: $HOME_ID"
+    echo -e "🏠 Room: $ROOM_NAME"
+    echo -e "🏷️ Device Label: $DEVICE_LABEL"
 fi
 
 echo ""
@@ -211,8 +324,12 @@ echo -e "Device UID:     ${YELLOW}$DEVICE_UID${NC} ${GREEN}(basé sur MAC)${NC}"
 echo -e "Home ID:        ${YELLOW}$HOME_ID${NC}"
 echo -e "Room:           ${YELLOW}$ROOM_NAME${NC} ${GREEN}(auto-generated ID)${NC}"
 echo -e "Device Label:   ${YELLOW}$DEVICE_LABEL${NC}"
-echo -e "Broker:         ${YELLOW}$BROKER_HOST:$BROKER_PORT${NC}"
+echo -e "Broker MQTT:    ${YELLOW}$BROKER_HOST:$BROKER_PORT${NC}"
+echo -e "Backend API:    ${YELLOW}$BACKEND_HOST:$BACKEND_PORT${NC}"
 echo -e "Read Interval:  ${YELLOW}${READ_INTERVAL}s${NC}"
+if [ "$SKIP_APT" = true ]; then
+    echo -e "Mode APT:       ${YELLOW}Ignoré (--skip-apt)${NC}"
+fi
 echo ""
 
 # Confirmation
@@ -224,14 +341,40 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 # 1. Mise à jour du système
-echo -e "${BLUE}📦 Mise à jour du système...${NC}"
-ssh pi@$PI_IP "sudo apt-get update -qq && sudo apt-get upgrade -y -qq"
-echo -e "${GREEN}✅ Système mis à jour${NC}"
+if [ "$SKIP_APT" = false ]; then
+    # Attendre que les processus apt se terminent
+    wait_for_apt_unlock $PI_IP
+
+    echo -e "${BLUE}📦 Mise à jour du système...${NC}"
+    ssh pi@$PI_IP "sudo apt-get update && sudo apt-get upgrade -y"
+    echo -e "${GREEN}✅ Système mis à jour${NC}"
+else
+    echo -e "${YELLOW}⏭️ Mise à jour système ignorée (--skip-apt)${NC}"
+fi
 
 # 2. Installation des dépendances
-echo -e "${BLUE}🔧 Installation des dépendances...${NC}"
-ssh pi@$PI_IP "sudo apt-get install -y -qq git build-essential libmosquitto-dev i2c-tools"
-echo -e "${GREEN}✅ Dépendances installées${NC}"
+if [ "$SKIP_APT" = false ]; then
+    # Attendre que les processus apt se terminent (au cas où)
+    wait_for_apt_unlock $PI_IP
+
+    echo -e "${BLUE}🔧 Installation des dépendances...${NC}"
+    # Installation avec gestion d'erreur améliorée
+    if ! ssh pi@$PI_IP "sudo apt-get install -y git build-essential libmosquitto-dev i2c-tools libi2c-dev"; then
+        echo -e "${RED}❌ Erreur lors de l'installation des dépendances${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✅ Dépendances installées${NC}"
+else
+    echo -e "${YELLOW}⏭️ Installation des dépendances ignorée (--skip-apt)${NC}"
+    # Vérifier que les dépendances essentielles sont présentes
+    echo -e "${BLUE}🔍 Vérification des dépendances existantes...${NC}"
+    if ! ssh pi@$PI_IP "which git > /dev/null && which gcc > /dev/null"; then
+        echo -e "${RED}❌ Dépendances manquantes (git ou build-essential)${NC}"
+        echo -e "${YELLOW}💡 Relancez sans --skip-apt pour installer les dépendances${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✅ Dépendances de base présentes${NC}"
+fi
 
 # 3. Activation I2C
 echo -e "${BLUE}⚙️ Configuration I2C...${NC}"
@@ -319,8 +462,10 @@ echo -e "${GREEN}✅ Configuration générée${NC}"
 
 # 6. Copie des sources et compilation
 echo -e "${BLUE}🔨 Compilation du projet...${NC}"
-rsync -av --delete device/src/ pi@$PI_IP:techtemp/device/src/
-rsync -av --delete device/include/ pi@$PI_IP:techtemp/device/include/
+rsync -av --delete ../device/src/ pi@$PI_IP:techtemp/device/src/
+rsync -av --delete ../device/include/ pi@$PI_IP:techtemp/device/include/
+# Copier également le Makefile mis à jour (sans wiringPi)
+rsync -av ../device/Makefile pi@$PI_IP:techtemp/device/
 
 ssh pi@$PI_IP "cd techtemp/device && make clean && make"
 echo -e "${GREEN}✅ Compilation terminée${NC}"
