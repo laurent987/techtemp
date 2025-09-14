@@ -81,12 +81,16 @@ function TechTempDashboard() {
       React.createElement('section', { className: 'section' },
         React.createElement('h2', null, `📊 Dernières Mesures (${readings.length})`),
         React.createElement('div', { className: 'readings-grid' },
-          readings.map(reading =>
-            React.createElement('div', {
+          readings.map(reading => {
+            // Trouver le device correspondant pour récupérer le label
+            const device = devices.find(d => d.uid === reading.device_id);
+            const displayName = device ? device.label : reading.device_id;
+
+            return React.createElement('div', {
               key: reading.device_id,
               className: 'reading-card'
             },
-              React.createElement('h3', null, reading.device_id),
+              React.createElement('h3', null, displayName),
               React.createElement('div', { className: 'metrics' },
                 React.createElement('div', { className: 'metric' },
                   React.createElement('span', { className: 'label' }, '🌡️ Température'),
@@ -100,8 +104,8 @@ function TechTempDashboard() {
               React.createElement('p', { className: 'timestamp' },
                 `⏰ ${new Date(reading.ts).toLocaleString()}`
               )
-            )
-          )
+            );
+          })
         )
       )
     )
