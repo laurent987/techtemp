@@ -191,17 +191,17 @@ int aht20_init(int i2c_bus, uint8_t address) {
         return TECHTEMP_TIMEOUT;
     }
     
-    // Send calibration command
+    // Send calibration command (optional - some AHT20s don't need it)
     uint8_t cal_cmd[3] = {AHT20_CMD_CALIBRATE, 0x08, 0x00};
     if (!write_i2c_block(cal_cmd, 3)) {
-        set_error("Failed to send calibration command");
-        return TECHTEMP_ERROR;
-    }
-    
-    // Wait for calibration to complete
-    if (!aht20_wait_not_busy(AHT20_BUSY_TIMEOUT)) {
-        set_error("Timeout waiting for calibration completion");
-        return TECHTEMP_TIMEOUT;
+        LOG_DEBUG_F("Calibration command failed (some AHT20s don't need it): %s", strerror(errno));
+        // Continue anyway - many AHT20s work without explicit calibration
+    } else {
+        // Wait for calibration to complete
+        if (!aht20_wait_not_busy(AHT20_BUSY_TIMEOUT)) {
+            LOG_DEBUG_F("Calibration timeout (continuing anyway)");
+            // Continue anyway - the sensor might still work
+        }
     }
     
     // Check calibration status (optional - some new AHT20s don't set this bit)
