@@ -1,10 +1,28 @@
 #!/bin/bash
 # Script de déploiement TechTemp robuste pour Raspberry Pi
-# Usage: ./scripts/deploy-robust-pi.sh [PI_IP]
+# Usage:
+#   ./scripts/admin/deploy-robust-pi.sh [PI_IP]                # déploie l'exemple web (web-example/)
+#   ./scripts/admin/deploy-robust-pi.sh [PI_IP] --with-dashboard  # build le dashboard React et le déploie
 
 set -euo pipefail  # Arrêt immédiat en cas d'erreur
 
-PI_IP=${1:-"192.168.0.42"}
+# Parsing des arguments (PI_IP positional, --with-dashboard flag)
+PI_IP="192.168.0.42"
+WITH_DASHBOARD=false
+for arg in "$@"; do
+    case "$arg" in
+        --with-dashboard) WITH_DASHBOARD=true ;;
+        --help|-h)
+            echo "Usage: $0 [PI_IP] [--with-dashboard]"
+            echo "  PI_IP              IP du Pi central (défaut: 192.168.0.42)"
+            echo "  --with-dashboard   Build le dashboard React (dashboard/) et le sert au lieu de l'exemple"
+            exit 0
+            ;;
+        --*) echo "Option inconnue: $arg" >&2; exit 1 ;;
+        *)   PI_IP="$arg" ;;
+    esac
+done
+
 PROJECT_DIR="/home/pi/techtemp"
 MIN_SPACE_MB=300
 LOG_FILE="/tmp/techtemp-deploy-$(date +%Y%m%d_%H%M%S).log"
@@ -165,26 +183,82 @@ install_docker() {
 handle_port_conflicts() {
     info "Vérification des conflits de ports..."
     
-    # Port 1883 (MQTT)
+    # Port 1883 (MQTT) — best-effort, on bypass ssh_exec pour les mêmes raisons que pour le 3000.
     if ssh pi@$PI_IP "netstat -tulpn 2>/dev/null | grep :1883" >/dev/null 2>&1; then
-        warning "Port 1883 (MQTT) déjà utilisé"
-        ssh_exec "
-            sudo systemctl stop mosquitto 2>/dev/null || true
-            sudo systemctl disable mosquitto 2>/dev/null || true
-            sudo pkill mosquitto 2>/dev/null || true
-        " "Arrêt services MQTT existants"
+        warning "Port 1883 (MQTT) occupé — tentative d'arrêt des services existants"
+        ssh pi@$PI_IP "
+            sudo systemctl stop mosquitto 2>/dev/null
+            sudo systemctl disable mosquitto 2>/dev/null
+            sudo pkill mosquitto 2>/dev/null
+        " >>"$LOG_FILE" 2>&1 || true
+        info "Nettoyage best-effort du port 1883 effectué"
     fi
     
-    # Port 3000 (API)
+    # Port 3000 (API). Best-effort uniquement : 'docker compose down' juste après libérera
+    # de toute façon le port s'il est occupé par un container techtemp. On bypass ssh_exec ici
+    # pour ne pas faire planter le déploiement à cause d'un pipefail sur du nettoyage cosmétique.
     if ssh pi@$PI_IP "netstat -tulpn 2>/dev/null | grep :3000" >/dev/null 2>&1; then
-        warning "Port 3000 (API) déjà utilisé"
-        ssh_exec "
-            sudo pkill -f 'node.*3000' 2>/dev/null || true
-            docker stop \$(docker ps -q --filter 'publish=3000') 2>/dev/null || true
-        " "Libération port 3000"
+        warning "Port 3000 (API) occupé — sera libéré par 'docker compose down' à l'étape suivante"
+        ssh pi@$PI_IP "
+            sudo pkill -f 'node.*3000' 2>/dev/null
+            CONTAINERS=\$(docker ps -q --filter 'publish=3000' 2>/dev/null)
+            if [ -n \"\$CONTAINERS\" ]; then
+                docker stop \$CONTAINERS >/dev/null 2>&1
+            fi
+        " >>"$LOG_FILE" 2>&1 || true
+        info "Nettoyage best-effort du port 3000 effectué"
     fi
     
     success "Ports libérés"
+}
+
+# Prépare le dossier web/ local (servi par le backend) avant le rsync.
+# Sans flag : copie web-example/ → web/ (exemple buildless minimal).
+# Avec --with-dashboard : build le dashboard React puis copie son build/ → web/.
+prepare_web_dir() {
+    local repo_root
+    repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+
+    info "Préparation du dossier web/ à servir..."
+
+    # Repartir d'un web/ propre pour éviter d'embarquer des résidus du déploiement précédent.
+    rm -rf "$repo_root/web"
+    mkdir -p "$repo_root/web"
+
+    if [ "$WITH_DASHBOARD" = "true" ]; then
+        info "Build du dashboard React (peut prendre 1-2 min)..."
+
+        if ! command -v npm >/dev/null 2>&1; then
+            error "npm requis pour --with-dashboard mais introuvable sur le PATH"
+        fi
+        if [ ! -d "$repo_root/dashboard" ]; then
+            error "Dossier dashboard/ introuvable, impossible de builder"
+        fi
+
+        (
+            cd "$repo_root/dashboard"
+            if [ ! -d node_modules ]; then
+                info "Installation des dépendances dashboard..."
+                npm install --no-audit --no-fund
+            fi
+            # NB: on n'utilise pas CI=true pour ne pas promouvoir les warnings ESLint en errors —
+            # ce build vise un déploiement local, pas une vraie CI.
+            npm run build
+        ) || error "Échec du build du dashboard (voir output ci-dessus)"
+
+        if [ ! -d "$repo_root/dashboard/build" ]; then
+            error "Build dashboard absent (dashboard/build/ manquant)"
+        fi
+
+        cp -R "$repo_root/dashboard/build/." "$repo_root/web/"
+        success "Dashboard buildé et copié dans web/ ($(du -sh "$repo_root/web" | awk '{print $1}'))"
+    else
+        if [ ! -d "$repo_root/web-example" ]; then
+            error "Dossier web-example/ introuvable"
+        fi
+        cp -R "$repo_root/web-example/." "$repo_root/web/"
+        success "Exemple buildless copié dans web/"
+    fi
 }
 
 # Fonction principale de déploiement
@@ -289,8 +363,13 @@ test_api() {
 # === EXECUTION PRINCIPALE ===
 
 echo "🚀 Déploiement TechTemp robuste sur Pi: $PI_IP"
+if [ "$WITH_DASHBOARD" = "true" ]; then
+    echo "   Mode UI: dashboard React (build local)"
+else
+    echo "   Mode UI: exemple buildless (web-example/)"
+fi
 echo "==============================================="
-log "Début du déploiement sur $PI_IP"
+log "Début du déploiement sur $PI_IP (with_dashboard=$WITH_DASHBOARD)"
 
 # Vérifications préliminaires
 info "🔍 Vérifications préliminaires..."
@@ -309,6 +388,7 @@ success "SSH accessible"
 check_disk_space
 install_docker
 handle_port_conflicts
+prepare_web_dir
 deploy_techtemp
 
 # Tests finaux

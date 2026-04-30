@@ -19,6 +19,9 @@ data/
 dist/
 build/
 
+# Deploy artifact: populated by deploy-robust-pi.sh from web-example/ or dashboard/build/
+/web/
+
 # Coverage reports
 coverage/
 
@@ -38,6 +41,9 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local screenshots / scratch
+/image/
 
 # Temporary files
 tmp/

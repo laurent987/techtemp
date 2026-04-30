@@ -2,26 +2,68 @@
 
 A complete home monitoring solution: deploy Raspberry Pi sensors throughout your home, collect temperature/humidity data via MQTT, and access everything through a REST API.
 
-## 🏠 How TechTemp Works
+## 🏠 **How TechTemp Works**
 
 **1. Install sensors in your rooms**
 - Place Raspberry Pi + AHT20 sensors in different rooms
-- Each Pi automatically sends data every 30 seconds via MQTT
+- Each Pi automatically sends data every few minutes via MQTT
+- Precise temperature & humidity tracking (±0.3°C accuracy)
 
 **2. Run the central server** 
-- Collects all sensor data and stores in database
-- Provides REST API for accessing readings
-- Organizes devices by rooms automatically
+- Collects all sensor data via MQTT
+- Stores readings in SQLite database for historical tracking
+- Provides REST API for accessing readings and device management
 
 **3. Build your applications**
-- Use the API for dashboards, alerts, automation
-- Integrate with Home Assistant, custom apps, monitoring systems
+- Use the API for dashboards, alerts, automation systems
+- Integrate with Home Assistant, custom apps, monitoring solutions
+- Example: Included simple web dashboard for real-time monitoring
 
-## 📦 What's in This Repository
 
-- **🖥️ Backend Server** (`/backend/`) - Node.js service that collects MQTT data and provides REST API
-- **📡 Device Firmware** (`/device/`) - C code for Raspberry Pi sensors with AHT20 integration
-- **🌐 Web Dashboard** (`/web/`) - React + Chakra UI dashboard (MVP)
+## 🏗️ **System Overview**
+
+Here's how your TechTemp network will look once set up:
+
+```mermaid
+%%{
+  init: {
+    "theme": "base",
+    "themeVariables": {
+      "fontFamily": "Inter, Segoe UI, Roboto, Arial, sans-serif",
+      "primaryColor": "#BFDBFE",
+      "primaryBorderColor": "#1F2937",
+      "primaryTextColor": "#0F172A",
+      "lineColor": "#64748B",
+      "tertiaryColor": "#F1F5F9"
+    }
+  }
+}%%
+flowchart LR
+  linkStyle default stroke:#64748B,stroke-width:2px,opacity:0.95
+
+  classDef sensor fill:#FDE68A,stroke:#B45309,stroke-width:1.5px,color:#0F172A
+  classDef hub    fill:#BBF7D0,stroke:#15803D,stroke-width:1.5px,color:#0F172A
+  classDef viewer fill:#BFDBFE,stroke:#1D4ED8,stroke-width:1.5px,color:#0F172A
+
+  A["Sensor Salon<br/>🍓 Pi + 🌡️ AHT20<br/>📊 22.5°C · 45%"]:::sensor
+  B["Sensor Cuisine<br/>🍓 Pi + 🌡️ AHT20<br/>📊 24.1°C · 52%"]:::sensor
+  C["Sensor Chambre<br/>🍓 Pi + 🌡️ AHT20<br/>📊 20.8°C · 38%"]:::sensor
+
+  D["🖥️ Central serveur<br/>📡 Collecte des données<br/>💾 SQLite<br/>API"]:::hub
+
+  E["💻 Data analyse"]:::viewer
+  F["📱 Dashboard"]:::viewer
+  G["📟 Monitoring"]:::viewer
+
+  A --> D
+  B --> D
+  C --> D
+
+  D --> E
+  D --> F
+  D --> G
+
+```
 
 ---
 
@@ -81,39 +123,7 @@ TechTemp serves different audiences with tailored documentation:
 </tr>
 </table>
 
----
 
-
-## 🏠 **Architecture Overview**
-
-```
-🏠 Living Room          🏠 Kitchen            🏠 Bedroom
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ Raspberry Pi    │    │ Raspberry Pi    │    │ Raspberry Pi    │
-│ + AHT20 Sensor  │    │ + AHT20 Sensor  │    │ + AHT20 Sensor  │
-│ (22.5°C, 45%)   │    │ (24.1°C, 52%)   │    │ (20.8°C, 38%)   │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
-                                 │ MQTT Messages
-                                 ▼
-                    ┌─────────────────────────┐
-                    │    Central Server       │
-                    │  ⚡ This Repository     │
-                    ├─────────────────────────┤
-                    │ • MQTT Data Collection  │
-                    │ • SQLite Database       │
-                    │ • REST API Server       │
-                    │ • Web Dashboard         │
-                    │ • Room Management       │
-                    └─────────┬───────────────┘
-                              │ REST API
-                              ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  Web Dashboard  │    │   Mobile App     │    │ Home Assistant  │
-│  (Built-in)     │    │   (Your App)     │    │   Integration   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
 
 ## ⚡ **Quick Demo** 
 
@@ -166,39 +176,27 @@ open http://localhost:3000
 
 ---
 
+## 📦 **What's in This Repository**
 
-## 🏗️ **Repository Structure**
+TechTemp is organized into clear, purpose-built components:
 
-```
-techtemp/
-├── 📖 README.md                     # 🚪 YOU ARE HERE - Start here for any audience
-├── 
-├── 🎯 docs/                         # 📚 Documentation by audience
-│   ├── 👤 USER/                     # End-user guides (home monitoring)
-│   ├── 🔧 DEVELOPER/                # API integration & development  
-│   ├── 🏗️ CONTRIBUTOR/              # Contributing to TechTemp
-│   └── 📁 INTERNAL/                 # Internal docs & archives
-│
-├── 💻 backend/                      # Node.js backend service
-│   ├── http/                        # REST API server
-│   ├── mqtt/                        # MQTT data ingestion  
-│   ├── db/                          # Database layer
-│   └── repositories/                # Business logic
-│
-├── 🌐 web/                          # React web dashboard
-│   ├── index.html                   # Main dashboard page
-│   ├── app-simple.js                # Dashboard React app
-│   └── styles.css                   # Responsive styles
-│
-├── 📡 device/                       # Raspberry Pi sensor code
-│   ├── src/                         # C source code
-│   ├── include/                     # Headers
-│   └── config/                      # Configuration files
-│
-├── 🚀 scripts/                      # Deployment & utility scripts
-├── 🐳 docker-compose.yml            # Container orchestration
-└── 🧪 test/                         # Comprehensive test suite
-```
+**� Core System:**
+- **� Backend Server** (`/backend/`) - Node.js service with MQTT ingestion, SQLite database, and REST API
+- **📡 Device Firmware** (`/device/`) - C code for Raspberry Pi sensors with AHT20 integration and MQTT publishing
+- **🌐 Web example** (`/web-example/`) - Buildless HTML+JS reference dashboard, served by the backend out of the box
+- **📊 Reference dashboard** (`/dashboard/`) - Optional React + Chakra UI app with historical charts; deploy with `./scripts/admin/deploy-robust-pi.sh --with-dashboard`
+
+**📚 Documentation:**
+- **👤 USER** - Complete setup guides for home monitoring (30-min installation)
+- **🔧 DEVELOPER** - API reference, integration examples, and development guides  
+- **🏗️ CONTRIBUTOR** - Architecture, coding standards, and contribution workflow
+
+**🚀 Deployment & Tools:**
+- **� Scripts** - Automated setup, provisioning, and monitoring tools
+- **🐳 Docker** - Complete containerized deployment with docker-compose
+- **🧪 Tests** - Comprehensive test suite for all components
+
+**Result:** Everything you need to deploy, develop with, or contribute to TechTemp.
 
 ## 🤝 **Contributing Quick Links**
 

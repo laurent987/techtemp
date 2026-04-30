@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { healthRouter } from './routes/health.js';
 import { readingsRouter } from './routes/readings.js';
 import { devicesRouter } from './routes/devices.js';
+import { roomsRouter } from './routes/rooms.js';
 
 /**
  * Create and start an HTTP server.
@@ -23,14 +24,32 @@ export function createHttpServer(config = {}) {
   // Middleware
   app.use(express.json());
 
-  // Static web UI (serve /web as root)
+  // Permissive CORS — lets a separately hosted dashboard talk to the API.
+  // Tighten the origin via config if exposing the API beyond a trusted LAN.
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
+
+  // Static web UI: serve `web/` first (deploy artifact, may hold a built dashboard),
+  // then fall back to the buildless reference example in `web-example/`.
+  // Express's static middleware silently skips missing directories, so the
+  // fallback works even when `web/` is empty or absent.
   try {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const webDir = path.resolve(__dirname, '../../web');
+    const exampleDir = path.resolve(__dirname, '../../web-example');
     app.use(express.static(webDir));
+    app.use(express.static(exampleDir));
   } catch (err) {
-    // Non-fatal: if web dir not present, API still works
+    // Non-fatal: if no web dirs are present, the API still works
     // eslint-disable-next-line no-console
     console.warn('Static web directory mounting skipped:', err?.message || err);
   }
@@ -39,6 +58,7 @@ export function createHttpServer(config = {}) {
   app.use('/health', healthRouter(config.deps || {}));
   app.use('/api/v1/readings', readingsRouter(config.deps || {}));
   app.use('/api/v1/devices', devicesRouter(config.deps || {}));
+  app.use('/api/v1/rooms', roomsRouter(config.deps || {}));
 
   return {
     /**

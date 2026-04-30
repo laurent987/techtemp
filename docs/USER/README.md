@@ -1,27 +1,8 @@
-# 🏠 TechTemp - Complete Setup Guide
+# 🏠 TechTemp - Setup Guide
 
-> **Simple home monitoring** - Place sensors in your rooms, access data from any device. **Complete setup in 30 minutes.**
+> **Ready to build your home monitoring system?** Follow this step-by-step guide to get TechTemp running in 30 minutes.
 
-##  **What You're Building**
-
-TechTemp transforms simple Raspberry Pis into a **professional home monitoring system** using affordable AHT20 sensors. In just 30 minutes, you'll have:
-
-**🏠 Room-by-room monitoring:**
-- **Each Pi becomes a smart sensor** - precise temperature & humidity tracking
-- **Automatic data collection** - readings every few minutes, 24/7
-- **No monthly fees** - your data stays on your network
-
-**📊 Central intelligence:**
-- **One server Pi** - collects, stores, and serves all your data  
-- **Web dashboard** - beautiful graphs and real-time readings
-- **Historical data** - track patterns, spot trends, export data
-
-**📱 Access anywhere:**
-- **Any device** - phone, tablet, laptop works instantly
-- **No apps to install** - just open your web browser
-- **Your network** - fast, private, always available
-
-**Result:** Professional-grade climate monitoring that costs ~$50 per room and takes 30 minutes to set up.
+You'll transform simple Raspberry Pis into a professional monitoring network that tracks temperature and humidity in every room. Let's get started!
 
 ## 🛒 **Shopping List** *(~$80 to start)*
 
@@ -37,54 +18,7 @@ TechTemp transforms simple Raspberry Pis into a **professional home monitoring s
 
 **💡 Smart start:** Begin with server + 1 room (~$80), then add rooms as needed
 
-## 🏗️ **System Overview**
-
-Here's how your TechTemp network will look once set up:
-
-```mermaid
-%%{
-  init: {
-    "theme": "base",
-    "themeVariables": {
-      "fontFamily": "Inter, Segoe UI, Roboto, Arial, sans-serif",
-      "primaryColor": "#BFDBFE",
-      "primaryBorderColor": "#1F2937",
-      "primaryTextColor": "#0F172A",
-      "lineColor": "#64748B",
-      "tertiaryColor": "#F1F5F9"
-    }
-  }
-}%%
-flowchart LR
-  linkStyle default stroke:#64748B,stroke-width:2px,opacity:0.95
-
-  classDef sensor fill:#FDE68A,stroke:#B45309,stroke-width:1.5px,color:#0F172A
-  classDef hub    fill:#BBF7D0,stroke:#15803D,stroke-width:1.5px,color:#0F172A
-  classDef viewer fill:#BFDBFE,stroke:#1D4ED8,stroke-width:1.5px,color:#0F172A
-
-  A["Sensor Salon<br/>🍓 Pi + 🌡️ AHT20<br/>📊 22.5°C · 45%"]:::sensor
-  B["Sensor Cuisine<br/>🍓 Pi + 🌡️ AHT20<br/>📊 24.1°C · 52%"]:::sensor
-  C["Sensor Chambre<br/>🍓 Pi + 🌡️ AHT20<br/>📊 20.8°C · 38%"]:::sensor
-
-  D["🖥️ Central serveur<br/>📡 Collecte des données<br/>💾 SQLite<br/>API"]:::hub
-
-  E["💻 Data analyse"]:::viewer
-  F["📱 Dashboard"]:::viewer
-  G["📟 Monitoring"]:::viewer
-
-  A --> D
-  B --> D
-  C --> D
-
-  D --> E
-  D --> F
-  D --> G
-
-```
-
-
-
-## ⚡ **4-Step Setup** *(30 minutes total)*
+## ⚡ **Build Your System** *(30 minutes total)*
 
 | Step | What You'll Do | Result |
 |------|----------------|---------|

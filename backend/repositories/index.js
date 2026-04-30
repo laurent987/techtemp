@@ -220,6 +220,9 @@ export function createRepository(db) {
         }
 
         return await dataAccess.findRoomByUid(roomUid);
+      },
+      findAll: async () => {
+        return await dataAccess.findAllRooms();
       }
     },
     readings: {
@@ -279,18 +282,35 @@ export function createRepository(db) {
         const readings = await dataAccess.findLatestReadingPerDevice();
         return readings;
       },
-      findByDeviceUid: async (uid, limit = 10) => {
+      findByDeviceUid: async (uid, options = {}) => {
         if (!uid) {
           throw new Error('Device UID is required');
         }
 
-        // Validate limit
+        // Backward compatibility: accept a plain number as limit
+        const opts = typeof options === 'number' ? { limit: options } : options;
+        const { limit = 10, from = null, to = null } = opts;
+
         const limitInt = parseInt(limit, 10);
         if (isNaN(limitInt) || limitInt < 1) {
           throw new Error('Limit must be a positive integer');
         }
 
-        const readings = await dataAccess.findReadingsByDeviceUid(uid, limitInt);
+        if (from && isNaN(Date.parse(from))) {
+          throw new Error('Invalid `from` timestamp (expected ISO 8601)');
+        }
+        if (to && isNaN(Date.parse(to))) {
+          throw new Error('Invalid `to` timestamp (expected ISO 8601)');
+        }
+        if (from && to && new Date(from) >= new Date(to)) {
+          throw new Error('`from` must be before `to`');
+        }
+
+        const readings = await dataAccess.findReadingsByDeviceUid(uid, {
+          limit: limitInt,
+          from,
+          to
+        });
         return readings;
       },
       findByRoomAndTimeRange: async (roomId, fromTs, toTs) => {

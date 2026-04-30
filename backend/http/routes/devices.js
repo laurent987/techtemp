@@ -346,7 +346,7 @@ export function devicesRouter(deps = {}) {
       }
 
       const { deviceUid } = req.params;
-      const { limit = 10 } = req.query;
+      const { limit = 10, from, to } = req.query;
 
       // Validate device exists
       const device = await deps.repo.devices.findByUid(deviceUid);
@@ -356,16 +356,36 @@ export function devicesRouter(deps = {}) {
         });
       }
 
-      // Validate limit parameter
+      // Validate limit parameter (max raised to 10000 to support charting larger windows)
       const limitInt = parseInt(limit, 10);
-      if (isNaN(limitInt) || limitInt < 1 || limitInt > 1000) {
+      if (isNaN(limitInt) || limitInt < 1 || limitInt > 10000) {
         return res.status(400).json({
-          error: 'Limit must be between 1 and 1000'
+          error: 'Limit must be between 1 and 10000'
         });
       }
 
-      // Get readings for this device
-      const readings = await deps.repo.readings.findByDeviceUid(deviceUid, limitInt);
+      // Validate ISO 8601 timestamps if provided
+      if (from !== undefined && isNaN(Date.parse(from))) {
+        return res.status(400).json({
+          error: '`from` must be a valid ISO 8601 timestamp'
+        });
+      }
+      if (to !== undefined && isNaN(Date.parse(to))) {
+        return res.status(400).json({
+          error: '`to` must be a valid ISO 8601 timestamp'
+        });
+      }
+      if (from && to && new Date(from) >= new Date(to)) {
+        return res.status(400).json({
+          error: '`from` must be before `to`'
+        });
+      }
+
+      const readings = await deps.repo.readings.findByDeviceUid(deviceUid, {
+        limit: limitInt,
+        from: from || null,
+        to: to || null
+      });
 
       // Transform to API format (without device info since it's in the URL)
       const data = readings.map(reading => ({

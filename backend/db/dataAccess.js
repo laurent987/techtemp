@@ -32,10 +32,11 @@ export function createDataAccess(db) {
     resolveRoomId: createResolveRoomId(db),
     updateDeviceLastSeen: createUpdateDeviceLastSeen(db),
 
-    // Room operations  
+    // Room operations
     insertRoom: createInsertRoom(db),
     findRoomById: createFindRoomById(db),
     findRoomByUid: createFindRoomByUid(db),
+    findAllRooms: createFindAllRooms(db),
 
     // Reading operations
     insertReading: createInsertReading(db),
@@ -178,6 +179,18 @@ function createFindRoomByUid(db) {
   };
 }
 
+function createFindAllRooms(db) {
+  const stmt = db.prepare(`
+    SELECT id, uid, name, floor, side
+    FROM rooms
+    ORDER BY name COLLATE NOCASE
+  `);
+
+  return function findAllRooms() {
+    return stmt.all();
+  };
+}
+
 // ====== READING OPERATIONS ======
 
 function createInsertReading(db) {
@@ -245,16 +258,19 @@ function createFindReadingsByRoomAndTimeRange(db) {
 
 function createFindReadingsByDeviceUid(db) {
   const stmt = db.prepare(`
-    SELECT r.*, d.uid 
+    SELECT r.*, d.uid
     FROM readings_raw r
-    JOIN devices d ON r.device_id = d.id 
+    JOIN devices d ON r.device_id = d.id
     WHERE d.uid = ?
+      AND (? IS NULL OR r.ts >= ?)
+      AND (? IS NULL OR r.ts <= ?)
     ORDER BY r.ts DESC
     LIMIT ?
   `);
 
-  return function findReadingsByDeviceUid(deviceUid, limit = 10) {
-    return stmt.all(deviceUid, limit);
+  return function findReadingsByDeviceUid(deviceUid, options = {}) {
+    const { limit = 10, from = null, to = null } = options;
+    return stmt.all(deviceUid, from, from, to, to, limit);
   };
 }
 
