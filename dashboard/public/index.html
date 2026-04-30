@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon-simple.svg?v=1.4" type="image/svg+xml" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico?v=1.4" type="image/x-icon" />
+    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico?v=1.4" />
+    
+    <!-- Meta viewport optimisé PWA mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563EB" />
+    <meta name="background-color" content="#f7fafc" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TechTemp" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Description et SEO -->
+    <meta name="description" content="TechTemp IoT - Surveillance des températures intérieures et extérieures en temps réel" />
+    <meta name="keywords" content="IoT, température, monitoring, capteur, temps réel" />
+    <meta name="author" content="TechTemp Team" />
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="TechTemp IoT" />
+    <meta property="og:description" content="Surveillance des températures en temps réel" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="%PUBLIC_URL%/icons/icon-512.png" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/icons/icon-192.png" />
+    
+    <!-- Mask Icon Safari (SVG) -->
+    <link rel="mask-icon" href="%PUBLIC_URL%/icons/icon-base.svg" color="#2563EB" />
+    
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Preconnect aux domaines externes -->
+    <link rel="preconnect" href="https://us-central1-techtemp-49c7f.cloudfunctions.net" />
+    <link rel="preconnect" href="https://api.open-meteo.com" />
+    
+    <title>TechTemp IoT - Monitoring Température</title>
+  </head>
+  <body>
+    <noscript>
+      <div style="text-align: center; padding: 50px; font-family: sans-serif;">
+        <h1>🌡️ TechTemp IoT</h1>
+        <p>Vous devez activer JavaScript pour utiliser cette application.</p>
+        <p>Please enable JavaScript to run this app.</p>
+      </div>
+    </noscript>
+    <div id="root"></div>
+  </body>
+</html>

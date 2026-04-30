@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Database files
+*.db
+*.db-wal
+*.db-shm
+data/
+
+# Build outputs
+dist/
+build/
+
+# Deploy artifact: populated by deploy-robust-pi.sh from web-example/ or dashboard/build/
+/web/
+
+# Coverage reports
+coverage/
+
+# Log files
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local screenshots / scratch
+/image/
+
+# Temporary files
+tmp/
+temp/

@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # TechTemp IoT Service
+  techtemp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: techtemp-service
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MQTT_URL=mqtt://mosquitto:1883
+      - DB_PATH=/app/data/techtemp.db
+      - HTTP_PORT=3000
+      - LOG_LEVEL=info
+    volumes:
+      - techtemp_data:/app/data
+    depends_on:
+      - mosquitto
+    networks:
+      - techtemp-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MQTT Broker
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: techtemp-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./infrastructure/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+    networks:
+      - techtemp-network
+
+# Persistent volumes
+volumes:
+  techtemp_data:
+    driver: local
+  mosquitto_data:
+    driver: local
+  mosquitto_logs:
+    driver: local
+
+# Network for service communication
+networks:
+  techtemp-network:
+    driver: bridge

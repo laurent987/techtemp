@@ -1,0 +1,28 @@
+{
+  "devices": [
+    {
+      "uid": "aht20-salon01",
+      "label": "Capteur Température Salon",
+      "model": "AHT20",
+      "roomName": "Salon"
+    },
+    {
+      "uid": "aht20-cuisine01",
+      "label": "Capteur Température Cuisine",
+      "model": "AHT20",
+      "roomName": "Cuisine"
+    },
+    {
+      "uid": "aht20-chambre01",
+      "label": "Capteur Température Chambre Parentale",
+      "model": "AHT20",
+      "roomName": "Chambre Parentale"
+    },
+    {
+      "uid": "aht20-bureau01",
+      "label": "Capteur Température Bureau",
+      "model": "AHT20",
+      "roomName": "Bureau"
+    }
+  ]
+}

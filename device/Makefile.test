@@ -1,0 +1,12 @@
+# Makefile pour test isolé AHT20
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c99 -O2
+LIBS = -lwiringPi
+
+test_aht20: test_aht20.c
+	$(CC) $(CFLAGS) -o test_aht20 test_aht20.c $(LIBS)
+
+clean:
+	rm -f test_aht20
+
+.PHONY: clean
