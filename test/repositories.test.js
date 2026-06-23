@@ -127,6 +127,46 @@ describe('Repository Pattern - Business Logic Layer', () => {
       await expect(repository.devices.updateLastSeen('non-existent'))
         .rejects.toThrow('Device with UID non-existent not found');
     });
+
+    it('should date placements with moved_at when provided', async () => {
+      const roomA = await repository.rooms.create({ uid: 'room-a', name: 'Room A' });
+      const roomB = await repository.rooms.create({ uid: 'room-b', name: 'Room B' });
+      await repository.devices.create({ uid: 'dev-move', room_id: roomA.id });
+
+      const movedAt = '2026-06-22T10:00:00.000Z';
+      await repository.devices.update('dev-move', { room_id: roomB.id, moved_at: movedAt });
+
+      const current = await repository.devices.getCurrentPlacement('dev-move');
+      expect(current.room_id).toBe(roomB.id);
+      expect(current.from_ts).toBe(movedAt);
+
+      const placements = db.prepare(
+        'SELECT room_id, from_ts, to_ts FROM device_room_placements ORDER BY from_ts'
+      ).all();
+      const closed = placements.find(p => p.room_id === roomA.id);
+      expect(closed.to_ts).toBe(movedAt);
+    });
+
+    it('should use current time for placement when moved_at is omitted', async () => {
+      const roomA = await repository.rooms.create({ uid: 'room-a2', name: 'Room A2' });
+      const roomB = await repository.rooms.create({ uid: 'room-b2', name: 'Room B2' });
+      await repository.devices.create({ uid: 'dev-move2', room_id: roomA.id });
+      // Backdate the initial placement so the "now" placement cannot collide
+      // with it on the (device_id, from_ts) primary key in fast in-memory tests.
+      db.prepare(
+        `UPDATE device_room_placements SET from_ts = ?
+           WHERE device_id = (SELECT id FROM devices WHERE uid = ?)`
+      ).run('2025-01-01T00:00:00.000Z', 'dev-move2');
+
+      const before = Date.now();
+      await repository.devices.update('dev-move2', { room_id: roomB.id });
+      const after = Date.now();
+
+      const current = await repository.devices.getCurrentPlacement('dev-move2');
+      const fromTs = new Date(current.from_ts).getTime();
+      expect(fromTs).toBeGreaterThanOrEqual(before);
+      expect(fromTs).toBeLessThanOrEqual(after);
+    });
   });
 
   describe('Room Repository', () => {

@@ -143,11 +143,14 @@ export function createRepository(db) {
 
         // Handle room_id changes via placements
         if (updateData.room_id !== undefined) {
+          // Use the provided move date if any, otherwise "now"
+          const placementTs = updateData.moved_at || new Date().toISOString();
+
           // First, close current placement if exists
           const currentPlacement = await dataAccess.findCurrentDevicePlacement(uid);
           if (currentPlacement) {
             await dataAccess.updateDevicePlacement(currentPlacement.device_id, currentPlacement.from_ts, {
-              to_ts: new Date().toISOString()
+              to_ts: placementTs
             });
           }
 
@@ -158,7 +161,7 @@ export function createRepository(db) {
             await dataAccess.insertDevicePlacement({
               device_id: deviceId,
               room_id: updateData.room_id,
-              from_ts: new Date().toISOString()
+              from_ts: placementTs
             });
           }
         }
