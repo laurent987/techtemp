@@ -175,6 +175,84 @@ describe('Device API', () => {
 
       expect(response.body.error).toBe('Device not found');
     });
+
+    test('should accept a valid moved_at and backdate the placement', async () => {
+      await request(app)
+        .post('/api/v1/devices')
+        .send({ device_uid: 'moved-sensor', room_name: 'Bedroom', label: 'Old label' });
+
+      // Backdate the initial placement so a past moved_at is valid
+      db.prepare(
+        `UPDATE device_room_placements SET from_ts = ?
+           WHERE device_id = (SELECT id FROM devices WHERE uid = ?)`
+      ).run(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), 'moved-sensor');
+
+      const movedAt = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 1h ago
+      const response = await request(app)
+        .put('/api/v1/devices/moved-sensor')
+        .send({ room_name: 'Attic', moved_at: movedAt })
+        .expect(200);
+
+      expect(response.body.data.room.name).toBe('Attic');
+
+      const current = await repo.devices.getCurrentPlacement('moved-sensor');
+      expect(current.from_ts).toBe(movedAt);
+    });
+
+    test('should reject a future moved_at', async () => {
+      await request(app)
+        .post('/api/v1/devices')
+        .send({ device_uid: 'future-sensor', room_name: 'Bedroom' });
+
+      const future = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      const response = await request(app)
+        .put('/api/v1/devices/future-sensor')
+        .send({ room_name: 'Attic', moved_at: future })
+        .expect(400);
+
+      expect(response.body.error).toContain('future');
+    });
+
+    test('should reject a moved_at before the current placement start', async () => {
+      await request(app)
+        .post('/api/v1/devices')
+        .send({ device_uid: 'early-sensor', room_name: 'Bedroom' });
+
+      // Current placement was created "now"; a date in the far past precedes it
+      const tooEarly = '2000-01-01T00:00:00.000Z';
+      const response = await request(app)
+        .put('/api/v1/devices/early-sensor')
+        .send({ room_name: 'Attic', moved_at: tooEarly })
+        .expect(400);
+
+      expect(response.body.error).toContain('after');
+    });
+
+    test('should reject a malformed moved_at', async () => {
+      await request(app)
+        .post('/api/v1/devices')
+        .send({ device_uid: 'bad-date-sensor', room_name: 'Bedroom' });
+
+      const response = await request(app)
+        .put('/api/v1/devices/bad-date-sensor')
+        .send({ room_name: 'Attic', moved_at: 'not-a-date' })
+        .expect(400);
+
+      expect(response.body.error).toContain('ISO 8601');
+    });
+
+    test('should reject moved_at without room_name', async () => {
+      await request(app)
+        .post('/api/v1/devices')
+        .send({ device_uid: 'no-room-sensor', room_name: 'Bedroom' });
+
+      const response = await request(app)
+        .put('/api/v1/devices/no-room-sensor')
+        .send({ moved_at: new Date(Date.now() - 60 * 60 * 1000).toISOString() })
+        .expect(400);
+
+      expect(response.body.error).toContain('room_name');
+    });
   });
 
   describe('DELETE /api/v1/devices/:deviceUid', () => {

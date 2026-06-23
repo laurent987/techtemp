@@ -243,7 +243,7 @@ export function devicesRouter(deps = {}) {
       }
 
       const { deviceUid } = req.params;
-      const { room_name, room_uid, label } = req.body;
+      const { room_name, room_uid, label, moved_at } = req.body;
 
       // Check if device exists
       const device = await deps.repo.devices.findByUid(deviceUid);
@@ -251,6 +251,35 @@ export function devicesRouter(deps = {}) {
         return res.status(404).json({
           error: 'Device not found'
         });
+      }
+
+      // Validate optional moved_at (dates the room change)
+      let normalizedMovedAt;
+      if (moved_at !== undefined) {
+        if (!room_name) {
+          return res.status(400).json({
+            error: 'moved_at requires room_name (it dates a room change)'
+          });
+        }
+        if (typeof moved_at !== 'string' || isNaN(Date.parse(moved_at))) {
+          return res.status(400).json({
+            error: 'moved_at must be a valid ISO 8601 timestamp'
+          });
+        }
+        const movedDate = new Date(moved_at);
+        if (movedDate.getTime() > Date.now()) {
+          return res.status(400).json({
+            error: 'moved_at cannot be in the future'
+          });
+        }
+        const currentPlacement = await deps.repo.devices.getCurrentPlacement(deviceUid);
+        if (currentPlacement &&
+            movedDate.getTime() <= new Date(currentPlacement.from_ts).getTime()) {
+          return res.status(400).json({
+            error: 'moved_at must be after the current placement start'
+          });
+        }
+        normalizedMovedAt = movedDate.toISOString();
       }
 
       let updatedRoomId = device.room_id;
@@ -300,6 +329,10 @@ export function devicesRouter(deps = {}) {
 
       if (label !== undefined) {
         updateData.label = label;
+      }
+
+      if (normalizedMovedAt) {
+        updateData.moved_at = normalizedMovedAt;
       }
 
       await deps.repo.devices.update(deviceUid, updateData);
