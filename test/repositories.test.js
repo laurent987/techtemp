@@ -141,8 +141,10 @@ describe('Repository Pattern - Business Logic Layer', () => {
       expect(current.from_ts).toBe(movedAt);
 
       const placements = db.prepare(
-        'SELECT room_id, from_ts, to_ts FROM device_room_placements ORDER BY from_ts'
-      ).all();
+        `SELECT room_id, from_ts, to_ts FROM device_room_placements
+           WHERE device_id = (SELECT id FROM devices WHERE uid = ?)
+           ORDER BY from_ts`
+      ).all('dev-move');
       const closed = placements.find(p => p.room_id === roomA.id);
       expect(closed.to_ts).toBe(movedAt);
     });

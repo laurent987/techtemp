@@ -143,8 +143,12 @@ export function createRepository(db) {
 
         // Handle room_id changes via placements
         if (updateData.room_id !== undefined) {
-          // Use the provided move date if any, otherwise "now"
-          const placementTs = updateData.moved_at || new Date().toISOString();
+          // Use the provided move date if any, otherwise "now". Pass the value
+          // through as-is (no correcting of bad input) — validation is the
+          // route layer's responsibility, matching the room_id check above.
+          const placementTs = updateData.moved_at !== undefined
+            ? updateData.moved_at
+            : new Date().toISOString();
 
           // First, close current placement if exists
           const currentPlacement = await dataAccess.findCurrentDevicePlacement(uid);
