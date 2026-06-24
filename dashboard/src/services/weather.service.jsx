@@ -103,3 +103,19 @@ export async function getOutdoorWeather(startDate, endDate) {
     })
     .sort((a, b) => a.timestamp - b.timestamp);
 }
+
+/** Current outdoor conditions (ICON-D2 model) → { temperature, humidity }. */
+export async function getCurrentOutdoor() {
+  const params = new URLSearchParams({
+    latitude: String(LAT),
+    longitude: String(LON),
+    current: 'temperature_2m,relative_humidity_2m',
+    models: 'icon_d2',
+    timezone: TZ,
+  });
+  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
+  if (!res.ok) throw new Error(`Open-Meteo current ${res.status}`);
+  const json = await res.json();
+  const c = json.current || {};
+  return { temperature: c.temperature_2m, humidity: c.relative_humidity_2m };
+}

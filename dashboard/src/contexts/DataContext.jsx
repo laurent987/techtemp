@@ -11,9 +11,10 @@ import {
   getDevices as fetchDevices,
   getRooms as fetchRooms,
   getRoomReadings,
+  getDeviceReadings,
   getLatestReadings as fetchLatestReadings
 } from '../services/api.service';
-import { getOutdoorWeather } from '../services/weather.service';
+import { getOutdoorWeather, getCurrentOutdoor } from '../services/weather.service';
 
 const DataContext = createContext(null);
 
@@ -199,4 +200,41 @@ export function useOutdoorWeather(startDate, endDate, enabled = true) {
   }, [enabled, fromTs, toTs]);
 
   return { data, loading, error };
+}
+
+/** Current outdoor conditions, refreshed periodically. */
+export function useCurrentOutdoor(refreshMs = 300000) {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => getCurrentOutdoor().then((d) => { if (!cancelled) setData(d); }).catch(() => {});
+    load();
+    const id = setInterval(load, refreshMs);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [refreshMs]);
+  return { data };
+}
+
+/** Today's min/max for a device (via the daily aggregation bucket). */
+export function useTodayStats(deviceUid, refreshMs = 300000) {
+  const [stats, setStats] = useState(null);
+  useEffect(() => {
+    if (!deviceUid) return undefined;
+    let cancelled = false;
+    const load = () => {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      getDeviceReadings(deviceUid, { from: start, to: new Date(), bucket: 'day' })
+        .then((rows) => {
+          if (cancelled) return;
+          const r = rows[0];
+          setStats(r ? { tempMin: r.temperatureMin, tempMax: r.temperatureMax, humMin: r.humidityMin, humMax: r.humidityMax } : null);
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, refreshMs);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [deviceUid, refreshMs]);
+  return stats;
 }
