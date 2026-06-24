@@ -116,12 +116,38 @@ Structure de haut en bas :
 | `dashboard/src/components/` (vignette) | `DeviceCard` : layout v6 + état sélectionné/non sélectionné + `onClick` toggle + couleur de pièce. |
 | `dashboard/src/components/charts/*` | Graphe multi-pièces piloté par la sélection ; sélecteur de mesure + période segmentés ; allègement du composant ~1000 lignes en sous-composants (au moins : barre de contrôles, légende/graphe). |
 
-## Risque / prérequis connu
+## Prérequis : migration CRA → Vite
 
-⚠️ **Le build du dashboard React plante en local** (bloqué à 0 % CPU au
-démarrage de `react-scripts build` — voir [[techtemp-deployment]]). À diagnostiquer
-et résoudre **avant** de pouvoir builder/déployer (vérifier si `npm start` en dev
-fonctionne). À traiter en première tâche du plan, ou en prérequis.
+⚠️ Tout l'outillage `react-scripts` (build, dev server `start`, **et** les tests
+Jest) **se fige au démarrage** sur cette machine (sommeil, 0 % CPU). Causes
+écartées : config `browserslist`, sandbox de l'outil, éviction iCloud. Cause
+retenue : **Create React App (`react-scripts` 5.0.1, 2022, abandonné) est
+incompatible avec le Node installé (22/23)**.
+
+**Décision (validée) : migrer le dashboard de Create React App vers Vite** comme
+**première phase** du plan, avant toute refonte UI. Cela débloque dev + build +
+tests sur le Node actuel, accélère les builds, et corrige le build de
+déploiement. Points de migration :
+
+- Outils : ajouter `vite`, `@vitejs/plugin-react`, `vitest`, `jsdom`,
+  `@testing-library/react`, `@testing-library/jest-dom` ; retirer `react-scripts`.
+- Entrée : déplacer `public/index.html` → `dashboard/index.html` (racine Vite),
+  remplacer les `%PUBLIC_URL%` par `/`, référencer `<script type="module"
+  src="/src/index.jsx">`.
+- JSX dans des fichiers `.js` : **renommer les 10 fichiers source `.js` → `.jsx`**
+  (imports sans extension → inchangés).
+- Variables d'env : `process.env.REACT_APP_*` → `import.meta.env.VITE_*`
+  (4 usages : `src/config/api.endpoints.js`, `src/services/weather.service.js`) ;
+  mettre à jour `.env.local` / `.env.example`.
+- Tests : pas de test Jest existant à migrer ; mettre en place **Vitest**
+  (jsdom + Testing Library) — c'est le socle TDD du reste du plan.
+- **Compatibilité déploiement** : régler `build.outDir = 'build'` dans
+  `vite.config.js` pour que `scripts/admin/deploy-robust-pi.sh` (qui copie
+  `dashboard/build/` → `web/`) continue de fonctionner **sans modification**.
+- Nettoyer les fichiers dupliqués macOS dans `public/` (`index 2.html`,
+  `manifest 2.json`, `robots 2.txt`, `icons 2/`).
+
+Voir [[techtemp-deployment]].
 
 ## Tests / validation
 
