@@ -48,3 +48,6 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Brainstorm / SDD scratch
+.superpowers/
