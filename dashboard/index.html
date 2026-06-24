@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon-simple.svg?v=1.4" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.svg?v=1.4" type="image/svg+xml" />
+
+    <!-- Meta viewport optimisé PWA mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TechTemp" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Description et SEO -->
+    <meta name="description" content="TechTemp IoT - Surveillance des températures intérieures et extérieures en temps réel" />
+    <meta name="author" content="TechTemp Team" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="TechTemp IoT" />
+    <meta property="og:description" content="Surveillance des températures en temps réel" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icons/icon-512.png" />
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png" />
+
+    <!-- Mask Icon Safari (SVG) -->
+    <link rel="mask-icon" href="/icons/icon-base.svg" color="#0891b2" />
+
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Preconnect aux domaines externes -->
+    <link rel="preconnect" href="https://api.open-meteo.com" />
+
+    <title>TechTemp IoT - Monitoring Température</title>
+  </head>
+  <body>
+    <noscript>
+      <div style="text-align: center; padding: 50px; font-family: sans-serif;">
+        <h1>🌡️ TechTemp IoT</h1>
+        <p>Vous devez activer JavaScript pour utiliser cette application.</p>
+      </div>
+    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/index.jsx"></script>
+  </body>
+</html>

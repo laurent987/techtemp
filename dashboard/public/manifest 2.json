@@ -1,0 +1,39 @@
+{
+  "short_name": "TechTemp",
+  "name": "TechTemp IoT",
+  "description": "Application de surveillance des températures intérieures et extérieures en temps réel",
+  "icons": [
+    {
+      "src": "icons/icon-pwa.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-pwa.svg",
+      "type": "image/svg+xml", 
+      "sizes": "any",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-192.png?v=1.7",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png?v=1.7", 
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ],
+  "start_url": ".",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2563EB",
+  "background_color": "#f7fafc",
+  "categories": ["utilities", "productivity"],
+  "lang": "fr"
+}
