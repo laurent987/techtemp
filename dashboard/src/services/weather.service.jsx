@@ -7,12 +7,12 @@
  *
  * For ranges that straddle the 5-day mark, we fetch from both and merge.
  *
- * Override the location via REACT_APP_WEATHER_LAT/LON.
+ * Override the location via VITE_WEATHER_LAT/LON.
  */
 
-const LAT = parseFloat(process.env.REACT_APP_WEATHER_LAT || '50.8798');
-const LON = parseFloat(process.env.REACT_APP_WEATHER_LON || '4.7005');
-const TZ = process.env.REACT_APP_WEATHER_TZ || 'Europe/Brussels';
+const LAT = parseFloat(import.meta.env.VITE_WEATHER_LAT || '50.8798');
+const LON = parseFloat(import.meta.env.VITE_WEATHER_LON || '4.7005');
+const TZ = import.meta.env.VITE_WEATHER_TZ || 'Europe/Brussels';
 
 const ARCHIVE_LAG_DAYS = 5; // safety: archive lags ~2 days, give it 5 to be safe
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
