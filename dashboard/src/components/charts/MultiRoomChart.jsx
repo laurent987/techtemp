@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
-import { Box, Flex, ButtonGroup, Button, HStack, IconButton, Text, useColorModeValue } from '@chakra-ui/react';
+import { Box, Flex, ButtonGroup, Button, HStack, IconButton, Text, Spinner, useColorModeValue } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import {
   Chart as ChartJS,
@@ -35,6 +35,7 @@ export default function MultiRoomChart({
   const [windowSize, setWindowSize] = useState(3);
   const [endDate, setEndDate] = useState(() => new Date());
   const [seriesByUid, setSeriesByUid] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const period = useMemo(() => {
     const end = new Date(endDate);
@@ -51,18 +52,24 @@ export default function MultiRoomChart({
   useEffect(() => {
     if (roomUids.length === 0) {
       setSeriesByUid({});
+      setLoading(false);
       return undefined;
     }
     let cancelled = false;
+    setLoading(true);
     Promise.all(
       roomUids.map((uid) =>
         getDeviceReadings(uid, { from: period.start, to: period.end })
           .then((rows) => [uid, rows])
           .catch(() => [uid, []])
       )
-    ).then((entries) => {
-      if (!cancelled) setSeriesByUid(Object.fromEntries(entries));
-    });
+    )
+      .then((entries) => {
+        if (!cancelled) setSeriesByUid(Object.fromEntries(entries));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -168,7 +175,7 @@ export default function MultiRoomChart({
           />
         </HStack>
       </Flex>
-      <Box h="300px">
+      <Box h="300px" position="relative">
         {roomUids.length === 0 ? (
           <Flex h="100%" align="center" justify="center">
             <Text color="app.textMuted" fontSize="sm">
@@ -177,6 +184,21 @@ export default function MultiRoomChart({
           </Flex>
         ) : (
           <Line data={data} options={options} />
+        )}
+        {loading && (
+          <Flex
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            align="center"
+            justify="center"
+            bg="app.surface"
+            opacity={0.65}
+          >
+            <Spinner size="lg" color="app.accent" thickness="3px" />
+          </Flex>
         )}
       </Box>
     </Box>
