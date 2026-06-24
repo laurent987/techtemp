@@ -24,7 +24,13 @@ const fmtDate = (d) => {
   return `${y}-${m}-${day}`;
 };
 
-async function fetchOpenMeteo(baseUrl, startDate, endDate) {
+// Higher-resolution model for the forecast endpoint (~2 km, covers Benelux).
+// The default "best_match" over-reads near Leuven (observed ~3 °C high on a hot
+// evening); ICON-D2 tracks the local reality better. Only valid on the forecast
+// endpoint — the archive (ERA5) ignores it, so it's passed only there.
+const FORECAST_MODEL = 'icon_d2';
+
+async function fetchOpenMeteo(baseUrl, startDate, endDate, model) {
   const params = new URLSearchParams({
     latitude: String(LAT),
     longitude: String(LON),
@@ -33,6 +39,7 @@ async function fetchOpenMeteo(baseUrl, startDate, endDate) {
     start_date: fmtDate(startDate),
     end_date: fmtDate(endDate)
   });
+  if (model) params.set('models', model);
   const res = await fetch(`${baseUrl}?${params.toString()}`);
   if (!res.ok) throw new Error(`Open-Meteo ${res.status} on ${baseUrl}`);
   const json = await res.json();
@@ -73,13 +80,13 @@ export async function getOutdoorWeather(startDate, endDate) {
     requests.push(fetchOpenMeteo(archiveUrl, startDate, endDate));
   } else if (startMs >= cutoffMs) {
     // Entirely recent → forecast only
-    requests.push(fetchOpenMeteo(forecastUrl, startDate, endDate));
+    requests.push(fetchOpenMeteo(forecastUrl, startDate, endDate, FORECAST_MODEL));
   } else {
     // Spans the cutoff → fetch both and merge
     const archiveEnd = new Date(cutoffMs - ONE_DAY_MS);
     const forecastStart = new Date(cutoffMs);
     requests.push(fetchOpenMeteo(archiveUrl, startDate, archiveEnd));
-    requests.push(fetchOpenMeteo(forecastUrl, forecastStart, endDate));
+    requests.push(fetchOpenMeteo(forecastUrl, forecastStart, endDate, FORECAST_MODEL));
   }
 
   const results = await Promise.all(requests);
