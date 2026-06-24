@@ -1,123 +1,136 @@
-# Design – Refonte UI du dashboard (thème Slate & Cyan, clair/sombre)
+# Design – Refonte UI du dashboard : page unique + thème Slate & Cyan
 
 **Date :** 2026-06-24
 **Statut :** Approuvé (design), prêt pour le plan d'implémentation
 
 ## Contexte
 
-Le dashboard React (`dashboard/`, React 19 + Chakra UI + Chart.js) a deux pages :
-`LivePage` (cartes capteurs temps réel) et `ChartsPage` (`HistoricalChart`,
-~1000 lignes). Aucun thème Chakra personnalisé n'est configuré et le mode sombre
-n'est pas réellement en place (pas de `ColorModeScript`, pas de bouton de
-bascule). L'objectif est un **polish visuel + responsive** (pas de nouvelle
-fonctionnalité métier), priorité à la **page Graphiques** et au **thème / mode
-sombre**.
+Le dashboard React (`dashboard/`, React 19 + Chakra UI + Chart.js) a aujourd'hui
+deux pages séparées : `LivePage` (cartes capteurs temps réel) et `ChartsPage`
+(`HistoricalChart`, ~1000 lignes), reliées par une nav dans le `Header`. Aucun
+thème Chakra personnalisé n'est configuré et le mode sombre n'est pas réellement
+en place (pas de `ColorModeScript`, pas de bouton de bascule).
 
+Objectif : **polish visuel + responsive** (pas de nouvelle fonction métier),
+**fusion des deux pages en une seule**, priorité au thème / mode sombre.
 Décisions validées en brainstorming via maquettes (companion visuel).
 
 ## Objectifs
 
-1. Thème visuel cohérent **Slate & Cyan**, en **clair ET sombre**, mode **auto
-   (suit le système)** au premier chargement + **bouton de bascule** mémorisé.
-2. Cartes capteurs (LivePage) redessinées.
-3. Page Graphiques redessinée : contrôles plus clairs/tactiles, résumé compact,
-   graphe dans la palette.
+1. **Fusionner Live + Graphiques en une page unique** : les vignettes en haut
+   servent aussi de **sélecteurs**, le graphe combiné en dessous.
+2. **Sélection multiple** : cliquer une vignette l'ajoute/retire du graphe ;
+   plusieurs pièces peuvent être comparées simultanément.
+3. Thème **Slate & Cyan** cohérent, **clair ET sombre**, mode **auto (système)**
+   au 1er chargement + **bouton de bascule** mémorisé.
 
-Hors périmètre : nouvelles fonctions (alertes, export, comparaison…), refonte du
-backend, changement de librairie de graphes.
+Hors périmètre : nouvelles fonctions (alertes, export, comparaison avancée…),
+refonte du backend, changement de librairie de graphes.
 
 ## Palette (Slate & Cyan)
 
 | Rôle | Sombre | Clair |
 |---|---|---|
-| Fond page | `#0f172a` (slate-900) | `#f1f5f9` (slate-100) |
-| Carte / surface | `#1e293b` (slate-800) | `#ffffff` (+ ombre légère) |
-| Bordure | `#334155` (slate-700) | `#e2e8f0` (slate-200) |
+| Fond page | `#0f172a` | `#f1f5f9` |
+| Carte / surface | `#1e293b` | `#ffffff` (+ ombre légère) |
+| Bordure | `#334155` | `#e2e8f0` |
 | Texte principal | `#f1f5f9` | `#0f172a` |
-| Texte secondaire | `#94a3b8` (slate-400) | `#64748b` (slate-500) |
-| Accent / courbe temp | `#22d3ee` (cyan-400) | `#0891b2` (cyan-600) |
-| Accent humidité | `#818cf8` (indigo-400) | `#6366f1` (indigo-500) |
-| Statut en ligne | `#22d3ee` | `#0891b2` |
+| Texte secondaire | `#94a3b8` | `#64748b` |
+| Accent (cyan) | `#22d3ee` | `#0891b2` |
+| Segment actif / boutons | `#0891b2` | `#0891b2` |
 
-Le cyan est assombri en mode clair pour rester lisible sur fond blanc.
+**Couleurs par pièce** (pour vignette sélectionnée + courbe dans le graphe) :
+palette qualitative assignée de façon stable par pièce, p. ex. cyan `#22d3ee`,
+indigo `#818cf8`, ambre `#fb923c`, émeraude `#34d399`, rose `#f472b6`… Une pièce
+garde sa couleur entre la vignette et la courbe.
 
 ## Thème & mode couleur
 
-- Créer un thème Chakra via `extendTheme` dans `dashboard/src/theme/index.js` :
-  - `config: { initialColorMode: 'system', useSystemColorMode: false }`
-    (= auto au 1er chargement, puis le choix manuel persiste).
-  - `colors`, `semanticTokens` pour les rôles ci-dessus (clair/sombre), `fonts`
-    (système : `-apple-system, system-ui, sans-serif`), `styles.global` pour le
-    fond de page.
-- `dashboard/src/index.js` : passer le thème à `ChakraProvider` et ajouter
-  `<ColorModeScript initialColorMode={theme.config.initialColorMode} />` (anti
-  flash, persistance).
-- `Header` : ajouter un bouton de bascule clair/sombre (icône ☀️ / 🌙) utilisant
-  `useColorMode()` / `toggleColorMode`, placé à droite de la navigation.
+- `dashboard/src/theme/index.js` (**créer**) : `extendTheme` avec
+  `config: { initialColorMode: 'system', useSystemColorMode: false }` (auto au
+  1er chargement, choix manuel ensuite persistant), `semanticTokens` pour les
+  rôles ci-dessus (clair/sombre), `fonts` système, `styles.global` pour le fond.
+- `dashboard/src/index.js` : thème passé à `ChakraProvider` +
+  `<ColorModeScript initialColorMode={theme.config.initialColorMode} />`.
+- `Header` : bouton de bascule clair/sombre (☀️ / 🌙) via
+  `useColorMode()` / `toggleColorMode`, à droite. La **navigation entre pages
+  disparaît** (page unique) ; le header ne garde que le titre + le bouton.
 
-## Carte capteur (LivePage / `DeviceCard`)
+## Page unique fusionnée
 
-Layout validé (maquette v6) :
+Structure de haut en bas :
 
-- **En-tête** (ligne propre, sans séparateur) : nom de la pièce à gauche, statut
-  à droite (pastille colorée + « En ligne / Retard / Hors ligne »).
-- **Données** : deux blocs **de taille égale, sur la même ligne**, séparés par
-  une barre verticale **entre les deux blocs uniquement** :
-  - bloc gauche : 🌡️ (icône) / valeur (ex. `28.5°`) / label « Température »
-  - bloc droite : 💧 / valeur (ex. `67%`) / label « Humidité »
-  - icône en haut, chiffre au centre (≈28px, gras), label en petit dessous
-    (≈11px, majuscules, gris).
-- **Mini-courbe** (sparkline) sous les données, dans l'accent cyan.
-- **Horodatage** discret en bas à droite (« il y a 2 min »).
-- **Largeur de carte ≈ 310px** ; grille responsive (`flex-wrap` /
-  `SimpleGrid minChildWidth≈310px`) : plusieurs cartes par ligne sur desktop, une
-  colonne sur mobile.
-- Les seuils de couleur existants (statut en ligne/retard/hors ligne, code
-  couleur température chaud/froid) sont conservés et adaptés aux deux modes.
+### 1. Grille de vignettes-sélecteurs
 
-## Page Graphiques (`ChartsPage` / `HistoricalChart`)
+- Une vignette par capteur, **cliquable** : clic = ajoute/retire la pièce du
+  graphe (toggle).
+- **État sélectionné** : contour de la couleur de la pièce + léger halo
+  (`box-shadow`). **Pas de coche/badge** dans le coin.
+- **État non sélectionné** : carte atténuée (opacité réduite) avec une
+  indication « + ajouter ».
+- Layout de carte (validé, maquette v6) :
+  - en-tête (sans séparateur) : pastille de couleur + nom de pièce à gauche,
+    statut à droite (en ligne / retard / hors ligne) ;
+  - deux blocs **égaux** séparés par une barre verticale **entre les deux
+    uniquement** : 🌡️ / valeur / « Température » et 💧 / valeur / « Humidité »
+    (icône en haut, chiffre ~24–28px gras, label petit majuscules) ;
+  - largeur ≈ 230–310px ; grille responsive (plusieurs par ligne desktop, une
+    colonne mobile).
+- Au moins une pièce sélectionnée par défaut (p. ex. toutes, ou la dernière vue)
+  pour que le graphe ne soit jamais vide au chargement.
 
-Layout validé (maquettes charts-page + résumé Option 1) :
+### 2. Contrôles du graphe
 
-- **Barre de contrôles** regroupée, responsive :
-  - sélecteur de capteur (📍 + nom),
-  - **période en boutons segmentés** : `1j / 3j / 1 sem / 1 mois` (segment actif
-    en cyan) — remplace le menu déroulant actuel,
-  - navigation de date `‹ … ›`.
-  - Sur mobile : les contrôles passent en pleine largeur, empilés.
-- **Résumé compact (Option 1)** : deux pastilles arrondies au-dessus du graphe,
-  calées à gauche — `🌡️ min · moy · max` et `💧 min · moy · max` (largeur auto,
-  pas de bandeau pleine largeur), avec une légende « min · moy · max ».
-- **Graphe** dans la palette : température cyan, humidité indigo, moyenne mobile
-  en pointillés gris, grille discrète, légende. Zoom/pan tactile conservé.
-- Le composant `HistoricalChart` étant volumineux (~1000 lignes), extraire au
-  passage les sous-unités qui servent ce redesign (au minimum : la barre de
-  contrôles et le bandeau de résumé en composants dédiés). Pas de refonte de la
-  logique de données au-delà de ce qui sert le polish.
+- **Sélecteur de mesure** segmenté : `🌡️ Température | 💧 Humidité` — une mesure
+  à la fois, affichée pour **toutes** les pièces sélectionnées (évite la
+  surcharge de courbes).
+- **Période** segmentée : `1j / 3j / 1 sem / 1 mois` (remplace le menu
+  déroulant ; segment actif en cyan).
+- **Navigation de date** `‹ … ›`.
+- Sur mobile : contrôles en pleine largeur, empilés.
+
+### 3. Graphe combiné
+
+- Une **courbe par pièce sélectionnée**, dans la couleur de la pièce, pour la
+  mesure choisie.
+- **Légende** listant les pièces sélectionnées (couleur + nom + valeur courante).
+- Grille discrète, zoom/pan tactile conservé (chartjs-plugin-zoom).
+- Moyenne mobile : conservée si une seule pièce est sélectionnée ; masquée en
+  comparaison multi-pièces pour rester lisible.
+
+### État applicatif
+
+- La liste des pièces sélectionnées et la mesure courante vivent dans l'état de
+  la page (ou le `DataContext`). Le graphe est dérivé de cette sélection.
+- L'attribution couleur↔pièce est déterministe (index stable de la pièce).
 
 ## Fichiers concernés (indicatif)
 
 | Fichier | Changement |
 |---|---|
-| `dashboard/src/theme/index.js` | **Créer** le thème (`extendTheme`, palette, config color mode). |
+| `dashboard/src/theme/index.js` | **Créer** le thème (palette, config color mode). |
 | `dashboard/src/index.js` | Brancher le thème + `ColorModeScript`. |
-| `dashboard/src/components/Header.js` | Bouton de bascule clair/sombre. |
-| `dashboard/src/pages/LivePage.js` | Refonte `DeviceCard` (layout v6) + grille responsive. |
-| `dashboard/src/components/charts/*` | Barre de contrôles segmentée, pastilles résumé, palette ; extraction de sous-composants. |
+| `dashboard/src/App.js` | **Supprimer la route `/charts`** ; une seule page. |
+| `dashboard/src/components/Header.js` | Bouton clair/sombre ; retrait de la nav inter-pages. |
+| `dashboard/src/pages/` | Page unique fusionnée (vignettes-sélecteurs + graphe). `LivePage`/`ChartsPage` fusionnées ; `ChartsPage` supprimée ou vidée. |
+| `dashboard/src/components/` (vignette) | `DeviceCard` : layout v6 + état sélectionné/non sélectionné + `onClick` toggle + couleur de pièce. |
+| `dashboard/src/components/charts/*` | Graphe multi-pièces piloté par la sélection ; sélecteur de mesure + période segmentés ; allègement du composant ~1000 lignes en sous-composants (au moins : barre de contrôles, légende/graphe). |
 
 ## Risque / prérequis connu
 
 ⚠️ **Le build du dashboard React plante en local** (bloqué à 0 % CPU au
-démarrage de `react-scripts build` — voir [[techtemp-deployment]]). Ce blocage
-doit être diagnostiqué et résolu **avant** de pouvoir builder/déployer la refonte
-(le développement avec `npm start` peut éventuellement fonctionner, à vérifier).
-À traiter en première tâche du plan d'implémentation, ou en prérequis.
+démarrage de `react-scripts build` — voir [[techtemp-deployment]]). À diagnostiquer
+et résoudre **avant** de pouvoir builder/déployer (vérifier si `npm start` en dev
+fonctionne). À traiter en première tâche du plan, ou en prérequis.
 
 ## Tests / validation
 
-- Le dashboard utilise `react-scripts` (Jest + React Testing Library
-  disponibles). Ajouter/adapter des tests de rendu pour `DeviceCard` (présence
-  température/humidité/labels, statut) et le bouton de bascule (changement de
-  `colorMode`).
-- Validation visuelle finale dans le vrai navigateur, en clair et sombre, sur
-  une largeur desktop et mobile.
+- `react-scripts` (Jest + React Testing Library disponibles). Tests de rendu /
+  comportement à ajouter ou adapter :
+  - `DeviceCard` : affiche température/humidité/labels/statut ; `onClick`
+    bascule l'état sélectionné.
+  - Sélection : cliquer une vignette ajoute/retire sa courbe (la sélection pilote
+    bien les séries du graphe) ; sélecteur de mesure bascule température/humidité.
+  - Bouton clair/sombre : change `colorMode`.
+- Validation visuelle finale dans le vrai navigateur : clair + sombre, desktop +
+  mobile, avec 1 et plusieurs pièces sélectionnées.
