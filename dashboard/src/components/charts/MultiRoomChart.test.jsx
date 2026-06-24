@@ -4,6 +4,11 @@ import { ChakraProvider } from '@chakra-ui/react';
 import theme from '../../theme';
 import MultiRoomChart from './MultiRoomChart';
 
+// Keep tests offline/deterministic: the outdoor weather hook must not hit the network.
+vi.mock('../../contexts/DataContext', () => ({
+  useOutdoorWeather: () => ({ data: [], loading: false, error: null }),
+}));
+
 // Render with no selected rooms -> shows the empty-state (no <Line>/canvas),
 // but the control bar (metric toggle + period buttons) is still present.
 function setup(props = {}) {

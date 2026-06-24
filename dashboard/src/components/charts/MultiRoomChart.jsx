@@ -16,7 +16,8 @@ import 'chartjs-adapter-date-fns';
 import { fr } from 'date-fns/locale';
 import { subDays, format } from 'date-fns';
 import { getDeviceReadings } from '../../services/api.service';
-import { bucketForWindow, buildDatasets } from './chartData';
+import { useOutdoorWeather } from '../../contexts/DataContext';
+import { bucketForWindow, buildDatasets, downsampleOutdoor } from './chartData';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, TimeScale, Filler);
 
@@ -51,6 +52,8 @@ export default function MultiRoomChart({
   }, [endDate, windowSize]);
 
   const bucket = bucketForWindow(windowSize);
+  const { data: outdoorRaw } = useOutdoorWeather(period.start, period.end, true);
+  const outdoorRows = downsampleOutdoor(outdoorRaw, bucket);
   const key = roomUids.join(',');
   const fromTs = period.start.getTime();
   const toTs = period.end.getTime();
@@ -86,7 +89,7 @@ export default function MultiRoomChart({
   const tickColor = useColorModeValue('#64748b', '#94a3b8');
 
   const data = {
-    datasets: buildDatasets({ roomUids, seriesByUid, metric, bucket, colorForRoom, nameForRoom }),
+    datasets: buildDatasets({ roomUids, seriesByUid, metric, bucket, colorForRoom, nameForRoom, outdoorRows }),
   };
 
   const options = {
