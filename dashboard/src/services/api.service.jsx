@@ -59,13 +59,14 @@ export async function getRooms() {
  * Returns readings shaped like { timestamp (ms), temperature, humidity, source }
  * sorted oldest → newest (handy for charts).
  */
-export async function getDeviceReadings(deviceUid, { from, to, limit = 10000 } = {}) {
+export async function getDeviceReadings(deviceUid, { from, to, limit = 10000, bucket } = {}) {
   const params = new URLSearchParams();
   if (from instanceof Date) params.set('from', from.toISOString());
   else if (typeof from === 'string') params.set('from', from);
   if (to instanceof Date) params.set('to', to.toISOString());
   else if (typeof to === 'string') params.set('to', to);
   params.set('limit', String(limit));
+  if (bucket && bucket !== 'raw') params.set('bucket', bucket);
 
   const url = `${API_ENDPOINTS.deviceReadings(deviceUid)}?${params.toString()}`;
   const json = await getJSON(url);
@@ -77,6 +78,10 @@ export async function getDeviceReadings(deviceUid, { from, to, limit = 10000 } =
     ts: r.ts,
     temperature: r.temperature,
     humidity: r.humidity,
+    temperatureMin: r.temperature_min,
+    temperatureMax: r.temperature_max,
+    humidityMin: r.humidity_min,
+    humidityMax: r.humidity_max,
     source: r.source || 'mqtt'
   }));
 }

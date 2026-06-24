@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
-import { Box, Flex, ButtonGroup, Button, HStack, IconButton, Text, Spinner, useColorModeValue } from '@chakra-ui/react';
+import { Box, Flex, ButtonGroup, Button, HStack, IconButton, Text, Spinner, Select, useColorModeValue } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import {
   Chart as ChartJS,
@@ -10,19 +10,24 @@ import {
   Tooltip,
   Legend,
   TimeScale,
+  Filler,
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { fr } from 'date-fns/locale';
 import { subDays, format } from 'date-fns';
 import { getDeviceReadings } from '../../services/api.service';
+import { bucketForWindow, buildDatasets } from './chartData';
 
-ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, TimeScale);
+ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, TimeScale, Filler);
 
 const PERIODS = [
-  { d: 1, label: '1j' },
-  { d: 3, label: '3j' },
-  { d: 7, label: '1 sem' },
+  { d: 1, label: '1 jour' },
+  { d: 3, label: '3 jours' },
+  { d: 7, label: '1 semaine' },
   { d: 30, label: '1 mois' },
+  { d: 90, label: '3 mois' },
+  { d: 180, label: '6 mois' },
+  { d: 365, label: '1 an' },
 ];
 
 export default function MultiRoomChart({
@@ -45,6 +50,7 @@ export default function MultiRoomChart({
     return { start, end };
   }, [endDate, windowSize]);
 
+  const bucket = bucketForWindow(windowSize);
   const key = roomUids.join(',');
   const fromTs = period.start.getTime();
   const toTs = period.end.getTime();
@@ -59,7 +65,7 @@ export default function MultiRoomChart({
     setLoading(true);
     Promise.all(
       roomUids.map((uid) =>
-        getDeviceReadings(uid, { from: period.start, to: period.end })
+        getDeviceReadings(uid, { from: period.start, to: period.end, bucket })
           .then((rows) => [uid, rows])
           .catch(() => [uid, []])
       )
@@ -74,32 +80,30 @@ export default function MultiRoomChart({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, fromTs, toTs]);
+  }, [key, fromTs, toTs, bucket]);
 
   const gridColor = useColorModeValue('#e2e8f0', '#293548');
   const tickColor = useColorModeValue('#64748b', '#94a3b8');
 
   const data = {
-    datasets: roomUids.map((uid) => ({
-      label: nameForRoom(uid),
-      data: (seriesByUid[uid] || []).map((r) => ({ x: r.timestamp, y: r[metric] })),
-      borderColor: colorForRoom(uid),
-      backgroundColor: colorForRoom(uid),
-      borderWidth: 2,
-      pointRadius: 0,
-      tension: 0.3,
-    })),
+    datasets: buildDatasets({ roomUids, seriesByUid, metric, bucket, colorForRoom, nameForRoom }),
   };
 
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
-    plugins: { legend: { labels: { color: tickColor } } },
+    plugins: {
+      legend: {
+        labels: {
+          color: tickColor,
+          filter: (item) => !/ (min|max)$/.test(item.text || ''),
+        },
+      },
+    },
     scales: {
       x: {
         type: 'time',
-        time: { unit: windowSize > 7 ? 'day' : 'hour' },
         adapters: { date: { locale: fr } },
         grid: { color: gridColor },
         ticks: { color: tickColor },
@@ -136,18 +140,17 @@ export default function MultiRoomChart({
               💧 Humidité
             </Button>
           </ButtonGroup>
-          <ButtonGroup isAttached size="xs">
+          <Select
+            aria-label="Période"
+            size="xs"
+            width="auto"
+            value={windowSize}
+            onChange={(e) => setWindowSize(Number(e.target.value))}
+          >
             {PERIODS.map((p) => (
-              <Button
-                key={p.d}
-                onClick={() => setWindowSize(p.d)}
-                colorScheme={windowSize === p.d ? 'cyan' : 'gray'}
-                variant={windowSize === p.d ? 'solid' : 'outline'}
-              >
-                {p.label}
-              </Button>
+              <option key={p.d} value={p.d}>{p.label}</option>
             ))}
-          </ButtonGroup>
+          </Select>
         </HStack>
         <HStack spacing={1}>
           <IconButton

@@ -16,15 +16,22 @@ function setup(props = {}) {
   return { onMetricChange };
 }
 
-test('shows the metric toggle and period buttons in the chart header', () => {
+test('shows the metric toggle in the chart header', () => {
   setup();
   expect(screen.getByRole('button', { name: /Température/i })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Humidité/i })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '3j' })).toBeInTheDocument();
 });
 
 test('clicking the humidity toggle calls onMetricChange', async () => {
   const { onMetricChange } = setup();
   await userEvent.click(screen.getByRole('button', { name: /Humidité/i }));
   expect(onMetricChange).toHaveBeenCalledWith('humidity');
+});
+
+test('period dropdown offers long ranges including 1 an', () => {
+  setup();
+  const select = screen.getByLabelText('Période');
+  expect(select).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: '1 an' })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: '3 mois' })).toBeInTheDocument();
 });
