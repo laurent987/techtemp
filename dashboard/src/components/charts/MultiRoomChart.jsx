@@ -1,0 +1,165 @@
+import { useState, useEffect, useMemo } from 'react';
+import { Line } from 'react-chartjs-2';
+import { Box, Flex, ButtonGroup, Button, HStack, IconButton, Text, useColorModeValue } from '@chakra-ui/react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import {
+  Chart as ChartJS,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+  TimeScale,
+} from 'chart.js';
+import 'chartjs-adapter-date-fns';
+import { fr } from 'date-fns/locale';
+import { subDays, format } from 'date-fns';
+import { getDeviceReadings } from '../../services/api.service';
+
+ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, TimeScale);
+
+const PERIODS = [
+  { d: 1, label: '1j' },
+  { d: 3, label: '3j' },
+  { d: 7, label: '1 sem' },
+  { d: 30, label: '1 mois' },
+];
+
+export default function MultiRoomChart({
+  roomUids = [],
+  metric = 'temperature',
+  colorForRoom = () => '#22d3ee',
+  nameForRoom = (u) => u,
+}) {
+  const [windowSize, setWindowSize] = useState(7);
+  const [endDate, setEndDate] = useState(() => new Date());
+  const [seriesByUid, setSeriesByUid] = useState({});
+
+  const period = useMemo(() => {
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    const start = subDays(end, windowSize - 1);
+    start.setHours(0, 0, 0, 0);
+    return { start, end };
+  }, [endDate, windowSize]);
+
+  const key = roomUids.join(',');
+  const fromTs = period.start.getTime();
+  const toTs = period.end.getTime();
+
+  useEffect(() => {
+    if (roomUids.length === 0) {
+      setSeriesByUid({});
+      return undefined;
+    }
+    let cancelled = false;
+    Promise.all(
+      roomUids.map((uid) =>
+        getDeviceReadings(uid, { from: period.start, to: period.end })
+          .then((rows) => [uid, rows])
+          .catch(() => [uid, []])
+      )
+    ).then((entries) => {
+      if (!cancelled) setSeriesByUid(Object.fromEntries(entries));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, fromTs, toTs]);
+
+  const gridColor = useColorModeValue('#e2e8f0', '#293548');
+  const tickColor = useColorModeValue('#64748b', '#94a3b8');
+
+  const data = {
+    datasets: roomUids.map((uid) => ({
+      label: nameForRoom(uid),
+      data: (seriesByUid[uid] || []).map((r) => ({ x: r.timestamp, y: r[metric] })),
+      borderColor: colorForRoom(uid),
+      backgroundColor: colorForRoom(uid),
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.3,
+    })),
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { labels: { color: tickColor } } },
+    scales: {
+      x: {
+        type: 'time',
+        time: { unit: windowSize > 7 ? 'day' : 'hour' },
+        adapters: { date: { locale: fr } },
+        grid: { color: gridColor },
+        ticks: { color: tickColor },
+      },
+      y: {
+        grid: { color: gridColor },
+        ticks: { color: tickColor },
+        title: {
+          display: true,
+          text: metric === 'temperature' ? 'Température (°C)' : 'Humidité (%)',
+          color: tickColor,
+        },
+      },
+    },
+  };
+
+  return (
+    <Box bg="app.surface" borderWidth="1px" borderColor="app.border" borderRadius="12px" p={4}>
+      <Flex justify="space-between" align="center" wrap="wrap" gap={2} mb={3}>
+        <ButtonGroup isAttached size="xs">
+          {PERIODS.map((p) => (
+            <Button
+              key={p.d}
+              onClick={() => setWindowSize(p.d)}
+              colorScheme={windowSize === p.d ? 'cyan' : 'gray'}
+              variant={windowSize === p.d ? 'solid' : 'outline'}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </ButtonGroup>
+        <HStack spacing={1}>
+          <IconButton
+            aria-label="Période précédente"
+            size="xs"
+            variant="ghost"
+            icon={<ChevronLeftIcon />}
+            onClick={() => setEndDate((d) => subDays(d, windowSize))}
+          />
+          <Text fontSize="xs" color="app.textMuted">
+            {format(period.start, 'd MMM', { locale: fr })} – {format(period.end, 'd MMM', { locale: fr })}
+          </Text>
+          <IconButton
+            aria-label="Période suivante"
+            size="xs"
+            variant="ghost"
+            icon={<ChevronRightIcon />}
+            onClick={() =>
+              setEndDate((d) => {
+                const n = new Date(d);
+                n.setDate(n.getDate() + windowSize);
+                return n > new Date() ? new Date() : n;
+              })
+            }
+          />
+        </HStack>
+      </Flex>
+      <Box h="300px">
+        {roomUids.length === 0 ? (
+          <Flex h="100%" align="center" justify="center">
+            <Text color="app.textMuted" fontSize="sm">
+              Sélectionne au moins une pièce ci-dessus pour afficher le graphe.
+            </Text>
+          </Flex>
+        ) : (
+          <Line data={data} options={options} />
+        )}
+      </Box>
+    </Box>
+  );
+}
