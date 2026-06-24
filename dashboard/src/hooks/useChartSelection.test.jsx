@@ -20,3 +20,22 @@ test('setMetric switches to humidity', () => {
   act(() => result.current.setMetric('humidity'));
   expect(result.current.metric).toBe('humidity');
 });
+
+test('selects all rooms once they load asynchronously (empty at first render)', () => {
+  const { result, rerender } = renderHook(({ uids }) => useChartSelection(uids), {
+    initialProps: { uids: [] },
+  });
+  expect(result.current.selected).toEqual([]); // no rooms yet
+  rerender({ uids: ['a', 'b'] }); // devices finished loading
+  expect(result.current.selected).toEqual(['a', 'b']);
+});
+
+test('does not re-add a room the user removed when the devices list refreshes', () => {
+  const { result, rerender } = renderHook(({ uids }) => useChartSelection(uids), {
+    initialProps: { uids: ['a', 'b'] },
+  });
+  act(() => result.current.toggle('a')); // user removes 'a'
+  expect(result.current.isSelected('a')).toBe(false);
+  rerender({ uids: ['a', 'b'] }); // periodic refresh, same rooms
+  expect(result.current.isSelected('a')).toBe(false); // stays removed
+});
