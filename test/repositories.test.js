@@ -251,6 +251,31 @@ describe('Repository Pattern - Business Logic Layer', () => {
       });
     });
 
+    it('aggregates readings by day (avg/min/max)', async () => {
+      await repository.devices.create({ uid: 'agg-dev' });
+      const mk = (ts, t, h) => repository.readings.create({
+        uid: 'agg-dev', room_id: null, temperature: t, humidity: h, ts,
+        source: 'test', msg_id: `m-${ts}`,
+      });
+      // Day A: temps 20 and 24 (avg 22, min 20, max 24)
+      await mk('2026-06-01T08:00:00.000Z', 20, 50);
+      await mk('2026-06-01T20:00:00.000Z', 24, 60);
+      // Day B: temp 30 (avg 30, min 30, max 30)
+      await mk('2026-06-02T09:00:00.000Z', 30, 70);
+
+      const rows = await repository.readings.findAggregatedByDeviceUid('agg-dev', {
+        from: '2026-06-01T00:00:00.000Z', to: '2026-06-03T00:00:00.000Z',
+        bucket: 'day', limit: 1000,
+      });
+
+      expect(rows).toHaveLength(2);
+      const byTemp = Object.fromEntries(rows.map(r => [Math.round(r.temperature), r]));
+      expect(byTemp[22].temperature_min).toBe(20);
+      expect(byTemp[22].temperature_max).toBe(24);
+      expect(byTemp[30].temperature_min).toBe(30);
+      expect(byTemp[30].temperature_max).toBe(30);
+    });
+
     it('should create a new reading with business validation', async () => {
       // Arrange
       const reading = {

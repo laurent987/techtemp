@@ -320,6 +320,19 @@ export function createRepository(db) {
         });
         return readings;
       },
+      findAggregatedByDeviceUid: async (uid, options = {}) => {
+        if (!uid) throw new Error('Device UID is required');
+        const { from = null, to = null, bucket = 'day', limit = 10000 } = options;
+        if (bucket !== 'hour' && bucket !== 'day') {
+          throw new Error("bucket must be 'hour' or 'day'");
+        }
+        const limitInt = parseInt(limit, 10);
+        if (isNaN(limitInt) || limitInt < 1) throw new Error('Limit must be a positive integer');
+        if (from && isNaN(Date.parse(from))) throw new Error('Invalid `from` timestamp (expected ISO 8601)');
+        if (to && isNaN(Date.parse(to))) throw new Error('Invalid `to` timestamp (expected ISO 8601)');
+        if (from && to && new Date(from) >= new Date(to)) throw new Error('`from` must be before `to`');
+        return dataAccess.findAggregatedReadingsByDeviceUid(uid, { from, to, bucket, limit: limitInt });
+      },
       findByRoomAndTimeRange: async (roomId, fromTs, toTs) => {
         if (!roomId || !fromTs || !toTs) {
           throw new Error('Room ID, from timestamp, and to timestamp are required');

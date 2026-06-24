@@ -43,6 +43,7 @@ export function createDataAccess(db) {
     findLatestReadingByDevice: createFindLatestReadingByDevice(db),
     findLatestReadingPerDevice: createFindLatestReadingPerDevice(db),
     findReadingsByDeviceUid: createFindReadingsByDeviceUid(db),
+    findAggregatedReadingsByDeviceUid: createFindAggregatedReadingsByDeviceUid(db),
     findReadingsByRoomAndTimeRange: createFindReadingsByRoomAndTimeRange(db),
 
     // Device placement operations
@@ -271,6 +272,34 @@ function createFindReadingsByDeviceUid(db) {
   return function findReadingsByDeviceUid(deviceUid, options = {}) {
     const { limit = 10, from = null, to = null } = options;
     return stmt.all(deviceUid, from, from, to, to, limit);
+  };
+}
+
+function createFindAggregatedReadingsByDeviceUid(db) {
+  // %Y-%m-%d -> day bucket ; %Y-%m-%dT%H -> hour bucket. Passed as a bound param.
+  const stmt = db.prepare(`
+    SELECT
+      MIN(r.ts)            AS ts,
+      AVG(r.temperature)   AS temperature,
+      MIN(r.temperature)   AS temperature_min,
+      MAX(r.temperature)   AS temperature_max,
+      AVG(r.humidity)      AS humidity,
+      MIN(r.humidity)      AS humidity_min,
+      MAX(r.humidity)      AS humidity_max
+    FROM readings_raw r
+    JOIN devices d ON r.device_id = d.id
+    WHERE d.uid = ?
+      AND (? IS NULL OR r.ts >= ?)
+      AND (? IS NULL OR r.ts <= ?)
+    GROUP BY strftime(?, r.ts)
+    ORDER BY ts DESC
+    LIMIT ?
+  `);
+
+  return function findAggregatedReadingsByDeviceUid(deviceUid, options = {}) {
+    const { from = null, to = null, bucket = 'day', limit = 10000 } = options;
+    const fmt = bucket === 'hour' ? '%Y-%m-%dT%H' : '%Y-%m-%d';
+    return stmt.all(deviceUid, from, from, to, to, fmt, limit);
   };
 }
 
