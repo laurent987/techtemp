@@ -21,7 +21,6 @@ export default function SensorCard({
       borderWidth={selected ? '2px' : '1px'}
       borderColor={selected ? color : 'app.border'}
       boxShadow={selected ? `0 0 0 3px ${color}26` : 'sm'}
-      opacity={selected ? 1 : 0.7}
       borderRadius="14px"
       p={4}
       transition="all .15s"

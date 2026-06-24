@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Box, SimpleGrid, Flex, Button, ButtonGroup, Spinner, Alert, AlertIcon } from '@chakra-ui/react';
+import { Box, Flex, Spinner, Alert, AlertIcon } from '@chakra-ui/react';
 import { useDevices, useLatestReadings } from '../contexts/DataContext';
 import { useChartSelection } from '../hooks/useChartSelection';
 import { ROOM_COLORS } from '../theme';
@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
   return (
     <Box>
-      <SimpleGrid minChildWidth="310px" spacing={4} mb={6}>
+      <Flex wrap="wrap" gap={3} mb={6}>
         {(devices || []).map((d) => {
           const r = readingByUid.get(d.uid) || {};
           return (
@@ -78,30 +78,12 @@ export default function DashboardPage() {
             />
           );
         })}
-      </SimpleGrid>
-
-      <Flex mb={4}>
-        <ButtonGroup isAttached size="sm">
-          <Button
-            onClick={() => setMetric('temperature')}
-            colorScheme={metric === 'temperature' ? 'cyan' : 'gray'}
-            variant={metric === 'temperature' ? 'solid' : 'outline'}
-          >
-            🌡️ Température
-          </Button>
-          <Button
-            onClick={() => setMetric('humidity')}
-            colorScheme={metric === 'humidity' ? 'cyan' : 'gray'}
-            variant={metric === 'humidity' ? 'solid' : 'outline'}
-          >
-            💧 Humidité
-          </Button>
-        </ButtonGroup>
       </Flex>
 
       <MultiRoomChart
         roomUids={selected}
         metric={metric}
+        onMetricChange={setMetric}
         colorForRoom={colorForRoom}
         nameForRoom={nameForRoom}
       />

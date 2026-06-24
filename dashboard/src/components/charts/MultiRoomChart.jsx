@@ -28,10 +28,11 @@ const PERIODS = [
 export default function MultiRoomChart({
   roomUids = [],
   metric = 'temperature',
+  onMetricChange = () => {},
   colorForRoom = () => '#22d3ee',
   nameForRoom = (u) => u,
 }) {
-  const [windowSize, setWindowSize] = useState(7);
+  const [windowSize, setWindowSize] = useState(3);
   const [endDate, setEndDate] = useState(() => new Date());
   const [seriesByUid, setSeriesByUid] = useState({});
 
@@ -111,18 +112,36 @@ export default function MultiRoomChart({
   return (
     <Box bg="app.surface" borderWidth="1px" borderColor="app.border" borderRadius="12px" p={4}>
       <Flex justify="space-between" align="center" wrap="wrap" gap={2} mb={3}>
-        <ButtonGroup isAttached size="xs">
-          {PERIODS.map((p) => (
+        <HStack spacing={2} wrap="wrap">
+          <ButtonGroup isAttached size="xs">
             <Button
-              key={p.d}
-              onClick={() => setWindowSize(p.d)}
-              colorScheme={windowSize === p.d ? 'cyan' : 'gray'}
-              variant={windowSize === p.d ? 'solid' : 'outline'}
+              onClick={() => onMetricChange('temperature')}
+              colorScheme={metric === 'temperature' ? 'cyan' : 'gray'}
+              variant={metric === 'temperature' ? 'solid' : 'outline'}
             >
-              {p.label}
+              🌡️ Température
             </Button>
-          ))}
-        </ButtonGroup>
+            <Button
+              onClick={() => onMetricChange('humidity')}
+              colorScheme={metric === 'humidity' ? 'cyan' : 'gray'}
+              variant={metric === 'humidity' ? 'solid' : 'outline'}
+            >
+              💧 Humidité
+            </Button>
+          </ButtonGroup>
+          <ButtonGroup isAttached size="xs">
+            {PERIODS.map((p) => (
+              <Button
+                key={p.d}
+                onClick={() => setWindowSize(p.d)}
+                colorScheme={windowSize === p.d ? 'cyan' : 'gray'}
+                variant={windowSize === p.d ? 'solid' : 'outline'}
+              >
+                {p.label}
+              </Button>
+            ))}
+          </ButtonGroup>
+        </HStack>
         <HStack spacing={1}>
           <IconButton
             aria-label="Période précédente"

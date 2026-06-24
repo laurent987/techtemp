@@ -36,12 +36,10 @@ function setup() {
   render(<ChakraProvider theme={theme}><DashboardPage /></ChakraProvider>);
 }
 
-test('renders a card per room and a metric switch', () => {
+test('renders a card per room', () => {
   setup();
   expect(screen.getByText('Zolder')).toBeInTheDocument();
   expect(screen.getByText('Bureau')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /Température/i })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /Humidité/i })).toBeInTheDocument();
 });
 
 test('all rooms selected by default drive the chart', () => {
@@ -53,10 +51,4 @@ test('clicking a card removes it from the chart selection', async () => {
   setup();
   await userEvent.click(screen.getByText('Zolder'));
   expect(screen.getByTestId('chart')).toHaveTextContent('temperature:bureau');
-});
-
-test('metric switch updates the chart', async () => {
-  setup();
-  await userEvent.click(screen.getByRole('button', { name: /Humidité/i }));
-  expect(screen.getByTestId('chart')).toHaveTextContent('humidity:');
 });
