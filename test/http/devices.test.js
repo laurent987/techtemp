@@ -313,4 +313,34 @@ describe('Device API', () => {
       expect(response.body.data[1]).toHaveProperty('uid');
     });
   });
+
+  describe('GET /api/v1/devices/:deviceUid/readings', () => {
+    test('aggregates by day when bucket=day', async () => {
+      await request(app).post('/api/v1/devices').send({ device_uid: 'agg-sensor', room_name: 'Bedroom' });
+      const mk = (ts, t, h) => repo.readings.create({ uid: 'agg-sensor', room_id: null, temperature: t, humidity: h, ts, source: 'test', msg_id: `x-${ts}` });
+      await mk('2026-06-01T08:00:00.000Z', 20, 50);
+      await mk('2026-06-01T20:00:00.000Z', 24, 60);
+      await mk('2026-06-02T09:00:00.000Z', 30, 70);
+
+      const res = await request(app)
+        .get('/api/v1/devices/agg-sensor/readings')
+        .query({ bucket: 'day', from: '2026-06-01T00:00:00.000Z', to: '2026-06-03T00:00:00.000Z' })
+        .expect(200);
+
+      expect(res.body.data).toHaveLength(2);
+      const pt = res.body.data.find((d) => Math.round(d.temperature) === 22);
+      expect(pt.temperature_min).toBe(20);
+      expect(pt.temperature_max).toBe(24);
+      expect(pt.humidity_min).toBe(50);
+    });
+
+    test('rejects an invalid bucket', async () => {
+      await request(app).post('/api/v1/devices').send({ device_uid: 'bk-sensor', room_name: 'Bedroom' });
+      const res = await request(app)
+        .get('/api/v1/devices/bk-sensor/readings')
+        .query({ bucket: 'week' })
+        .expect(400);
+      expect(res.body.error).toContain('bucket');
+    });
+  });
 });

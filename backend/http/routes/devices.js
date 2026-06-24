@@ -379,7 +379,7 @@ export function devicesRouter(deps = {}) {
       }
 
       const { deviceUid } = req.params;
-      const { limit = 10, from, to } = req.query;
+      const { limit = 10, from, to, bucket = 'raw' } = req.query;
 
       // Validate device exists
       const device = await deps.repo.devices.findByUid(deviceUid);
@@ -412,6 +412,29 @@ export function devicesRouter(deps = {}) {
         return res.status(400).json({
           error: '`from` must be before `to`'
         });
+      }
+
+      if (!['raw', 'hour', 'day'].includes(bucket)) {
+        return res.status(400).json({ error: "bucket must be one of 'raw', 'hour', 'day'" });
+      }
+
+      if (bucket !== 'raw') {
+        const aggregated = await deps.repo.readings.findAggregatedByDeviceUid(deviceUid, {
+          from: from || null,
+          to: to || null,
+          bucket,
+          limit: limitInt
+        });
+        const aggData = aggregated.map((r) => ({
+          ts: r.ts,
+          temperature: r.temperature,
+          temperature_min: r.temperature_min,
+          temperature_max: r.temperature_max,
+          humidity: r.humidity,
+          humidity_min: r.humidity_min,
+          humidity_max: r.humidity_max
+        }));
+        return res.status(200).json({ data: aggData });
       }
 
       const readings = await deps.repo.readings.findByDeviceUid(deviceUid, {
