@@ -30,6 +30,15 @@ test('selects all rooms once they load asynchronously (empty at first render)', 
   expect(result.current.selected).toEqual(['a', 'b']);
 });
 
+test('selects newly-appearing uids by default (outdoor first, rooms load later)', () => {
+  const { result, rerender } = renderHook(({ uids }) => useChartSelection(uids), {
+    initialProps: { uids: ['out'] }, // outdoor present from the very first render
+  });
+  expect(result.current.selected).toEqual(['out']);
+  rerender({ uids: ['out', 'a', 'b'] }); // rooms finished loading
+  expect(result.current.selected).toEqual(['out', 'a', 'b']);
+});
+
 test('does not re-add a room the user removed when the devices list refreshes', () => {
   const { result, rerender } = renderHook(({ uids }) => useChartSelection(uids), {
     initialProps: { uids: ['a', 'b'] },
