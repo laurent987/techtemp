@@ -37,6 +37,7 @@ export default function MultiRoomChart({
   onMetricChange = () => {},
   colorForRoom = () => '#22d3ee',
   nameForRoom = (u) => u,
+  showOutdoor = true,
 }) {
   const [windowSize, setWindowSize] = useState(3);
   const [endDate, setEndDate] = useState(() => new Date());
@@ -52,8 +53,8 @@ export default function MultiRoomChart({
   }, [endDate, windowSize]);
 
   const bucket = bucketForWindow(windowSize);
-  const { data: outdoorRaw } = useOutdoorWeather(period.start, period.end, true);
-  const outdoorRows = downsampleOutdoor(outdoorRaw, bucket);
+  const { data: outdoorRaw } = useOutdoorWeather(period.start, period.end, showOutdoor);
+  const outdoorRows = showOutdoor ? downsampleOutdoor(outdoorRaw, bucket) : [];
   const key = roomUids.join(',');
   const fromTs = period.start.getTime();
   const toTs = period.end.getTime();

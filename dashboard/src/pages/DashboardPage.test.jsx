@@ -4,8 +4,6 @@ import { ChakraProvider } from '@chakra-ui/react';
 import theme from '../theme';
 import DashboardPage from './DashboardPage';
 
-// Mock the data context with the REAL hook shapes:
-// useDevices() -> { devices: [...] }, useLatestReadings() -> { readings: [...] }
 vi.mock('../contexts/DataContext', () => ({
   useDevices: () => ({
     devices: [
@@ -23,12 +21,13 @@ vi.mock('../contexts/DataContext', () => ({
     loading: false,
     error: null,
   }),
+  useCurrentOutdoor: () => ({ data: { temperature: 32, humidity: 38 } }),
+  useTodayStats: () => ({ tempMin: 24, tempMax: 29, humMin: 60, humMax: 78 }),
 }));
 
-// Stub the chart so the test asserts the selection it receives (no canvas).
 vi.mock('../components/charts/MultiRoomChart', () => ({
-  default: ({ roomUids, metric }) => (
-    <div data-testid="chart">{metric}:{roomUids.join(',')}</div>
+  default: ({ roomUids, showOutdoor }) => (
+    <div data-testid="chart">{showOutdoor ? 'OUT|' : ''}{roomUids.join(',')}</div>
   ),
 }));
 
@@ -36,19 +35,27 @@ function setup() {
   render(<ChakraProvider theme={theme}><DashboardPage /></ChakraProvider>);
 }
 
-test('renders a card per room', () => {
+test('the first vignette is the outdoor "Extérieur" card', () => {
   setup();
-  expect(screen.getByText('Zolder')).toBeInTheDocument();
-  expect(screen.getByText('Bureau')).toBeInTheDocument();
+  const names = screen.getAllByText(/Extérieur|Zolder|Bureau/).map((n) => n.textContent);
+  expect(names[0]).toMatch(/Extérieur/);
 });
 
-test('all rooms selected by default drive the chart', () => {
+test('outdoor selected by default -> chart shows the outdoor overlay + rooms', () => {
   setup();
-  expect(screen.getByTestId('chart')).toHaveTextContent('temperature:zolder,bureau');
+  expect(screen.getByTestId('chart')).toHaveTextContent('OUT|zolder,bureau');
 });
 
-test('clicking a card removes it from the chart selection', async () => {
+test('deselecting the outdoor card removes the overlay (rooms stay)', async () => {
+  setup();
+  await userEvent.click(screen.getByText('Extérieur'));
+  const chart = screen.getByTestId('chart');
+  expect(chart).not.toHaveTextContent('OUT|');
+  expect(chart).toHaveTextContent('zolder,bureau');
+});
+
+test('clicking a room card removes it from the chart selection', async () => {
   setup();
   await userEvent.click(screen.getByText('Zolder'));
-  expect(screen.getByTestId('chart')).toHaveTextContent('temperature:bureau');
+  expect(screen.getByTestId('chart')).toHaveTextContent('OUT|bureau');
 });
