@@ -23,6 +23,10 @@ for arg in "$@"; do
     esac
 done
 
+# Bibliothèque watchdog (fonctions partagées).
+# shellcheck source=/dev/null
+. "$(dirname "$0")/lib/setup-watchdog.sh"
+
 PROJECT_DIR="/home/pi/techtemp"
 MIN_SPACE_MB=300
 LOG_FILE="/tmp/techtemp-deploy-$(date +%Y%m%d_%H%M%S).log"
@@ -360,6 +364,17 @@ test_api() {
     return 0
 }
 
+# Installe le watchdog matériel sur le serveur (gel OS total -> reboot).
+# Pas de ping/reboot-réseau : le serveur est la cible, pas un client du réseau.
+install_server_watchdog() {
+    info "Installation du watchdog matériel sur le serveur..."
+    if remote_install_watchdog "pi@$PI_IP" server "" >>"$LOG_FILE" 2>&1; then
+        success "Watchdog serveur (HW) installé"
+    else
+        warning "Échec installation watchdog serveur (voir $LOG_FILE) — déploiement non bloqué"
+    fi
+}
+
 # === EXECUTION PRINCIPALE ===
 
 echo "🚀 Déploiement TechTemp robuste sur Pi: $PI_IP"
@@ -390,6 +405,7 @@ install_docker
 handle_port_conflicts
 prepare_web_dir
 deploy_techtemp
+install_server_watchdog
 
 # Tests finaux
 test_api

@@ -136,6 +136,13 @@ fi
 PI_IP="$1"
 shift 1
 
+# Passerelle (box) que les capteurs pingueront pour détecter une perte de lien local.
+GATEWAY_IP="${GATEWAY_IP:-192.168.0.1}"
+
+# Bibliothèque watchdog (fonctions partagées).
+# shellcheck source=/dev/null
+. "$(dirname "$0")/../scripts/admin/lib/setup-watchdog.sh"
+
 # Mode interactif par défaut
 INTERACTIVE=true
 
@@ -613,7 +620,15 @@ ssh pi@$PI_IP "sudo mv /tmp/techtemp-device.service /etc/systemd/system/ && sudo
 rm /tmp/techtemp-device.service
 echo -e "${GREEN}✅ Service systemd installé${NC}"
 
-# 11. Récapitulatif final
+# 11. Installation du watchdog (récupération réseau + gel OS)
+echo -e "${BLUE}🐶 Installation du watchdog (ping passerelle ${GATEWAY_IP})...${NC}"
+if remote_install_watchdog "pi@$PI_IP" sensor "$GATEWAY_IP"; then
+  echo -e "${GREEN}✅ Watchdog capteur installé${NC}"
+else
+  echo -e "${YELLOW}⚠️  Watchdog non installé (déploiement non bloqué)${NC}"
+fi
+
+# 12. Récapitulatif final
 echo ""
 echo -e "${GREEN}🎉 Bootstrap terminé avec succès !${NC}"
 echo -e "${GREEN}================================${NC}"
