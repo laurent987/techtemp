@@ -20,9 +20,10 @@ refute_match() { ! grep -q "$1" <<<"$2"; } # succeeds when pattern NOT found in 
 # --- render_watchdog_conf: rôle sensor ---
 sensor_conf="$(render_watchdog_conf sensor 192.168.0.1)"
 check "sensor: contient watchdog-device" grep -qxF 'watchdog-device = /dev/watchdog' <<<"$sensor_conf"
-check "sensor: pinge la passerelle"        grep -qxF 'ping            = 192.168.0.1' <<<"$sensor_conf"
-check "sensor: retry-timeout 600"          grep -qxF 'retry-timeout   = 600' <<<"$sensor_conf"
-check "sensor: interval 10"                grep -qxF 'interval        = 10' <<<"$sensor_conf"
+# Format « clé = valeur » avec UN seul espace : watchdog(8) ignore l'alignement multi-espaces.
+check "sensor: pinge la passerelle"        grep -qxF 'ping = 192.168.0.1' <<<"$sensor_conf"
+check "sensor: retry-timeout 600"          grep -qxF 'retry-timeout = 600' <<<"$sensor_conf"
+check "sensor: interval 10"                grep -qxF 'interval = 10' <<<"$sensor_conf"
 
 # --- render_watchdog_conf: rôle server (HW seul, AUCUN ping) ---
 server_conf="$(render_watchdog_conf server '')"

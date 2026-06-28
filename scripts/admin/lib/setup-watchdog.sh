@@ -12,17 +12,21 @@ render_watchdog_conf() {
     sensor|server) ;;
     *) echo "render_watchdog_conf: rôle inconnu: $role" >&2; return 2 ;;
   esac
+  # IMPORTANT : le parser de watchdog(8) 5.16 est sensible au formatage et IGNORE
+  # silencieusement les lignes alignées par espaces multiples (interval/ping/...),
+  # retombant sur les défauts (ping désactivé = capteur qui ne reboote jamais).
+  # Utiliser exactement « clé = valeur » avec UN seul espace.
   cat <<EOF
 # Généré par setup-watchdog.sh — ne pas éditer à la main
 watchdog-device = /dev/watchdog
-interval        = 10
-realtime        = yes
-priority        = 1
+interval = 10
+realtime = yes
+priority = 1
 EOF
   if [ "$role" = "sensor" ]; then
     cat <<EOF
-ping            = ${gateway}
-retry-timeout   = 600
+ping = ${gateway}
+retry-timeout = 600
 EOF
   fi
 }
@@ -60,7 +64,11 @@ done
 # Mettre en place la conf générée puis (re)démarrer le service.
 sudo mv /tmp/techtemp-watchdog.conf /etc/watchdog.conf
 sudo systemctl enable watchdog
+# Libérer /dev/watchdog du fallback wd_keepalive (sinon le restart de watchdog
+# peut échouer car le device est déjà tenu). watchdog.service le reprend ensuite.
+sudo systemctl stop wd_keepalive 2>/dev/null || true
 sudo systemctl restart watchdog
+sleep 3
 sudo systemctl --no-pager --full status watchdog | head -n 5 || true
 REMOTE
 }
