@@ -8,6 +8,10 @@
 #   role = server : watchdog matériel seul (aucun ping, reboot uniquement sur gel OS total)
 render_watchdog_conf() {
   local role="$1" gateway="${2:-}"
+  case "$role" in
+    sensor|server) ;;
+    *) echo "render_watchdog_conf: rôle inconnu: $role" >&2; return 2 ;;
+  esac
   cat <<EOF
 # Généré par setup-watchdog.sh — ne pas éditer à la main
 watchdog-device = /dev/watchdog
@@ -23,25 +27,6 @@ EOF
   fi
 }
 
-# ensure_line_in_file <line> <file>
-# Ajoute <line> à <file> seulement si elle n'y est pas déjà (match exact ligne entière).
-ensure_line_in_file() {
-  local line="$1" file="$2"
-  if ! grep -qxF "$line" "$file" 2>/dev/null; then
-    printf '%s\n' "$line" >> "$file"
-  fi
-}
-
-# pick_existing_path <path...>
-# Imprime le premier chemin qui est un fichier régulier existant ; code 1 si aucun.
-pick_existing_path() {
-  local f
-  for f in "$@"; do
-    [ -f "$f" ] && { printf '%s\n' "$f"; return 0; }
-  done
-  return 1
-}
-
 # remote_install_watchdog <ssh_host> <role> <gateway>
 # Installe + configure le daemon watchdog sur un Pi distant, de façon idempotente.
 # Effets : apt install watchdog, charge le module HW (immédiat) + le persiste,
@@ -50,15 +35,15 @@ remote_install_watchdog() {
   local host="$1" role="$2" gateway="${3:-}"
   local tmpconf
   tmpconf="$(mktemp)"
-  render_watchdog_conf "$role" "$gateway" > "$tmpconf"
+  trap 'rm -f "$tmpconf"' RETURN
+  render_watchdog_conf "$role" "$gateway" > "$tmpconf" || return 1
 
-  scp "$tmpconf" "${host}:/tmp/techtemp-watchdog.conf" || { rm -f "$tmpconf"; return 1; }
-  rm -f "$tmpconf"
+  scp "$tmpconf" "${host}:/tmp/techtemp-watchdog.conf" || return 1
 
   # Le heredoc est entre quotes ('REMOTE') => exécuté tel quel sur le Pi.
   ssh "$host" 'bash -s' <<'REMOTE'
 set -e
-sudo apt-get update -qq
+sudo apt-get update -qq || true
 sudo apt-get install -y watchdog
 
 # Charger le module HW maintenant (sans reboot) pour que /dev/watchdog existe.

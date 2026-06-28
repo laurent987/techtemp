@@ -622,8 +622,11 @@ echo -e "${GREEN}✅ Service systemd installé${NC}"
 
 # 11. Installation du watchdog (récupération réseau + gel OS)
 echo -e "${BLUE}🐶 Installation du watchdog (ping passerelle ${GATEWAY_IP})...${NC}"
-remote_install_watchdog "pi@$PI_IP" sensor "$GATEWAY_IP"
-echo -e "${GREEN}✅ Watchdog capteur installé${NC}"
+if remote_install_watchdog "pi@$PI_IP" sensor "$GATEWAY_IP"; then
+  echo -e "${GREEN}✅ Watchdog capteur installé${NC}"
+else
+  echo -e "${YELLOW}⚠️  Watchdog non installé (déploiement non bloqué)${NC}"
+fi
 
 # 12. Récapitulatif final
 echo ""

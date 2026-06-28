@@ -30,20 +30,9 @@ check "server: contient watchdog-device" grep -qxF 'watchdog-device = /dev/watch
 check "server: AUCUNE ligne ping"        refute_match '^ping' "$server_conf"
 check "server: AUCUN retry-timeout"      refute_match '^retry-timeout' "$server_conf"
 
-# --- ensure_line_in_file: idempotent ---
-tmp="$(mktemp)"
-ensure_line_in_file 'dtparam=watchdog=on' "$tmp"
-ensure_line_in_file 'dtparam=watchdog=on' "$tmp"
-count="$(grep -cxF 'dtparam=watchdog=on' "$tmp")"
-check "ensure_line_in_file: une seule occurrence après 2 appels" test "$count" -eq 1
-rm -f "$tmp"
-
-# --- pick_existing_path ---
-tmpf="$(mktemp)"
-out="$(pick_existing_path /nope/a /nope/b "$tmpf")"
-check "pick_existing_path: trouve le fichier existant" test "$out" = "$tmpf"
-pick_existing_path /nope/a /nope/b 2>/dev/null; not_found_status=$?
-check "pick_existing_path: code 1 si rien" test "$not_found_status" -ne 0
-rm -f "$tmpf"
+# --- render_watchdog_conf: rôle inconnu ---
+bogus_out="$(render_watchdog_conf bogus '' 2>/dev/null)"; bogus_rc=$?
+check "rôle inconnu: code retour non nul" test "$bogus_rc" -ne 0
+check "rôle inconnu: aucune config émise" test -z "$bogus_out"
 
 exit "$fail"
