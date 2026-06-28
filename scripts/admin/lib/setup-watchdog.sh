@@ -39,10 +39,16 @@ remote_install_watchdog() {
   local host="$1" role="$2" gateway="${3:-}"
   local tmpconf
   tmpconf="$(mktemp)"
-  trap 'rm -f "$tmpconf"' RETURN
-  render_watchdog_conf "$role" "$gateway" > "$tmpconf" || return 1
-
-  scp "$tmpconf" "${host}:/tmp/techtemp-watchdog.conf" || return 1
+  # Nettoyage EXPLICITE (pas de `trap ... RETURN`) : sourcée dans un script avec
+  # `set -u` (ex. deploy-robust-pi.sh), un trap RETURN référençant $tmpconf peut se
+  # déclencher hors portée et casser l'appelant (« tmpconf: unbound variable »).
+  if ! render_watchdog_conf "$role" "$gateway" > "$tmpconf"; then
+    rm -f "$tmpconf"; return 1
+  fi
+  if ! scp "$tmpconf" "${host}:/tmp/techtemp-watchdog.conf"; then
+    rm -f "$tmpconf"; return 1
+  fi
+  rm -f "$tmpconf"
 
   # Le heredoc est entre quotes ('REMOTE') => exécuté tel quel sur le Pi.
   ssh "$host" 'bash -s' <<'REMOTE'
