@@ -109,11 +109,48 @@ export default function MultiRoomChart({
       x: {
         type: 'time',
         adapters: { date: { locale: fr } },
+        time: { tooltipFormat: 'dd/MM/yyyy HH:mm' },
         grid: { color: gridColor },
-        ticks: { color: tickColor },
+        ticks: {
+          color: tickColor,
+          // Marque les débuts de jour (minuit) comme ticks "major". autoSkip de
+          // Chart.js préserve toujours les major : le tick qui porte la date ne peut
+          // plus être supprimé, donc la date reste visible même si minuit tombe
+          // pile sur un tick éliminé pour cause de densité.
+          major: { enabled: true },
+          // Ancre les ticks dans le temps : la date n'apparaît qu'au changement de
+          // jour/mois, sinon on ne montre que l'heure. S'adapte à la granularité
+          // (heures pour 1-3 j, jours pour semaine/mois, mois pour 3 mois-1 an).
+          callback: function (value, index, ticks) {
+            const d = new Date(value);
+            const stepMs = ticks.length > 1
+              ? Math.abs(ticks[1].value - ticks[0].value)
+              : 0;
+            const day = 24 * 60 * 60 * 1000;
+
+            // Granularité mensuelle ou plus : mois + année
+            if (stepMs >= 28 * day) {
+              return format(d, 'MMM yy', { locale: fr });
+            }
+            // Granularité journalière : jour/mois
+            if (stepMs >= day) {
+              return format(d, 'dd/MM', { locale: fr });
+            }
+            // Granularité horaire : heure, + date (2e ligne) au premier tick d'un nouveau jour
+            const hhmm = format(d, 'HH:mm', { locale: fr });
+            const prev = index > 0 ? new Date(ticks[index - 1].value) : null;
+            const isNewDay = !prev
+              || format(prev, 'yyyy-MM-dd') !== format(d, 'yyyy-MM-dd');
+            return isNewDay ? [hhmm, format(d, 'dd/MM', { locale: fr })] : hhmm;
+          },
+        },
       },
       y: {
-        grid: { color: gridColor },
+        grid: {
+          color: gridColor,
+          // Lignes des dizaines un peu plus épaisses pour mieux lire les valeurs
+          lineWidth: (ctx) => (ctx.tick?.value % 10 === 0 ? 2.8 : 1),
+        },
         ticks: { color: tickColor },
         title: {
           display: true,

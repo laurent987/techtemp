@@ -47,7 +47,7 @@ test('downsampleOutdoor leaves rows unchanged for raw/hour', () => {
   expect(downsampleOutdoor(rows, 'hour')).toBe(rows);
 });
 
-test('buildDatasets appends an "Extérieur" series when outdoorRows given', () => {
+test('buildDatasets prepends an "Extérieur" series when outdoorRows given', () => {
   const ds = buildDatasets({
     roomUids: ['zolder'],
     seriesByUid: { zolder: [{ timestamp: 1, temperature: 22, temperatureMin: 20, temperatureMax: 24 }] },

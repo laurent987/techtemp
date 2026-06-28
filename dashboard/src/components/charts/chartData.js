@@ -65,7 +65,9 @@ export function buildDatasets({ roomUids, seriesByUid, metric, bucket, colorForR
   }
 
   if (outdoorRows && outdoorRows.length > 0) {
-    datasets.push({
+    // Placé en tête pour que l'ordre de la légende corresponde à celui des
+    // vignettes (Extérieur en premier, cf. DashboardPage : [OUTDOOR, ...rooms]).
+    datasets.unshift({
       label: 'Extérieur',
       data: outdoorRows.map((r) => ({ x: r.timestamp, y: r[metric] })),
       borderColor: '#94a3b8',
