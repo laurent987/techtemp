@@ -19,7 +19,7 @@ services:
     volumes:
       - techtemp_data:/app/data
       # Dashboard servi depuis le disque du Pi (lecture seule) au lieu d'être figé
-      # dans l'image : permet de mettre à jour web/ sans rebuild (cf. update-dashboard.sh).
+      # dans l'image : permet de mettre à jour web/ sans rebuild (cf. deploy-dashboard.sh).
       - ./web:/app/web:ro
     depends_on:
       - mosquitto

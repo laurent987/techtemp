@@ -10,7 +10,7 @@
 # pour livrer le docker-compose.yml mis à jour et (re)lancer le conteneur AVEC le bind mount.
 # Ensuite, ce script suffit pour toutes les itérations suivantes.
 #
-# Usage : ./scripts/admin/update-dashboard.sh [PI_IP]   (défaut : 192.168.0.42)
+# Usage : ./scripts/admin/deploy-dashboard.sh [PI_IP]   (défaut : 192.168.0.42)
 
 set -euo pipefail
 
