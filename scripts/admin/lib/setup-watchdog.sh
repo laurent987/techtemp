@@ -64,10 +64,13 @@ done
 # Mettre en place la conf générée puis (re)démarrer le service.
 sudo mv /tmp/techtemp-watchdog.conf /etc/watchdog.conf
 sudo systemctl enable watchdog
-# Libérer /dev/watchdog du fallback wd_keepalive (sinon le restart de watchdog
-# peut échouer car le device est déjà tenu). watchdog.service le reprend ensuite.
-sudo systemctl stop wd_keepalive 2>/dev/null || true
-sudo systemctl restart watchdog
+# Démarrage déterministe : watchdog.service et son fallback wd_keepalive se
+# disputent /dev/watchdog (Conflicts/OnFailure du paquet). Un simple `restart`
+# refile le device à wd_keepalive pendant le stop, et le start qui suit ne peut
+# plus le reprendre. On arrête donc les DEUX, puis on démarre watchdog seul.
+sudo systemctl stop watchdog wd_keepalive 2>/dev/null || true
+sleep 1
+sudo systemctl start watchdog
 sleep 3
 sudo systemctl --no-pager --full status watchdog | head -n 5 || true
 REMOTE
