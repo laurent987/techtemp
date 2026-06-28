@@ -15,6 +15,7 @@ check() { # check <description> <condition-cmd...>
     echo "FAIL - $desc"; fail=1
   fi
 }
+refute_match() { ! grep -q "$1" <<<"$2"; } # succeeds when pattern NOT found in text
 
 # --- render_watchdog_conf: rôle sensor ---
 sensor_conf="$(render_watchdog_conf sensor 192.168.0.1)"
@@ -26,8 +27,8 @@ check "sensor: interval 10"                grep -qxF 'interval        = 10' <<<"
 # --- render_watchdog_conf: rôle server (HW seul, AUCUN ping) ---
 server_conf="$(render_watchdog_conf server '')"
 check "server: contient watchdog-device" grep -qxF 'watchdog-device = /dev/watchdog' <<<"$server_conf"
-check "server: AUCUNE ligne ping"        bash -c '! grep -q "^ping" <<<"$server_conf"'
-check "server: AUCUN retry-timeout"      bash -c '! grep -q "^retry-timeout" <<<"$server_conf"'
+check "server: AUCUNE ligne ping"        refute_match '^ping' "$server_conf"
+check "server: AUCUN retry-timeout"      refute_match '^retry-timeout' "$server_conf"
 
 # --- ensure_line_in_file: idempotent ---
 tmp="$(mktemp)"
@@ -39,9 +40,10 @@ rm -f "$tmp"
 
 # --- pick_existing_path ---
 tmpf="$(mktemp)"
-check "pick_existing_path: trouve le fichier existant" \
-  bash -c '[ "$(pick_existing_path /nope/a /nope/b "'"$tmpf"'")" = "'"$tmpf"'" ]'
-check "pick_existing_path: code 1 si rien" bash -c '! pick_existing_path /nope/a /nope/b'
+out="$(pick_existing_path /nope/a /nope/b "$tmpf")"
+check "pick_existing_path: trouve le fichier existant" test "$out" = "$tmpf"
+pick_existing_path /nope/a /nope/b 2>/dev/null; not_found_status=$?
+check "pick_existing_path: code 1 si rien" test "$not_found_status" -ne 0
 rm -f "$tmpf"
 
 exit "$fail"

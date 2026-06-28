@@ -42,7 +42,3 @@ pick_existing_path() {
   return 1
 }
 
-# Export functions for use in subshells
-export -f render_watchdog_conf
-export -f ensure_line_in_file
-export -f pick_existing_path
