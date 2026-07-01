@@ -11,7 +11,9 @@ import {
   Legend,
   TimeScale,
   Filler,
+  Interaction,
 } from 'chart.js';
+import { getRelativePosition } from 'chart.js/helpers';
 import 'chartjs-adapter-date-fns';
 import { fr } from 'date-fns/locale';
 import { subDays, format } from 'date-fns';
@@ -20,6 +22,97 @@ import { useOutdoorWeather } from '../../contexts/DataContext';
 import { bucketForWindow, buildDatasets, downsampleOutdoor } from './chartData';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, TimeScale, Filler);
+
+// Mode d'interaction custom : pour CHAQUE courbe visible, un point SYNTHÉTIQUE
+// interpolé linéairement à l'instant (x) exact du curseur. Les modes intégrés
+// échouent ici car les densités diffèrent trop : 'x' rate l'extérieur (horaire,
+// points espacés) et duplique les pièces (mesures ~5 min, plusieurs points par
+// pixel) ; 'index' apparie par numéro d'index, incohérent entre 72 pts
+// (extérieur) et ~860 (pièces). En interpolant, l'extérieur (horaire) n'est plus
+// "décalé" jusqu'à 30 min : le tooltip montre la valeur estimée pile à l'heure
+// survolée, sur toutes les courbes. La ligne extérieur étant déjà tracée en
+// segments droits entre points, le point interpolé tombe exactement dessus.
+Interaction.modes.xInterpolate = function (chart, e, options, useFinalPosition) {
+  const pos = getRelativePosition(e, chart);
+  const items = [];
+  for (const meta of chart.getSortedVisibleDatasetMetas()) {
+    // On ignore les bandes min/max (bordure transparente) : rien à interpoler.
+    if (chart.data.datasets[meta.index]?.borderColor === 'transparent') continue;
+
+    const pts = [];
+    for (let i = 0; i < meta.data.length; i++) {
+      const el = meta.data[i];
+      if (el.skip) continue;
+      const { x, y } = el.getProps(['x', 'y'], useFinalPosition);
+      pts.push({ x, y, i });
+    }
+    if (pts.length === 0) continue;
+
+    let sx;
+    let sy;
+    let idx;
+    if (pos.x <= pts[0].x) {
+      ({ x: sx, y: sy, i: idx } = pts[0]); // avant le 1er point → on borne
+    } else if (pos.x >= pts[pts.length - 1].x) {
+      ({ x: sx, y: sy, i: idx } = pts[pts.length - 1]); // après le dernier → borné
+    } else {
+      let k = 1;
+      while (k < pts.length && pts[k].x < pos.x) k++;
+      const a = pts[k - 1];
+      const b = pts[k];
+      const t = (pos.x - a.x) / (b.x - a.x);
+      sx = pos.x;
+      sy = a.y + t * (b.y - a.y);
+      idx = t < 0.5 ? a.i : b.i; // index du point réel le plus proche (fallback)
+    }
+
+    const base = meta.data[idx];
+    const element = {
+      x: sx,
+      y: sy,
+      skip: false,
+      options: base.options,
+      getProps(props) {
+        const o = {};
+        for (const p of props) o[p] = this[p];
+        return o;
+      },
+      getCenterPoint() {
+        return { x: this.x, y: this.y };
+      },
+      tooltipPosition() {
+        return this.getCenterPoint();
+      },
+      hasValue() {
+        return true;
+      },
+    };
+    items.push({ element, datasetIndex: meta.index, index: idx });
+  }
+  return items;
+};
+
+// Redessine un point à la position INTERPOLÉE de chaque courbe active (les
+// éléments synthétiques ci-dessus ne sont pas dans meta.data, donc Chart.js ne
+// les met pas en surbrillance tout seul). On lit les éléments actifs du tooltip.
+const crosshairDots = {
+  id: 'crosshairDots',
+  afterDraw(chart) {
+    const active = chart.tooltip?.getActiveElements?.() || [];
+    if (active.length === 0) return;
+    const { ctx } = chart;
+    ctx.save();
+    for (const { element, datasetIndex } of active) {
+      const color = chart.data.datasets[datasetIndex]?.borderColor;
+      if (!color || color === 'transparent') continue;
+      ctx.beginPath();
+      ctx.arc(element.x, element.y, 4, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    ctx.restore();
+  },
+};
 
 // Cadence du rafraîchissement auto du graphe (période courante uniquement).
 // Calée sur la fréquence des mesures (~5 min) : rafraîchir plus vite ne ferait
@@ -125,12 +218,35 @@ export default function MultiRoomChart({
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
+    // Voir le mode custom défini en tête de fichier : une valeur interpolée par
+    // courbe à l'instant exact du curseur, robuste aux densités différentes
+    // (pièces vs extérieur). intersect:false => le tooltip suit le curseur sans
+    // devoir toucher pile un point (utile car pointRadius:0).
+    interaction: { mode: 'xInterpolate', intersect: false },
     plugins: {
       legend: {
         labels: {
           color: tickColor,
           filter: (item) => !/ (min|max)$/.test(item.text || ''),
+        },
+      },
+      tooltip: {
+        callbacks: {
+          // Titre = l'instant réel sous le curseur (pixel x -> temps), pas
+          // l'heure d'un point voisin.
+          title: (items) => {
+            if (items.length === 0) return '';
+            const { chart, element } = items[0];
+            const ms = chart.scales.x.getValueForPixel(element.x);
+            return format(new Date(ms), 'dd/MM/yyyy HH:mm', { locale: fr });
+          },
+          // Valeur = estimation interpolée (pixel y -> valeur via l'échelle).
+          label: (ctx) => {
+            const v = ctx.chart.scales.y.getValueForPixel(ctx.element.y);
+            const unit = metric === 'temperature' ? '°C' : '%';
+            const digits = metric === 'temperature' ? 1 : 0;
+            return ` ${ctx.dataset.label} : ${v.toFixed(digits)} ${unit}`;
+          },
         },
       },
     },
@@ -256,7 +372,7 @@ export default function MultiRoomChart({
             </Text>
           </Flex>
         ) : (
-          <Line data={data} options={options} />
+          <Line data={data} options={options} plugins={[crosshairDots]} />
         )}
         {loading && (
           <Flex
