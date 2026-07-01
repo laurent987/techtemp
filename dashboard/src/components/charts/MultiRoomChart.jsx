@@ -21,6 +21,11 @@ import { bucketForWindow, buildDatasets, downsampleOutdoor } from './chartData';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, TimeScale, Filler);
 
+// Cadence du rafraîchissement auto du graphe (période courante uniquement).
+// Calée sur la fréquence des mesures (~5 min) : rafraîchir plus vite ne ferait
+// que re-télécharger la même fenêtre de données à l'identique.
+const AUTO_REFRESH_MS = 5 * 60_000;
+
 const PERIODS = [
   { d: 1, label: '1 jour' },
   { d: 3, label: '3 jours' },
@@ -66,22 +71,46 @@ export default function MultiRoomChart({
       return undefined;
     }
     let cancelled = false;
-    setLoading(true);
-    Promise.all(
-      roomUids.map((uid) =>
-        getDeviceReadings(uid, { from: period.start, to: period.end, bucket })
-          .then((rows) => [uid, rows])
-          .catch(() => [uid, []])
+
+    // showSpinner=false pour les rafraîchissements auto : on met à jour les
+    // données en silence, sans faire clignoter l'overlay de chargement.
+    const load = (showSpinner) => {
+      if (showSpinner) setLoading(true);
+      Promise.all(
+        roomUids.map((uid) =>
+          getDeviceReadings(uid, { from: period.start, to: period.end, bucket })
+            .then((rows) => [uid, rows])
+            .catch(() => [uid, []])
+        )
       )
-    )
-      .then((entries) => {
-        if (!cancelled) setSeriesByUid(Object.fromEntries(entries));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        .then((entries) => {
+          if (!cancelled) setSeriesByUid(Object.fromEntries(entries));
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    };
+
+    load(true);
+
+    // Rafraîchissement auto UNIQUEMENT quand la fenêtre affichée se termine
+    // "maintenant" (période courante). Dès qu'on navigue dans le passé (flèches
+    // ◀) ou qu'on choisit une période antérieure, toTs devient < maintenant :
+    // aucun intervalle n'est créé, donc la navigation historique n'est jamais
+    // perturbée. Le re-fetch garde exactement la même fenêtre (il ne touche ni
+    // endDate ni windowSize) : la vue ne "saute" pas, seules les données se
+    // rafraîchissent. Changer la période (ex. plus de jours) tout en restant
+    // sur aujourd'hui relance cet effet et réactive naturellement le timer.
+    const isCurrentPeriod = toTs >= Date.now();
+    if (!isCurrentPeriod) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    const id = setInterval(() => load(false), AUTO_REFRESH_MS);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, fromTs, toTs, bucket]);

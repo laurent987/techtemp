@@ -33,7 +33,9 @@ function ageLabel(ts) {
 
 // One card: pulls today's min/max and computes the derived (humidex/dew point) values.
 function RoomVignette({ uid, name, temperature, humidity, status, ageLabel: age, color, selected, onToggle }) {
-  const stats = useTodayStats(uid);
+  // __exterieur__ n'est pas un vrai device (météo via Open-Meteo) : pas de
+  // stats "device" à aller chercher, sinon le backend renvoie un 404.
+  const stats = useTodayStats(uid === OUTDOOR_UID ? null : uid);
   const hasReading = temperature != null && humidity != null;
   const hx = hasReading ? humidex(temperature, humidity) : null;
   return (
